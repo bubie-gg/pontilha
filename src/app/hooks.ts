@@ -12,6 +12,7 @@ const TOOL_KEYS: Record<string, ToolId> = {
   e: 'eraser',
   l: 'line',
   u: 'rect',
+  o: 'ellipse',
   g: 'fill',
   i: 'eyedropper',
 };

@@ -7,11 +7,28 @@ apps do ArtCraft. Nos dois casos, cada passo aparece na tela na hora.
 ## Usar
 
 - Abrir: `pontilha` (ou pelo lançador de apps).
-- Atalhos: M seleção, B lápis, E borracha, L linha, U retângulo, G balde, I conta-gotas, X troca as
+- Atalhos: M seleção, B lápis, E borracha, L linha, U retângulo, O elipse, G balde, I conta-gotas, X troca as
   cores, `[` e `]` mudam o pincel, Alt segurado pega uma cor, Espaço e arrastar move a
   tela, Ctrl+Z/Ctrl+Shift+Z desfazem e refazem, Ctrl+S salva, Ctrl+E exporta (PNG, folha de sprites ou GIF).
 - Formato próprio: `.pontilha` (camadas, quadros e paleta). PNG exportado sem borrar, em
   qualquer escala inteira.
+
+## Simetria
+
+Lápis, borracha, linha, retângulo, elipse e balde têm Simetria na barra de opções: ↔ Lados
+repete o que você pinta do outro lado da linha vertical do centro, ↕ Cima e baixo da linha
+horizontal, e Os quatro das duas. As linhas do centro aparecem na tela enquanto está ligada.
+
+## Cores
+
+No painel Cores:
+
+- Rampa (ícone de degraus): cria de 3 a 9 cores em volta da cor principal, com sombras mais
+  escuras e saturadas puxando para o azul e luzes mais claras puxando para o amarelo; o giro
+  de matiz por passo é ajustável. Vai para a paleta sem repetir cores.
+- Trocar cor (ícone de setas): troca uma cor usada por outra na imagem inteira, só na
+  camada ativa ou só no quadro atual, num passo de desfazer. Bom para recolorir uma
+  animação inteira ou fazer variantes de um badge.
 
 ## Tamanho da imagem
 

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { toBase64 } from './base64';
-import { blendOver, pack, parseHex, toHex } from './color';
+import { blendOver, pack, parseHex, rgbToHsv, toHex, unpack } from './color';
 import { createDoc, createFrame, sampleComposite, showFrame } from './doc';
 import { History } from './history';
+import { hueShiftRamp } from './palette';
 import { encodePng, scaleNearest, zlibDeflate, zlibInflate } from './png';
 import { parseProject, serializeProject } from './project';
 import { brushOffsets, floodFill, line, snapToPerfectAngle } from './raster';
@@ -41,6 +42,37 @@ describe('color', () => {
     expect(half & 255).toBe(128);
     expect((half >>> 16) & 255).toBe(128);
     expect(half >>> 24).toBe(255);
+  });
+});
+
+describe('ramps', () => {
+  const hsv = (c: number) => {
+    const { r, g, b } = unpack(c);
+    return rgbToHsv(r, g, b);
+  };
+
+  it('darkens towards blue and lightens towards yellow around the base', () => {
+    const base = parseHex('#c93c4a')!;
+    const ramp = hueShiftRamp(base, 5, 12);
+    expect(ramp).toHaveLength(5);
+    expect(ramp[2]).toBe(base);
+    const v = ramp.map((c) => hsv(c).v);
+    for (let i = 1; i < v.length; i++) expect(v[i]).toBeGreaterThan(v[i - 1]);
+    // Red (~355°) turns down towards blue in the shadows and up towards yellow in the lights.
+    const hue = (c: number) => (hsv(c).h + 180) % 360; // unwrap around red
+    expect(hue(ramp[0])).toBeLessThan(hue(ramp[1]));
+    expect(hue(ramp[1])).toBeLessThan(hue(base));
+    expect(hue(ramp[4])).toBeGreaterThan(hue(ramp[3]));
+    expect(hsv(ramp[0]).s).toBeGreaterThan(hsv(base).s);
+    expect(hsv(ramp[4]).s).toBeLessThan(hsv(base).s);
+  });
+
+  it('keeps steps distinct for greys, near-black and white', () => {
+    for (const hex of ['#808080', '#0a0a0a', '#ffffff']) {
+      const ramp = hueShiftRamp(parseHex(hex)!, 5, 12);
+      expect(new Set(ramp).size).toBe(5);
+    }
+    expect(hueShiftRamp(parseHex('#336699')!, 4)).toHaveLength(4);
   });
 });
 
@@ -124,6 +156,35 @@ describe('tools and history', () => {
     expect(layer.pixels.filter(Boolean)).toHaveLength(0);
     history.redo(doc);
     expect(sampleComposite(doc, 0, 0)).toBe(BLUE);
+  });
+
+  it('mirrors strokes and fills with symmetry', () => {
+    const doc = createDoc(6, 4);
+    const layer = doc.layers[0];
+    const s = startSession('pencil', doc, layer, RED, { ...DEFAULT_SETTINGS, symmetry: 'both' }, 0, 0, false);
+    s.move(1, 0, false);
+    const entry = s.end();
+    expect(ascii(layer.pixels, 6)).toEqual(['##..##', '......', '......', '##..##']);
+    // One undo step holds every mirrored pixel.
+    expect(entry?.kind === 'pixels' && entry.indices.length).toBe(8);
+
+    const wall = createDoc(5, 1);
+    wall.layers[0].pixels[2] = BLUE; // splits the row in two areas
+    startSession('fill', wall, wall.layers[0], RED, { ...DEFAULT_SETTINGS, symmetry: 'vertical' }, 0, 0, false).end();
+    expect([...wall.layers[0].pixels]).toEqual([RED, RED, BLUE, RED, RED]);
+  });
+
+  it('draws ellipses, and circles with shift', () => {
+    const doc = createDoc(9, 9);
+    const layer = doc.layers[0];
+    const s = startSession('ellipse', doc, layer, RED, { ...DEFAULT_SETTINGS, ellipseFilled: true }, 0, 0, false);
+    s.move(8, 4, true);
+    s.end();
+    const rows = ascii(layer.pixels, 9);
+    // Shift turned the 9 × 5 drag into a 9 × 9 circle, symmetric both ways.
+    expect(rows[4]).toBe('#########');
+    expect(rows[0]).toBe(rows[8]);
+    for (const row of rows) expect(row).toBe([...row].reverse().join(''));
   });
 
   it('erases to transparent', () => {

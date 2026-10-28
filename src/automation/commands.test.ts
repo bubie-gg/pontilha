@@ -315,3 +315,32 @@ describe('image size', () => {
     expect((await execute('canvas.scale', { factor: 1 })).ok).toBe(false);
   });
 });
+
+describe('colours', () => {
+  it('replaces a colour in every layer and frame as one undo step', async () => {
+    await run('draw.pixels', { pixels: [[0, 0]], color: '#ff0000' });
+    await run('layer.new');
+    await run('draw.pixels', { pixels: [[1, 0]], color: '#ff0000' });
+    await run('frame.new', { copy: true });
+    await run('draw.pixels', { pixels: [[2, 0]], color: '#ff0000' });
+
+    const used = await run('color.used');
+    expect(used.colors).toEqual([{ color: '#ff0000', pixels: 5 }]);
+
+    expect((await run('color.replaceAll', { from: '#ff0000', to: '#00ff00', scope: 'frame', frame: 1 })).changed).toBe(2);
+    expect((await run('color.replaceAll', { from: '#ff0000', to: '#0000ff' })).changed).toBe(3);
+    expect(((await run('color.used')).colors as Array<{ color: string }>).map((c) => c.color).sort()).toEqual(['#0000ff', '#00ff00']);
+    actions.undo();
+    actions.undo();
+    expect((await run('color.used')).colors).toEqual([{ color: '#ff0000', pixels: 5 }]);
+  });
+
+  it('adds hue-shifted ramps to the palette once', async () => {
+    useApp.setState({ palette: [] });
+    const out = await run('palette.ramp', { color: '#3a9150', steps: 5 });
+    expect(out.added).toBe(5);
+    expect((out.ramp as string[])[2]).toBe('#3a9150');
+    expect((await run('palette.ramp', { color: '#3a9150' })).added).toBe(0);
+    expect((await execute('palette.ramp', { steps: 40 })).ok).toBe(false);
+  });
+});

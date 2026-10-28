@@ -116,6 +116,13 @@ function ToolOptions() {
           <Toggle label="Preenchido" checked={settings.rectFilled} onChange={(rectFilled) => set({ rectFilled })} />
         </>
       );
+    case 'ellipse':
+      return (
+        <>
+          {size('Contorno')}
+          <Toggle label="Preenchida" checked={settings.ellipseFilled} onChange={(ellipseFilled) => set({ ellipseFilled })} />
+        </>
+      );
     case 'fill':
       return (
         <Segmented
@@ -196,12 +203,36 @@ const TOOL_NAMES: Record<ToolId, string> = {
   eraser: 'Borracha',
   line: 'Linha',
   rect: 'Retângulo',
+  ellipse: 'Elipse',
   fill: 'Balde',
   eyedropper: 'Conta-gotas',
   select: 'Seleção',
 };
 
 /** Options for the active tool, in their own row so they never get squeezed by the top bar. */
+/** Tools that paint, and so can mirror what they paint. */
+const MIRRORED = new Set<ToolId>(['pencil', 'eraser', 'line', 'rect', 'ellipse', 'fill']);
+
+function SymmetryOption() {
+  const symmetry = useApp((s) => s.settings.symmetry);
+  return (
+    <div className="option-group" title="Repete o que você pinta do outro lado das linhas do centro da imagem">
+      <span className="option-label">Simetria</span>
+      <Segmented
+        label="Simetria"
+        value={symmetry}
+        options={[
+          { value: 'none', label: 'Desligada' },
+          { value: 'vertical', label: '↔ Lados' },
+          { value: 'horizontal', label: '↕ Cima e baixo' },
+          { value: 'both', label: 'Os quatro' },
+        ]}
+        onChange={(value) => actions.setSettings({ symmetry: value })}
+      />
+    </div>
+  );
+}
+
 export function OptionsBar() {
   const tool = useApp((s) => s.tool);
   const held = useApp((s) => s.heldTool);
@@ -212,6 +243,7 @@ export function OptionsBar() {
         {held && <span className="options-held">enquanto segura Alt</span>}
       </span>
       <ToolOptions />
+      {MIRRORED.has(tool) && <SymmetryOption />}
     </div>
   );
 }

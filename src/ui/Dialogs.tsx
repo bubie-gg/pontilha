@@ -1,10 +1,12 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { type ExportKind, exportImage } from '../app/fileActions';
 import { type SheetLayout, sheetGrid } from '../core/animation';
+import { toCss, toHex } from '../core/color';
 import { MAX_SIZE } from '../core/doc';
+import { type ColorScope, hueShiftRamp, usedColors } from '../core/palette';
 import { ANCHORS, type Anchor, contentBounds } from '../core/transform';
 import { actions, useApp } from '../state/store';
-import { Segmented, Toggle } from './controls';
+import { Segmented, Stepper, Toggle } from './controls';
 
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -411,6 +413,159 @@ function CanvasDialog() {
   );
 }
 
+function PickSwatch({ color, on, label, onClick }: { color: number; on: boolean; label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      className={`swatch${on ? ' is-primary' : ''}`}
+      style={{ '--swatch': toCss(color) } as React.CSSProperties}
+      title={label}
+      aria-label={label}
+      aria-pressed={on}
+      onClick={onClick}
+    />
+  );
+}
+
+const SCOPE_NOTES: Record<ColorScope, string> = {
+  all: 'em todas as camadas e quadros',
+  layer: 'na camada ativa, em todos os quadros',
+  frame: 'no quadro na tela, em todas as camadas',
+};
+
+function RecolorDialog() {
+  const doc = useApp((s) => s.doc);
+  const activeLayerId = useApp((s) => s.activeLayerId);
+  const primary = useApp((s) => s.primary);
+  const secondary = useApp((s) => s.secondary);
+  const palette = useApp((s) => s.palette);
+  const [scope, setScope] = useState<ColorScope>('all');
+  // The image can't change while the dialog is open, so counting per scope is enough.
+  const used = useMemo(() => usedColors(doc, scope, activeLayerId, doc.frame), [doc, scope, activeLayerId]);
+  const [from, setFrom] = useState<number | null>(() => {
+    const all = usedColors(doc, 'all', activeLayerId, doc.frame);
+    return all.some((u) => u.color === primary) ? primary : (all[0]?.color ?? null);
+  });
+  const [to, setTo] = useState(() => (from === primary ? secondary : primary));
+  const targets = [primary, secondary, ...palette].filter((c, i, list) => c >>> 24 && list.indexOf(c) === i);
+  const count = used.find((u) => u.color === from)?.pixels ?? 0;
+  const close = () => actions.openDialog(null);
+
+  return (
+    <Modal title="Trocar cor" onClose={close}>
+      <div className="modal-tabs">
+        <Segmented
+          label="Onde trocar"
+          value={scope}
+          options={[
+            { value: 'all', label: 'Imagem inteira' },
+            { value: 'layer', label: 'Camada ativa' },
+            { value: 'frame', label: 'Quadro atual' },
+          ]}
+          onChange={setScope}
+        />
+      </div>
+      {used.length === 0 ? (
+        <p className="modal-note">Não há nada pintado aqui ainda.</p>
+      ) : (
+        <>
+          <p className="option-label recolor-label">Trocar esta cor</p>
+          <div className="swatches pick-swatches" role="group" aria-label="Cores usadas na imagem">
+            {used.slice(0, 96).map(({ color, pixels }) => (
+              <PickSwatch
+                key={color}
+                color={color}
+                on={color === from}
+                label={`${toHex(color)}, ${pixels} pixels`}
+                onClick={() => setFrom(color)}
+              />
+            ))}
+          </div>
+          <p className="option-label recolor-label">Por esta</p>
+          <div className="swatches pick-swatches" role="group" aria-label="Nova cor">
+            {targets.map((color) => (
+              <PickSwatch key={color} color={color} on={color === to} label={toHex(color)} onClick={() => setTo(color)} />
+            ))}
+          </div>
+          <div className="recolor-preview">
+            {from !== null && <span className="recolor-chip" style={{ '--swatch': toCss(from) } as React.CSSProperties} />}
+            <span>{from !== null ? toHex(from) : '–'}</span>
+            <span className="recolor-arrow">→</span>
+            <span className="recolor-chip" style={{ '--swatch': toCss(to) } as React.CSSProperties} />
+            <span>{toHex(to)}</span>
+          </div>
+          <p className="modal-note">
+            {count} pixels {SCOPE_NOTES[scope]}. Um passo de desfazer.
+          </p>
+        </>
+      )}
+      <div className="modal-actions">
+        <button type="button" className="btn px" onClick={close}>
+          Cancelar
+        </button>
+        <button
+          type="button"
+          className="btn btn-primary px"
+          data-autofocus
+          disabled={from === null || count === 0 || from === to}
+          onClick={() => {
+            close();
+            const n = actions.replaceColor(from!, to, scope);
+            actions.notify(`${n} pixels trocados de ${toHex(from!)} para ${toHex(to)}.`);
+          }}
+        >
+          Trocar cor
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function RampDialog() {
+  const primary = useApp((s) => s.primary);
+  const [steps, setSteps] = useState(5);
+  const [shift, setShift] = useState(12);
+  const ramp = hueShiftRamp(primary, steps, shift);
+  const close = () => actions.openDialog(null);
+  return (
+    <Modal title="Rampa de cores" onClose={close}>
+      <p className="modal-note">
+        A partir da cor principal ({toHex(primary)}): sombras mais escuras e saturadas puxando para o azul, luzes mais claras puxando para o
+        amarelo.
+      </p>
+      <div className="ramp-preview" role="img" aria-label={`Rampa: ${ramp.map(toHex).join(', ')}`}>
+        {ramp.map((c) => (
+          <div key={c} className={`ramp-step${c === primary ? ' is-base' : ''}`}>
+            <span className="ramp-chip" style={{ '--swatch': toCss(c) } as React.CSSProperties} />
+            <span className="ramp-hex">{toHex(c)}</span>
+          </div>
+        ))}
+      </div>
+      <div className="export-options">
+        <Stepper label="Cores" value={steps} min={3} max={9} onChange={setSteps} />
+        <Stepper label="Giro de matiz (°)" value={shift} min={0} max={30} onChange={setShift} />
+      </div>
+      <div className="modal-actions">
+        <button type="button" className="btn px" onClick={close}>
+          Cancelar
+        </button>
+        <button
+          type="button"
+          className="btn btn-primary px"
+          data-autofocus
+          onClick={() => {
+            close();
+            const added = actions.addColors(ramp);
+            actions.notify(added ? `${added} cores novas na paleta.` : 'Essas cores já estavam na paleta.');
+          }}
+        >
+          Adicionar à paleta
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
 function ConfirmDialog() {
   const request = useApp((s) => s.confirm)!;
   return (
@@ -435,5 +590,7 @@ export function Dialogs() {
   if (dialog === 'new') return <NewDialog />;
   if (dialog === 'export') return <ExportDialog />;
   if (dialog === 'canvas') return <CanvasDialog />;
+  if (dialog === 'recolor') return <RecolorDialog />;
+  if (dialog === 'ramp') return <RampDialog />;
   return null;
 }

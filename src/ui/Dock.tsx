@@ -77,6 +77,8 @@ function Palette() {
       title="Cores"
       actions={
         <div className="dock-actions">
+          <IconButton size="sm" icon="ramp" label="Criar uma rampa de cores a partir da principal" onClick={() => actions.openDialog('ramp')} />
+          <IconButton size="sm" icon="swap" label="Trocar uma cor na imagem inteira" onClick={() => actions.openDialog('recolor')} />
           <IconButton size="sm" icon="plus" label="Adicionar a cor principal à paleta" onClick={() => actions.addToPalette(primary)} />
           <IconButton
             size="sm"

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { blendOver } from '../core/color';
+import { blendOver, sameColor } from '../core/color';
 import {
   type Doc,
   type Frame,
@@ -16,6 +16,7 @@ import {
   showFrame,
 } from '../core/doc';
 import { PixelEditor } from '../core/editor';
+import { type ColorScope, scopeCels } from '../core/palette';
 import { scaleNearest } from '../core/png';
 import { type DocState, type Entry, type Focus, History, snapshot } from '../core/history';
 import {
@@ -99,7 +100,7 @@ export interface AppState {
   canUndo: boolean;
   canRedo: boolean;
   notice: Notice | null;
-  dialog: 'new' | 'export' | 'canvas' | null;
+  dialog: 'new' | 'export' | 'canvas' | 'recolor' | 'ramp' | null;
   confirm: ConfirmRequest | null;
   /** Port scripts use to drive this window, or null when control is off. */
   controlPort: number | null;
@@ -358,6 +359,33 @@ export const actions = {
       return;
     }
     set((s) => ({ palette: [...s.palette, color], dirty: true }));
+  },
+
+  /** Appends colours missing from the palette; returns how many were new. */
+  addColors(colors: number[]): number {
+    const fresh = colors.filter((c, i) => c >>> 24 && colors.indexOf(c) === i && !get().palette.includes(c));
+    if (fresh.length) set((s) => ({ palette: [...s.palette, ...fresh], dirty: true }));
+    return fresh.length;
+  },
+
+  /**
+   * Swaps one colour for another in every layer and frame (or only the active
+   * layer, or only the frame on screen), as one undo step. Returns pixels changed.
+   */
+  replaceColor(from: number, to: number, scope: ColorScope = 'all', at: { layer?: string; frame?: string } = {}): number {
+    const { doc, activeLayerId } = get();
+    const entries: Entry[] = [];
+    let count = 0;
+    for (const { layer, cel } of scopeCels(doc, scope, at.layer ?? activeLayerId, at.frame ?? doc.frame)) {
+      const editor = new PixelEditor(layer, doc.width, doc.height, cel);
+      for (let i = 0; i < cel.length; i++) if (sameColor(cel[i], from)) editor.setIndex(i, to);
+      const entry = editor.toEntry();
+      if (entry?.kind !== 'pixels') continue;
+      entries.push(entry);
+      count += entry.indices.length;
+    }
+    if (entries.length) recorded(entries.length === 1 ? entries[0] : { kind: 'group', entries });
+    return count;
   },
 
   removeFromPalette(color: number) {

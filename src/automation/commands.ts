@@ -4,6 +4,7 @@ import { parseHex, sameColor, toHex } from '../core/color';
 import { type Frame, type Layer, MAX_SIZE, celOf, composite, createDoc, frameIndex } from '../core/doc';
 import { PixelEditor } from '../core/editor';
 import { encodePng, scaleNearest } from '../core/png';
+import { type ColorScope, hueShiftRamp, usedColors } from '../core/palette';
 import { parseProject, serializeProject } from '../core/project';
 import {
   type Point,
@@ -127,6 +128,12 @@ function selectionTarget(p: Params): Target {
 
 function frameInfo(frame: Frame, index: number) {
   return { id: frame.id, number: index + 1, duration: frame.duration };
+}
+
+function colorScope(p: Params): ColorScope {
+  const scope = text(p, 'scope', 'all');
+  if (scope !== 'all' && scope !== 'layer' && scope !== 'frame') fail('scope precisa ser "all", "layer" ou "frame"');
+  return scope;
 }
 
 /** `layer` param (id or name), defaulting to the active layer. */
@@ -653,6 +660,44 @@ export const COMMANDS: Record<string, Command> = {
       const c = requiredColor(p, 'color');
       if (!useApp.getState().palette.includes(c)) useApp.setState((s) => ({ palette: [...s.palette, c], dirty: true }));
       return { palette: useApp.getState().palette.map(toHex) };
+    },
+  },
+
+  'palette.ramp': {
+    summary:
+      'Rampa de cores em volta de color (padrão: a principal), da mais escura à mais clara: sombras mais escuras, saturadas e puxando para o azul; luzes mais claras, menos saturadas e puxando para o amarelo. shift é o giro de matiz por passo, em graus. add false só calcula.',
+    params: 'color?, steps?, shift?, add?',
+    run: (p) => {
+      const steps = int(p, 'steps', 5);
+      if (steps < 2 || steps > 12) fail('steps precisa ser de 2 a 12');
+      const shift = num(p, 'shift', 12);
+      if (shift < 0 || shift > 45) fail('shift precisa ser de 0 a 45 graus');
+      const ramp = hueShiftRamp(color(p), steps, shift);
+      const added = bool(p, 'add', true) ? actions.addColors(ramp) : 0;
+      return { ramp: ramp.map(toHex), added };
+    },
+  },
+
+  'color.used': {
+    summary: 'Cores pintadas e quantos pixels usam cada uma, da mais usada para a menos. scope: all (padrão), layer (a camada em todos os quadros) ou frame (o quadro em todas as camadas).',
+    params: 'scope?, layer?, frame?',
+    readOnly: true,
+    run: (p) => {
+      const { doc } = useApp.getState();
+      const scope = colorScope(p);
+      return { colors: usedColors(doc, scope, targetLayer(p).id, targetFrame(p).id).map(({ color: c, pixels }) => ({ color: toHex(c), pixels })) };
+    },
+  },
+
+  'color.replaceAll': {
+    summary:
+      'Troca uma cor por outra em todas as camadas e quadros, num passo de desfazer. scope layer limita à camada (todos os quadros); frame, ao quadro (todas as camadas). Bom para recolorir uma animação inteira.',
+    params: 'from, to, scope?, layer?, frame?',
+    run: (p) => {
+      const from = requiredColor(p, 'from');
+      const to = requiredColor(p, 'to');
+      const changed = actions.replaceColor(from, to, colorScope(p), { layer: targetLayer(p).id, frame: targetFrame(p).id });
+      return { changed };
     },
   },
 

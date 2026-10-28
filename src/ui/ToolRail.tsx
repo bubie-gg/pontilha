@@ -9,6 +9,7 @@ const TOOLS: Array<{ id: ToolId; icon: IconName; label: string; key: string }> =
   { id: 'eraser', icon: 'eraser', label: 'Borracha', key: 'E' },
   { id: 'line', icon: 'line', label: 'Linha', key: 'L' },
   { id: 'rect', icon: 'rect', label: 'Retângulo', key: 'U' },
+  { id: 'ellipse', icon: 'ellipse', label: 'Elipse', key: 'O' },
   { id: 'fill', icon: 'fill', label: 'Balde', key: 'G' },
   { id: 'eyedropper', icon: 'eyedropper', label: 'Conta-gotas', key: 'I' },
 ];

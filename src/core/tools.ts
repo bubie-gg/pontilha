@@ -1,9 +1,13 @@
 import type { Doc, Layer } from './doc';
 import { PixelEditor } from './editor';
 import type { Entry } from './history';
-import { type BrushShape, brushOffsets, floodFill, line, rectCells, snapToPerfectAngle } from './raster';
+import { type BrushShape, brushOffsets, ellipseCells, floodFill, line, rectCells, snapToPerfectAngle } from './raster';
+import { rectBetween } from './transform';
 
-export type ToolId = 'pencil' | 'eraser' | 'line' | 'rect' | 'fill' | 'eyedropper' | 'select';
+export type ToolId = 'pencil' | 'eraser' | 'line' | 'rect' | 'ellipse' | 'fill' | 'eyedropper' | 'select';
+
+/** Mirror lines through the centre of the image: left-right, top-bottom, or both. */
+export type Symmetry = 'none' | 'vertical' | 'horizontal' | 'both';
 
 export interface ToolSettings {
   brushSize: number;
@@ -13,8 +17,11 @@ export interface ToolSettings {
   /** Line tool snaps to perfect angles; Shift inverts this while dragging. */
   perfectAngle: boolean;
   rectFilled: boolean;
+  ellipseFilled: boolean;
   fillContiguous: boolean;
   sampleAllLayers: boolean;
+  /** Painting tools repeat every pixel in its mirror images. */
+  symmetry: Symmetry;
 }
 
 export const DEFAULT_SETTINGS: ToolSettings = {
@@ -23,9 +30,58 @@ export const DEFAULT_SETTINGS: ToolSettings = {
   pixelPerfect: true,
   perfectAngle: false,
   rectFilled: false,
+  ellipseFilled: false,
   fillContiguous: true,
   sampleAllLayers: true,
+  symmetry: 'none',
 };
+
+/** A pixel and its mirror images across the image's centre lines (duplicates on an axis are harmless). */
+export function mirrorPoints(x: number, y: number, width: number, height: number, symmetry: Symmetry): Array<[number, number]> {
+  const mx = width - 1 - x;
+  const my = height - 1 - y;
+  switch (symmetry) {
+    case 'none':
+      return [[x, y]];
+    case 'vertical':
+      return [
+        [x, y],
+        [mx, y],
+      ];
+    case 'horizontal':
+      return [
+        [x, y],
+        [x, my],
+      ];
+    case 'both':
+      return [
+        [x, y],
+        [mx, y],
+        [x, my],
+        [mx, my],
+      ];
+  }
+}
+
+/** Paints every pixel in its mirror images too, so each tool gets symmetry for free. */
+class MirrorEditor extends PixelEditor {
+  constructor(
+    layer: Layer,
+    width: number,
+    height: number,
+    private readonly symmetry: Symmetry,
+  ) {
+    super(layer, width, height);
+  }
+
+  override set(x: number, y: number, color: number) {
+    for (const [px, py] of mirrorPoints(x, y, this.width, this.height, this.symmetry)) super.set(px, py, color);
+  }
+
+  override restore(x: number, y: number) {
+    for (const [px, py] of mirrorPoints(x, y, this.width, this.height, this.symmetry)) super.restore(px, py);
+  }
+}
 
 export interface Session {
   move(x: number, y: number, shift: boolean): void;
@@ -42,7 +98,8 @@ export function startSession(
   y: number,
   shift: boolean,
 ): Session {
-  const editor = new PixelEditor(layer, doc.width, doc.height);
+  const editor =
+    settings.symmetry === 'none' ? new PixelEditor(layer, doc.width, doc.height) : new MirrorEditor(layer, doc.width, doc.height, settings.symmetry);
   const offsets = brushOffsets(settings.brushSize, settings.brushShape);
   const ink = tool === 'eraser' ? 0 : color;
   const stamp = (px: number, py: number) => {
@@ -83,10 +140,31 @@ export function startSession(
       return { move: draw, end: () => editor.toEntry() };
     }
 
+    case 'ellipse': {
+      const draw = (ex: number, ey: number, circle: boolean) => {
+        editor.revertAll();
+        let tx = ex;
+        let ty = ey;
+        if (circle) {
+          const side = Math.max(Math.abs(ex - x), Math.abs(ey - y));
+          tx = x + (Math.sign(ex - x) || 1) * side;
+          ty = y + (Math.sign(ey - y) || 1) * side;
+        }
+        const box = rectBetween(x, y, tx, ty);
+        ellipseCells(box.x, box.y, box.w, box.h, settings.ellipseFilled, settings.brushSize, (px, py) => editor.set(px, py, ink));
+      };
+      draw(x, y, shift);
+      return { move: draw, end: () => editor.toEntry() };
+    }
+
     case 'fill': {
-      for (const i of floodFill(layer.pixels, doc.width, doc.height, x, y, settings.fillContiguous)) {
-        editor.setIndex(i, ink);
+      // With symmetry, each mirror image of the click fills its own area, measured before any paint.
+      const seeds = mirrorPoints(x, y, doc.width, doc.height, settings.symmetry);
+      const area = new Set<number>();
+      for (const [sx, sy] of seeds) {
+        for (const i of floodFill(layer.pixels, doc.width, doc.height, sx, sy, settings.fillContiguous)) area.add(i);
       }
+      for (const i of area) editor.setIndex(i, ink);
       return { move: () => {}, end: () => editor.toEntry() };
     }
   }

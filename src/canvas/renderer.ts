@@ -9,6 +9,9 @@ const SHADOW = 'rgba(22, 21, 28, 0.5)';
 const GRID = 'rgba(36, 34, 46, 0.2)';
 
 const BRUSH_TOOLS = new Set(['pencil', 'eraser', 'line', 'rect']);
+/** Tools that honour the symmetry setting, so its axes show while they are active. */
+const MIRRORED_TOOLS = new Set(['pencil', 'eraser', 'line', 'rect', 'ellipse', 'fill']);
+const AXIS = 'rgba(244, 183, 63, 0.85)';
 /** Onion skin strength: the previous frame reads more than the next one. */
 const ONION_PREVIOUS = 0.3;
 const ONION_NEXT = 0.15;
@@ -98,8 +101,22 @@ export function renderViewport(ctx: CanvasRenderingContext2D, s: AppState) {
     for (let y = y0; y <= y1; y++) ctx.fillRect(panX, panY + Math.round(y * zoom), dw, 1);
   }
 
+  if (s.settings.symmetry !== 'none' && MIRRORED_TOOLS.has(s.tool)) drawAxes(ctx, s, dw, dh);
   if (s.selection) drawSelection(ctx, s);
   drawCursor(ctx, s);
+}
+
+/** The mirror lines through the centre of the image. */
+function drawAxes(ctx: CanvasRenderingContext2D, s: AppState, dw: number, dh: number) {
+  const { view, settings } = s;
+  const width = Math.max(1, Math.round(view.dpr));
+  ctx.fillStyle = AXIS;
+  if (settings.symmetry === 'vertical' || settings.symmetry === 'both') {
+    ctx.fillRect(view.panX + Math.round(dw / 2) - Math.floor(width / 2), view.panY, width, dh);
+  }
+  if (settings.symmetry === 'horizontal' || settings.symmetry === 'both') {
+    ctx.fillRect(view.panX, view.panY + Math.round(dh / 2) - Math.floor(width / 2), dw, width);
+  }
 }
 
 /** Dashed black-and-white outline, readable over any colour. */
