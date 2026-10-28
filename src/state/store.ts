@@ -98,6 +98,10 @@ export interface AppState {
   secondary: number;
   palette: number[];
   showGrid: boolean;
+  /** Shows the image repeated around itself, to check that a tile's edges meet. */
+  tileMode: boolean;
+  /** Width in pixels of the 2:1 isometric tiles drawn as a guide, or 0 for none. */
+  isoGrid: number;
   view: View;
   needsFit: boolean;
   hover: { x: number; y: number } | null;
@@ -140,6 +144,8 @@ export const useApp = create<AppState>(() => ({
   secondary: DEFAULT_PALETTE[6],
   palette: DEFAULT_PALETTE,
   showGrid: true,
+  tileMode: false,
+  isoGrid: 0,
   view: { zoom: 16, panX: 0, panY: 0, width: 0, height: 0, dpr: 1 },
   needsFit: true,
   hover: null,
@@ -401,6 +407,9 @@ export const actions = {
   },
 
   toggleGrid: () => set((s) => ({ showGrid: !s.showGrid })),
+  toggleTileMode: () => set((s) => ({ tileMode: !s.tileMode })),
+  /** Isometric guide with tiles `size` pixels wide (and half as tall), or 0 to hide it. */
+  setIsoGrid: (size: number) => set({ isoGrid: Math.max(0, Math.round(size)) }),
 
   // Layers
 

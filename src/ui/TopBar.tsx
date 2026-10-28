@@ -176,6 +176,8 @@ export function TopBar() {
   const canUndo = useApp((s) => s.canUndo);
   const canRedo = useApp((s) => s.canRedo);
   const showGrid = useApp((s) => s.showGrid);
+  const tileMode = useApp((s) => s.tileMode);
+  const isoGrid = useApp((s) => s.isoGrid);
   const zoom = useApp((s) => s.view.zoom / s.view.dpr);
 
   return (
@@ -207,6 +209,26 @@ export function TopBar() {
 
       <div className="bar-group">
         <IconButton icon="grid" label="Grade de pixels (Ctrl+')" active={showGrid} onClick={actions.toggleGrid} />
+        <IconButton
+          icon="tile"
+          label="Modo tile: mostra a imagem repetida em volta, para conferir as emendas"
+          active={tileMode}
+          onClick={actions.toggleTileMode}
+        />
+        <IconButton
+          icon="iso"
+          label="Grade isométrica 2:1"
+          active={isoGrid > 0}
+          onClick={() => actions.setIsoGrid(isoGrid > 0 ? 0 : 32)}
+        />
+        {isoGrid > 0 && (
+          <Segmented
+            label="Largura do ladrilho isométrico"
+            value={String(isoGrid)}
+            options={[16, 32, 64].map((n) => ({ value: String(n), label: `${n}` }))}
+            onChange={(v) => actions.setIsoGrid(Number(v))}
+          />
+        )}
         <IconButton icon="minus" label="Diminuir zoom (-)" onClick={() => actions.zoomStep(-1)} />
         <button type="button" className="zoom-readout px" title="Zoom 100% (1)" onClick={actions.zoomActual}>
           {Math.round(zoom * 100)}%

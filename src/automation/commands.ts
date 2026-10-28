@@ -1007,6 +1007,28 @@ export const COMMANDS: Record<string, Command> = {
     },
   },
 
+  'view.tile': {
+    summary: 'Modo tile: mostra a imagem repetida em volta (só na tela), para conferir se as bordas emendam.',
+    params: 'on',
+    readOnly: true,
+    run: (p) => {
+      if (useApp.getState().tileMode !== bool(p, 'on', true)) actions.toggleTileMode();
+      return { tile: useApp.getState().tileMode };
+    },
+  },
+
+  'view.isoGrid': {
+    summary: 'Grade isométrica 2:1 (só na tela) com ladrilhos de size pixels de largura e metade de altura; size 0 esconde.',
+    params: 'size',
+    readOnly: true,
+    run: (p) => {
+      const size = int(p, 'size');
+      if (size < 0 || size > 512 || size % 2 !== 0) fail('size precisa ser par, de 0 a 512 (0 esconde)');
+      actions.setIsoGrid(size);
+      return { isoGrid: useApp.getState().isoGrid };
+    },
+  },
+
   // Output. Files are written by the caller, so the app never needs file system access for scripts.
 
   'render.png': {

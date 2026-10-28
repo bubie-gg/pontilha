@@ -13,6 +13,12 @@ apps do ArtCraft. Nos dois casos, cada passo aparece na tela na hora.
 - Formato próprio: `.pontilha` (camadas, quadros e paleta). PNG exportado sem borrar, em
   qualquer escala inteira.
 
+## Tiles e isométrico
+
+Na barra de cima, o modo tile mostra a imagem repetida em volta, mais apagada, para conferir
+se as bordas de um ladrilho emendam. A grade isométrica desenha linhas 2:1 com ladrilhos de
+16, 32 ou 64 px de largura, guia para mobis. As duas aparecem só na tela.
+
 ## Simetria
 
 Lápis, borracha, linha, retângulo, elipse e balde têm Simetria na barra de opções: ↔ Lados

@@ -384,3 +384,13 @@ describe('magic wand', () => {
     expect((await rgRows()).slice(0, 2)).toEqual(['RR.RBRR.', '.R......']);
   });
 });
+
+describe('view guides', () => {
+  it('toggles tile mode and the isometric grid', async () => {
+    expect((await run('view.tile', { on: true })).tile).toBe(true);
+    expect((await run('view.isoGrid', { size: 32 })).isoGrid).toBe(32);
+    expect((await run('view.isoGrid', { size: 0 })).isoGrid).toBe(0);
+    expect((await execute('view.isoGrid', { size: 33 })).ok).toBe(false);
+    await run('view.tile', { on: false });
+  });
+});

@@ -13,6 +13,9 @@ const BRUSH_TOOLS = new Set(['pencil', 'eraser', 'line', 'rect']);
 /** Tools that honour the symmetry setting, so its axes show while they are active. */
 const MIRRORED_TOOLS = new Set(['pencil', 'eraser', 'line', 'rect', 'ellipse', 'fill']);
 const AXIS = 'rgba(244, 183, 63, 0.85)';
+const ISO = 'rgba(125, 149, 255, 0.55)';
+/** Repeated copies around the image in tile mode are dimmed so the real one stands out. */
+const TILE_ALPHA = 0.55;
 /** Onion skin strength: the previous frame reads more than the next one. */
 const ONION_PREVIOUS = 0.3;
 const ONION_NEXT = 0.15;
@@ -73,10 +76,14 @@ export function renderViewport(ctx: CanvasRenderingContext2D, s: AppState) {
   ctx.fillStyle = FELT;
   ctx.fillRect(0, 0, W, H);
 
-  // Hard offset shadow, like a sprite lifted off the table.
-  const lift = Math.round(4 * dpr);
-  ctx.fillStyle = SHADOW;
-  ctx.fillRect(panX + lift, panY + lift, dw, dh);
+  if (s.tileMode) drawTiles(ctx, s, dw, dh);
+
+  // Hard offset shadow, like a sprite lifted off the table (not in tile mode, where it would cover the neighbours).
+  if (!s.tileMode) {
+    const lift = Math.round(4 * dpr);
+    ctx.fillStyle = SHADOW;
+    ctx.fillRect(panX + lift, panY + lift, dw, dh);
+  }
 
   const pattern = ctx.createPattern(checkerTile(Math.max(4, Math.round(8 * dpr))), 'repeat')!;
   pattern.setTransform(new DOMMatrix([1, 0, 0, 1, panX, panY]));
@@ -102,9 +109,55 @@ export function renderViewport(ctx: CanvasRenderingContext2D, s: AppState) {
     for (let y = y0; y <= y1; y++) ctx.fillRect(panX, panY + Math.round(y * zoom), dw, 1);
   }
 
+  if (s.isoGrid > 0) drawIsoGrid(ctx, s, dw, dh);
   if (s.settings.symmetry !== 'none' && MIRRORED_TOOLS.has(s.tool)) drawAxes(ctx, s, dw, dh);
   if (s.selection) drawSelection(ctx, s);
   drawCursor(ctx, s);
+}
+
+/** The eight neighbouring copies of the image, for checking how a tile repeats. */
+function drawTiles(ctx: CanvasRenderingContext2D, s: AppState, dw: number, dh: number) {
+  const { doc, view } = s;
+  for (let ty = -1; ty <= 1; ty++) {
+    for (let tx = -1; tx <= 1; tx++) {
+      if (tx === 0 && ty === 0) continue;
+      const x = view.panX + tx * dw;
+      const y = view.panY + ty * dh;
+      if (x + dw < 0 || y + dh < 0 || x > view.width || y > view.height) continue;
+      for (const layer of doc.layers) {
+        if (!layer.visible || layer.opacity <= 0) continue;
+        ctx.globalAlpha = layer.opacity * TILE_ALPHA;
+        ctx.drawImage(layerCanvas(layer, doc.width, doc.height), x, y, dw, dh);
+      }
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+/** 2:1 isometric guide lines, `isoGrid` pixels between corners across, over the image only. */
+function drawIsoGrid(ctx: CanvasRenderingContext2D, s: AppState, dw: number, dh: number) {
+  const { doc, view, isoGrid: size } = s;
+  const step = size / 2;
+  const px = (x: number) => view.panX + x * view.zoom;
+  const py = (y: number) => view.panY + y * view.zoom;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(view.panX, view.panY, dw, dh);
+  ctx.clip();
+  ctx.beginPath();
+  // Lines y = x/2 + c going down to the right, and y = -x/2 + c going up to the right.
+  for (let c = -Math.ceil(doc.width / 2 / step) * step; c <= doc.height; c += step) {
+    ctx.moveTo(px(0), py(c));
+    ctx.lineTo(px(doc.width), py(c + doc.width / 2));
+  }
+  for (let c = 0; c <= doc.height + doc.width / 2 + step; c += step) {
+    ctx.moveTo(px(0), py(c));
+    ctx.lineTo(px(doc.width), py(c - doc.width / 2));
+  }
+  ctx.lineWidth = Math.max(1, Math.round(view.dpr));
+  ctx.strokeStyle = ISO;
+  ctx.stroke();
+  ctx.restore();
 }
 
 /** The mirror lines through the centre of the image. */
