@@ -1,0 +1,46 @@
+{
+  "name": "Badge Rastafári",
+  "description": "Gorro tam listrado em verde, dourado e vermelho, com faixa preta e dreads. 32 × 32; exporte com escala 4.",
+  "steps": [
+    { "id": "doc.new", "params": { "width": 32, "height": 32, "name": "badge-rastafari" } },
+    { "id": "palette.set", "params": { "colors": ["#16141c", "#1f5e45", "#3a9150", "#7dc25b", "#db7b2a", "#f6b847", "#ffe6a0", "#8a2340", "#c93c4a", "#f0715e", "#2e2a38", "#4d4759", "#5a2a1e", "#9c4a22"] } },
+    { "id": "layer.setProps", "params": { "name": "gorro" } },
+
+    { "id": "draw.ellipse", "params": { "x": 2, "y": 2, "w": 28, "h": 22, "color": "#1f5e45", "filled": true } },
+    { "id": "draw.ellipse", "params": { "x": 0, "y": 0, "w": 28, "h": 22, "color": "#7dc25b", "filled": true, "onlyOn": "#1f5e45" } },
+    { "id": "draw.ellipse", "params": { "x": 3, "y": 3, "w": 28, "h": 22, "color": "#3a9150", "filled": true, "onlyOn": "#7dc25b" } },
+    { "id": "draw.rect", "params": { "x": 0, "y": 19, "w": 32, "h": 13, "color": "transparent", "filled": true } },
+    { "id": "draw.rect", "params": { "x": 15, "y": 1, "w": 2, "h": 1, "color": "#3a9150", "filled": true } },
+
+    { "id": "draw.rect", "params": { "x": 0, "y": 8, "w": 32, "h": 5, "color": "#f6b847", "filled": true, "onlyOn": "#3a9150" } },
+    { "id": "draw.rect", "params": { "x": 0, "y": 8, "w": 32, "h": 5, "color": "#db7b2a", "filled": true, "onlyOn": "#1f5e45" } },
+    { "id": "draw.rect", "params": { "x": 0, "y": 8, "w": 32, "h": 5, "color": "#ffe6a0", "filled": true, "onlyOn": "#7dc25b" } },
+    { "id": "draw.rect", "params": { "x": 0, "y": 13, "w": 32, "h": 6, "color": "#c93c4a", "filled": true, "onlyOn": "#3a9150" } },
+    { "id": "draw.rect", "params": { "x": 0, "y": 13, "w": 32, "h": 6, "color": "#8a2340", "filled": true, "onlyOn": "#1f5e45" } },
+    { "id": "draw.rect", "params": { "x": 0, "y": 13, "w": 32, "h": 6, "color": "#f0715e", "filled": true, "onlyOn": "#7dc25b" } },
+
+    { "id": "draw.rect", "params": { "x": 5, "y": 18, "w": 22, "h": 4, "color": "#2e2a38", "filled": true } },
+    { "id": "draw.rect", "params": { "x": 5, "y": 18, "w": 22, "h": 1, "color": "#4d4759", "filled": true } },
+
+    { "id": "draw.pattern", "params": { "x": 5, "y": 22, "legend": { "H": "#9c4a22", "B": "#5a2a1e", "o": "#f6b847" }, "rows": [
+      "HB.HB.HB",
+      "HB.HB.HB",
+      "HB.HB.HB",
+      "HB.oo.H.",
+      ".B.HB...",
+      "...HB...",
+      "....B..."
+    ] } },
+    { "id": "draw.pattern", "params": { "x": 19, "y": 22, "legend": { "H": "#9c4a22", "B": "#5a2a1e", "o": "#f6b847" }, "rows": [
+      "HB.HB.HB",
+      "HB.HB.HB",
+      "HB.HB.HB",
+      ".B.oo.HB",
+      "...HB.H.",
+      "...HB...",
+      "....B..."
+    ] } },
+
+    { "id": "effect.outline", "params": { "color": "#16141c" } }
+  ]
+}
