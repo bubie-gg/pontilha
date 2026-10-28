@@ -10,7 +10,9 @@ import {
   clampDuration,
   createFrame,
   newLayerId,
+  newTagId,
   showFrame,
+  tagRange,
 } from './doc';
 import { zlibDeflate, zlibInflate } from './png';
 
@@ -39,6 +41,8 @@ interface ProjectFileV2 {
   activeFrame: number;
   frames: Array<{ duration: number }>;
   layers: Array<{ name: string; visible: boolean; opacity: number; cels: string[] }>;
+  /** Named stretches of frames by index, both ends included. Optional: older files have none. */
+  tags?: Array<{ name: string; from: number; to: number }>;
 }
 
 export interface LoadedProject {
@@ -69,6 +73,10 @@ export async function serializeProject(doc: Doc, palette: number[], activeLayerI
     activeFrame: Math.max(0, doc.frames.findIndex((f) => f.id === doc.frame)),
     frames: doc.frames.map((f) => ({ duration: f.duration })),
     layers,
+    tags: doc.tags.flatMap((t) => {
+      const range = tagRange(doc, t);
+      return range ? [{ name: t.name, from: range[0], to: range[1] }] : [];
+    }),
   };
   return JSON.stringify(file);
 }
@@ -138,7 +146,13 @@ export async function parseProject(text: string): Promise<LoadedProject> {
     }),
   );
 
-  const doc: Doc = { width, height, layers, frames, frame: frames[0].id };
+  const frameAt = (i: unknown) => (Number.isInteger(i) ? frames[i as number] : undefined);
+  const tags = (Array.isArray(v2.tags) ? v2.tags : []).flatMap((t) => {
+    const from = frameAt(t?.from);
+    const to = frameAt(t?.to);
+    return from && to ? [{ id: newTagId(), name: String(t.name || 'Trecho'), from: from.id, to: to.id }] : [];
+  });
+  const doc: Doc = { width, height, layers, frames, frame: frames[0].id, tags };
   showFrame(doc, frames[Math.min(frames.length - 1, Math.max(0, v2.activeFrame | 0))].id);
   const palette = (v2.palette ?? []).map(parseHex).filter((c): c is number => c !== null);
   const active = layers[Math.min(layers.length - 1, Math.max(0, v2.activeLayer | 0))];

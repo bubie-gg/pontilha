@@ -394,3 +394,40 @@ describe('view guides', () => {
     await run('view.tile', { on: false });
   });
 });
+
+describe('tags', () => {
+  async function fiveFrames() {
+    for (let i = 0; i < 4; i++) await run('frame.new', { copy: true });
+    await run('frame.setDuration', { duration: 50, frame: 3 });
+  }
+
+  it('names stretches, exports only them and survives frame deletion', async () => {
+    await fiveFrames();
+    const walk = await run('tag.add', { name: 'andar', from: 2, to: 4 });
+    expect(walk).toMatchObject({ name: 'andar', from: 2, to: 4 });
+    expect((await execute('tag.add', { name: 'andar', from: 1, to: 1 })).ok).toBe(false);
+
+    expect((await run('render.gif', { tag: 'andar' })).frames).toBe(3);
+    expect((await run('render.sheet', { tag: 'andar' })).durations).toEqual([100, 50, 100]);
+
+    // Deleting an end moves it inwards; deleting the last frame of a one-frame tag drops the tag.
+    await run('frame.delete', { frame: 4 });
+    expect((await run('doc.inspect')).tags).toEqual([expect.objectContaining({ name: 'andar', from: 2, to: 3 })]);
+    await run('tag.add', { name: 'pose', from: 1, to: 1 });
+    await run('frame.delete', { frame: 1 });
+    expect(((await run('doc.inspect')).tags as Array<{ name: string }>).map((t) => t.name)).toEqual(['andar']);
+    actions.undo();
+    expect(((await run('doc.inspect')).tags as Array<{ name: string }>).map((t) => t.name)).toEqual(['andar', 'pose']);
+
+    await run('tag.delete', { tag: 'pose' });
+    expect((await execute('render.gif', { tag: 'pose' })).ok).toBe(false);
+  });
+
+  it('keeps tags in the project file', async () => {
+    await fiveFrames();
+    await run('tag.add', { name: 'pular', from: 3, to: 5 });
+    const { text } = await run('project.serialize');
+    await run('project.load', { text, discard: true });
+    expect((await run('doc.inspect')).tags).toEqual([expect.objectContaining({ name: 'pular', from: 3, to: 5 })]);
+  });
+});

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { playbackOrder, renderGif, renderSheet, sheetGrid } from './animation';
+import { docFromFrames, guessFrameSize, playbackOrder, renderGif, renderSheet, sheetGrid, sliceSheet } from './animation';
 import { pack } from './color';
 import { createDoc, createFrame } from './doc';
 import { encodeGif, lzwEncode } from './gif';
@@ -154,5 +154,30 @@ describe('animation export', () => {
     const gif = decodeGif(renderGif(threeFrames(), { pingpong: true, scale: 3 }).bytes);
     expect(gif.width).toBe(6);
     expect(gif.frames.map((f) => f.delay)).toEqual([10, 20, 30, 20]);
+  });
+});
+
+describe('sprite sheet import', () => {
+  it('cuts a sheet into frames and drops empty cells at the end', () => {
+    // A 3 × 2 grid of 2 × 1 cells; only the first four hold pixels.
+    const pixels = new Uint32Array(6 * 2);
+    for (const i of [0, 3, 4, 7]) pixels[i] = RED;
+    const cells = sliceSheet(pixels, 6, 2, 2, 1);
+    expect(cells.map((c) => [...c])).toEqual([
+      [RED, 0],
+      [0, RED],
+      [RED, 0],
+      [0, RED],
+    ]);
+    const doc = docFromFrames(cells, 2, 1, 80);
+    expect(doc.frames.map((f) => f.duration)).toEqual([80, 80, 80, 80]);
+    expect([...doc.layers[0].cels.get(doc.frames[1].id)!]).toEqual([0, RED]);
+    expect([...doc.layers[0].pixels]).toEqual([RED, 0]);
+  });
+
+  it('guesses square frames along a strip', () => {
+    expect(guessFrameSize(128, 32)).toEqual({ w: 32, h: 32 });
+    expect(guessFrameSize(16, 64)).toEqual({ w: 16, h: 16 });
+    expect(guessFrameSize(30, 20)).toEqual({ w: 30, h: 20 });
   });
 });

@@ -16,9 +16,12 @@ const AXIS = 'rgba(244, 183, 63, 0.85)';
 const ISO = 'rgba(125, 149, 255, 0.55)';
 /** Repeated copies around the image in tile mode are dimmed so the real one stands out. */
 const TILE_ALPHA = 0.55;
-/** Onion skin strength: the previous frame reads more than the next one. */
-const ONION_PREVIOUS = 0.3;
-const ONION_NEXT = 0.15;
+/** Onion skin strength of the nearest frame on each side; farther ones fade out. Earlier frames read more. */
+const ONION_BEFORE = 0.32;
+const ONION_AFTER = 0.2;
+/** Tints, as in Aseprite: earlier frames red, later ones blue. */
+const TINT_BEFORE = 'rgba(232, 66, 66, 0.75)';
+const TINT_AFTER = 'rgba(66, 120, 232, 0.75)';
 
 interface Ghost {
   canvas: HTMLCanvasElement;
@@ -28,8 +31,9 @@ interface Ghost {
 /** Flattened neighbouring frames, rebuilt only when the document changes. */
 let ghosts = new Map<string, Ghost>();
 
-function ghostCanvas(doc: Doc, frameId: string, version: number, keep: Map<string, Ghost>): HTMLCanvasElement {
-  let ghost = ghosts.get(frameId);
+function ghostCanvas(doc: Doc, frameId: string, version: number, tint: string | null, keep: Map<string, Ghost>): HTMLCanvasElement {
+  const key = `${frameId}:${tint ?? ''}`;
+  let ghost = ghosts.get(key);
   if (!ghost || ghost.canvas.width !== doc.width || ghost.canvas.height !== doc.height) {
     const canvas = document.createElement('canvas');
     canvas.width = doc.width;
@@ -39,26 +43,38 @@ function ghostCanvas(doc: Doc, frameId: string, version: number, keep: Map<strin
   if (ghost.version !== version) {
     const pixels = composite(doc, frameId);
     const image = new ImageData(new Uint8ClampedArray(pixels.buffer as ArrayBuffer), doc.width, doc.height);
-    ghost.canvas.getContext('2d')!.putImageData(image, 0, 0);
+    const g = ghost.canvas.getContext('2d')!;
+    g.putImageData(image, 0, 0);
+    if (tint) {
+      // Colour only where the frame has pixels.
+      g.globalCompositeOperation = 'source-atop';
+      g.fillStyle = tint;
+      g.fillRect(0, 0, doc.width, doc.height);
+      g.globalCompositeOperation = 'source-over';
+    }
     ghost.version = version;
   }
-  keep.set(frameId, ghost);
+  keep.set(key, ghost);
   return ghost.canvas;
 }
 
 function drawOnionSkin(ctx: CanvasRenderingContext2D, s: AppState, dw: number, dh: number) {
-  const { doc, view } = s;
+  const { doc, view, onion } = s;
   const keep = new Map<string, Ghost>();
   const index = frameIndex(doc);
-  const neighbours: Array<[number, number]> = [
-    [index - 1, ONION_PREVIOUS],
-    [index + 1, ONION_NEXT],
-  ];
-  for (const [i, alpha] of neighbours) {
+  const neighbours: Array<[number, number, string | null]> = [];
+  // Farthest first, so the nearest frames end up on top.
+  for (let d = onion.before; d >= 1; d--) {
+    neighbours.push([index - d, ONION_BEFORE * (1 - (d - 1) / onion.before), onion.tint ? TINT_BEFORE : null]);
+  }
+  for (let d = onion.after; d >= 1; d--) {
+    neighbours.push([index + d, ONION_AFTER * (1 - (d - 1) / onion.after), onion.tint ? TINT_AFTER : null]);
+  }
+  for (const [i, alpha, tint] of neighbours) {
     const frame = doc.frames[i];
     if (!frame) continue;
     ctx.globalAlpha = alpha;
-    ctx.drawImage(ghostCanvas(doc, frame.id, s.version, keep), view.panX, view.panY, dw, dh);
+    ctx.drawImage(ghostCanvas(doc, frame.id, s.version, tint, keep), view.panX, view.panY, dw, dh);
   }
   ctx.globalAlpha = 1;
   ghosts = keep;

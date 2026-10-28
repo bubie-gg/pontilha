@@ -255,11 +255,13 @@ struct Export {
     sheet: Option<String>,
     /// GIF only: play forward, then back.
     pingpong: bool,
+    /// Sheet and GIF: only this tag's frames (name or id).
+    tag: Option<String>,
 }
 
 impl Export {
     fn scale(scale: u64) -> Self {
-        Self { scale, layer: None, sheet: None, pingpong: false }
+        Self { scale, layer: None, sheet: None, pingpong: false, tag: None }
     }
 }
 
@@ -280,7 +282,11 @@ fn save_as(client: &Client, path: &Path, export: &Export) -> Result<Value> {
             Ok(json!({ "saved": path, "format": "pontilha" }))
         }
         "png" if export.sheet.is_some() => {
-            let result = client.call("render.sheet", json!({ "scale": scale, "layout": export.sheet }))?;
+            let mut params = json!({ "scale": scale, "layout": export.sheet });
+            if let Some(tag) = &export.tag {
+                params["tag"] = json!(tag);
+            }
+            let result = client.call("render.sheet", params)?;
             let png = decode_base64(&result["png"], "PNG")?;
             write_file(path, &png)?;
             Ok(json!({
@@ -296,7 +302,11 @@ fn save_as(client: &Client, path: &Path, export: &Export) -> Result<Value> {
             Ok(json!({ "saved": path, "format": "png", "scale": scale, "bytes": png.len() }))
         }
         "gif" => {
-            let result = client.call("render.gif", json!({ "scale": scale, "pingpong": export.pingpong }))?;
+            let mut params = json!({ "scale": scale, "pingpong": export.pingpong });
+            if let Some(tag) = &export.tag {
+                params["tag"] = json!(tag);
+            }
+            let result = client.call("render.gif", params)?;
             let gif = decode_base64(&result["gif"], "GIF")?;
             write_file(path, &gif)?;
             Ok(json!({
@@ -436,7 +446,8 @@ fn tools() -> Value {
                 "scale": { "type": "integer", "minimum": 1 },
                 "layer": { "type": "string", "description": "PNG of the frame on screen only: layer name or id; default: all visible layers." },
                 "sheet": { "type": "string", "enum": ["row", "grid"], "description": "PNG only: every frame left to right in one row, or in a near-square grid." },
-                "pingpong": { "type": "boolean", "description": "GIF only: play forward, then back." }
+                "pingpong": { "type": "boolean", "description": "GIF only: play forward, then back." },
+                "tag": { "type": "string", "description": "Sheet and GIF: only the frames of this tag (name or id)." }
             }), &["path"])
         },
         {
@@ -557,6 +568,7 @@ impl Session {
                     layer: some(args, "layer"),
                     sheet,
                     pingpong: args["pingpong"].as_bool().unwrap_or(false),
+                    tag: args["tag"].as_str().map(str::to_string),
                 };
                 Ok(text(save_as(&client, &path, &export)?))
             }
@@ -639,6 +651,7 @@ Sem comando, abre a janela. Com a janela aberta:
   preview [ARQUIVO.png]      salva uma prévia ampliada (cerca de 512 px)
   export ARQUIVO.png [ESCALA] [row|grid]   quadro atual, ou todos numa folha de sprites
   export ARQUIVO.gif [ESCALA] [pingpong]   animação inteira, repetindo
+                                           (folha e GIF: tag=NOME exporta só um trecho)
   save ARQUIVO.pontilha
   place ARQUIVO.png [OPACIDADE]  põe um PNG como camada nova (referência: 0.5)
   mcp                        servidor MCP para agentes (stdio)";
@@ -759,7 +772,8 @@ fn terminal(args: &[String]) -> Result<()> {
                 match option.as_str() {
                     "row" | "grid" => export.sheet = Some(option.clone()),
                     "pingpong" => export.pingpong = true,
-                    n => export.scale = n.parse().map_err(|_| format!("opção desconhecida: {n} (use uma escala, row, grid ou pingpong)"))?,
+                    t if t.starts_with("tag=") => export.tag = Some(t["tag=".len()..].to_string()),
+                    n => export.scale = n.parse().map_err(|_| format!("opção desconhecida: {n} (use uma escala, row, grid, pingpong ou tag=NOME)"))?,
                 }
             }
             println!("{:#}", save_as(&client, &path, &export)?);

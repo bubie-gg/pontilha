@@ -1,7 +1,19 @@
-import { renderGif, renderSheet, sheetGrid } from '../core/animation';
+import { type FrameRange, docFromFrames, renderGif, renderSheet, sheetGrid, sliceSheet } from '../core/animation';
 import { fromBase64, toBase64 } from '../core/base64';
 import { parseHex, sameColor, toHex } from '../core/color';
-import { type Frame, type Layer, MAX_SIZE, celOf, composite, createDoc, frameIndex } from '../core/doc';
+import {
+  type Frame,
+  type Layer,
+  type Tag,
+  MAX_FRAMES,
+  MAX_SIZE,
+  celOf,
+  clampDuration,
+  composite,
+  createDoc,
+  frameIndex,
+  tagRange,
+} from '../core/doc';
 import { PixelEditor } from '../core/editor';
 import { encodePng, scaleNearest } from '../core/png';
 import { type ColorScope, hueShiftRamp, usedColors } from '../core/palette';
@@ -133,6 +145,24 @@ function selectionInfo(sel: Selection | null) {
 
 const currentSelection = () => selectionInfo(useApp.getState().selection);
 
+function tagRef(ref: unknown): Tag {
+  const { doc } = useApp.getState();
+  const tag = doc.tags.find((t) => t.id === ref) ?? doc.tags.find((t) => t.name === ref);
+  if (!tag) fail(`trecho não encontrado: ${JSON.stringify(ref)}. Trechos: ${doc.tags.map((t) => t.name).join(', ') || 'nenhum'}`);
+  return tag;
+}
+
+/** `tag` param as the frames to export, or every frame without it. */
+function exportRange(p: Params): FrameRange | undefined {
+  if (!has(p, 'tag')) return undefined;
+  return tagRange(useApp.getState().doc, tagRef(p.tag)) ?? fail('esse trecho perdeu um dos quadros das pontas');
+}
+
+function tagInfo(tag: Tag) {
+  const range = tagRange(useApp.getState().doc, tag);
+  return { id: tag.id, name: tag.name, from: range ? range[0] + 1 : null, to: range ? range[1] + 1 : null };
+}
+
 function frameInfo(frame: Frame, index: number) {
   return { id: frame.id, number: index + 1, duration: frame.duration };
 }
@@ -165,6 +195,7 @@ function inspect() {
     layers: s.doc.layers.map(layerInfo).reverse(),
     frame: frameIndex(s.doc) + 1,
     frames: s.doc.frames.map(frameInfo),
+    tags: s.doc.tags.map(tagInfo),
     selection: selectionInfo(s.selection),
     primary: toHex(s.primary),
     secondary: toHex(s.secondary),
@@ -651,6 +682,31 @@ export const COMMANDS: Record<string, Command> = {
     },
   },
 
+  // Tags: named stretches of frames, for playback and export.
+
+  'tag.add': {
+    summary: 'Dá nome a um trecho da animação, do quadro from ao to (números a partir de 1, ou ids; os dois entram).',
+    params: 'name, from, to',
+    run: (p) => {
+      const name = text(p, 'name').trim();
+      if (!name) fail('name não pode ser vazio');
+      if (useApp.getState().doc.tags.some((t) => t.name === name)) fail(`já existe um trecho chamado "${name}"`);
+      if (!has(p, 'from') || !has(p, 'to')) fail('from e to são obrigatórios');
+      return tagInfo(actions.addTag(name, frameRef(p.from).id, frameRef(p.to).id));
+    },
+  },
+
+  'tag.delete': {
+    summary: 'Apaga um trecho (por nome ou id). Os quadros continuam.',
+    params: 'tag',
+    run: (p) => {
+      if (!has(p, 'tag')) fail('o parâmetro "tag" é obrigatório');
+      const tag = tagRef(p.tag);
+      actions.deleteTag(tag.id);
+      return { deleted: tag.name, tags: useApp.getState().doc.tags.map(tagInfo) };
+    },
+  },
+
   // Colours
 
   'color.set': {
@@ -1048,19 +1104,21 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'render.sheet': {
-    summary: 'Folha de sprites em PNG (base64): todos os quadros lado a lado (layout "row") ou numa grade quase quadrada ("grid").',
-    params: 'scale?, layout?: "row" | "grid"',
+    summary:
+      'Folha de sprites em PNG (base64): os quadros lado a lado (layout "row") ou numa grade quase quadrada ("grid"). tag limita a um trecho.',
+    params: 'scale?, layout?: "row" | "grid", tag?',
     readOnly: true,
     run: async (p) => {
       const { doc } = useApp.getState();
       const scale = int(p, 'scale', 1);
       const layout = text(p, 'layout', 'row');
       if (layout !== 'row' && layout !== 'grid') fail('layout precisa ser "row" ou "grid"');
-      const { cols, rows } = sheetGrid(doc.frames.length, layout);
+      const range = exportRange(p);
+      const { cols, rows } = sheetGrid(range ? range[1] - range[0] + 1 : doc.frames.length, layout);
       if (scale < 1 || cols * doc.width * scale > 16384 || rows * doc.height * scale > 16384) {
         fail('folha grande demais (até 16384 px por lado); use scale menor ou layout "grid"');
       }
-      const sheet = renderSheet(doc, layout, scale);
+      const sheet = renderSheet(doc, layout, scale, range);
       const png = await encodePng(new Uint8Array(sheet.pixels.buffer), sheet.width, sheet.height);
       return {
         png: toBase64(png),
@@ -1070,26 +1128,27 @@ export const COMMANDS: Record<string, Command> = {
         rows: sheet.rows,
         frameWidth: sheet.frameWidth,
         frameHeight: sheet.frameHeight,
-        durations: doc.frames.map((f) => f.duration),
+        durations: sheet.durations,
       };
     },
   },
 
   'render.gif': {
     summary:
-      'GIF animado (base64) com todos os quadros e suas durações, repetindo para sempre. pingpong true vai e volta. GIF guarda até 256 cores e transparência total ou nenhuma.',
-    params: 'scale?, pingpong?',
+      'GIF animado (base64) com os quadros e suas durações, repetindo para sempre. pingpong true vai e volta; tag limita a um trecho. GIF guarda até 256 cores e transparência total ou nenhuma.',
+    params: 'scale?, pingpong?, tag?',
     readOnly: true,
     run: (p) => {
       const { doc } = useApp.getState();
       const scale = int(p, 'scale', 1);
       if (scale < 1 || doc.width * scale > 4096 || doc.height * scale > 4096) fail('scale fora do limite (até 4096 px por lado)');
-      const gif = renderGif(doc, { scale, pingpong: bool(p, 'pingpong', false) });
+      const range = exportRange(p);
+      const gif = renderGif(doc, { scale, pingpong: bool(p, 'pingpong', false), range });
       return {
         gif: toBase64(gif.bytes),
         width: doc.width * scale,
         height: doc.height * scale,
-        frames: doc.frames.length,
+        frames: range ? range[1] - range[0] + 1 : doc.frames.length,
         colors: gif.colors,
         reduced: gif.reduced,
       };
@@ -1127,6 +1186,28 @@ export const COMMANDS: Record<string, Command> = {
         palette: project.palette,
         fileName: text(p, 'fileName', 'projeto.pontilha'),
         filePath: null,
+      });
+      return inspect();
+    },
+  },
+
+  'image.loadSheet': {
+    summary:
+      'Abre uma folha de sprites PNG (base64) como animação nova: recorta em quadros de frameWidth × frameHeight, da esquerda para a direita e de cima para baixo, sem as células vazias do fim. Mesma regra de discard do doc.new.',
+    params: 'png, frameWidth, frameHeight, duration?, fileName?, discard?',
+    run: async (p) => {
+      guardUnsaved(p);
+      const image = await decodeImage(fromBase64(text(p, 'png')));
+      const fw = int(p, 'frameWidth');
+      const fh = int(p, 'frameHeight');
+      checkSize(fw, fh);
+      if (fw > image.width || fh > image.height) fail(`o quadro ${fw} × ${fh} é maior que a folha ${image.width} × ${image.height}`);
+      const cells = sliceSheet(image.pixels, image.width, image.height, fw, fh);
+      if (cells.length > MAX_FRAMES) fail(`a folha daria ${cells.length} quadros; o máximo é ${MAX_FRAMES}`);
+      actions.loadDoc(docFromFrames(cells, fw, fh, clampDuration(num(p, 'duration', 100))), {
+        fileName: text(p, 'fileName', 'folha.pontilha'),
+        filePath: null,
+        dirty: true,
       });
       return inspect();
     },

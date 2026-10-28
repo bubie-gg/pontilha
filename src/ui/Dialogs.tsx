@@ -1,10 +1,11 @@
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { type ExportKind, exportImage } from '../app/fileActions';
-import { type SheetLayout, sheetGrid } from '../core/animation';
+import { type SheetLayout, docFromFrames, guessFrameSize, sheetGrid, sliceSheet } from '../core/animation';
 import { toCss, toHex } from '../core/color';
-import { MAX_SIZE } from '../core/doc';
+import { MAX_FRAMES, MAX_SIZE, clampDuration, frameIndex, tagRange } from '../core/doc';
 import { type ColorScope, hueShiftRamp, usedColors } from '../core/palette';
 import { ANCHORS, type Anchor, contentBounds } from '../core/transform';
+import { decodeImage, pickFile, withExtension } from '../platform/files';
 import { actions, useApp } from '../state/store';
 import { Segmented, Stepper, Toggle } from './controls';
 
@@ -110,9 +111,15 @@ const LIMITS: Record<ExportKind, number> = { frame: 8192, sheet: 16384, gif: 409
 function ExportDialog() {
   const width = useApp((s) => s.doc.width);
   const height = useApp((s) => s.doc.height);
-  const frameCount = useApp((s) => s.doc.frames.length);
+  const doc = useApp((s) => s.doc);
   const loopMode = useApp((s) => s.loopMode);
-  const [kind, setKind] = useState<ExportKind>(frameCount > 1 ? 'gif' : 'frame');
+  const playTag = useApp((s) => s.playTag);
+  const tags = doc.tags.filter((t) => tagRange(doc, t));
+  const [tagId, setTagId] = useState<string>(() => (tags.some((t) => t.id === playTag) ? playTag! : 'all'));
+  const tag = tags.find((t) => t.id === tagId);
+  const range = tag ? tagRange(doc, tag)! : undefined;
+  const frameCount = range ? range[1] - range[0] + 1 : doc.frames.length;
+  const [kind, setKind] = useState<ExportKind>(doc.frames.length > 1 ? 'gif' : 'frame');
   const [layout, setLayout] = useState<SheetLayout>('row');
   const [pingpong, setPingpong] = useState(loopMode === 'pingpong');
   const [scale, setScale] = useState(1);
@@ -139,6 +146,17 @@ function ExportDialog() {
         />
       </div>
       {kind === 'frame' && <p className="modal-note">PNG do quadro na tela. Cada pixel vira um bloco do tamanho escolhido, sem borrar.</p>}
+      {kind !== 'frame' && tags.length > 0 && (
+        <div className="export-options">
+          <span className="option-label">Quadros</span>
+          <Segmented
+            label="Quais quadros"
+            value={tagId}
+            options={[{ value: 'all', label: 'Todos' }, ...tags.map((t) => ({ value: t.id, label: t.name }))]}
+            onChange={setTagId}
+          />
+        </div>
+      )}
       {kind === 'sheet' && (
         <>
           <p className="modal-note">
@@ -195,7 +213,7 @@ function ExportDialog() {
           disabled={usable.length === 0}
           onClick={() => {
             close();
-            void exportImage(kind, chosen, { layout, pingpong });
+            void exportImage(kind, chosen, { layout, pingpong, range, suffix: tag?.name });
           }}
         >
           {kind === 'gif' ? 'Exportar GIF' : 'Exportar PNG'}
@@ -567,6 +585,157 @@ function RampDialog() {
   );
 }
 
+function SheetDialog() {
+  const dirty = useApp((s) => s.dirty);
+  const [sheet, setSheet] = useState<{ name: string; width: number; height: number; pixels: Uint32Array } | null>(null);
+  const [fw, setFw] = useState('');
+  const [fh, setFh] = useState('');
+  const [duration, setDuration] = useState('100');
+  const [error, setError] = useState<string | null>(null);
+  const close = () => actions.openDialog(null);
+  const w = Number(fw);
+  const h = Number(fh);
+  const fits = !!sheet && Number.isInteger(w) && Number.isInteger(h) && w >= 1 && h >= 1 && w <= sheet.width && h <= sheet.height;
+  const count = fits ? Math.floor(sheet.width / w) * Math.floor(sheet.height / h) : 0;
+  const ms = Number(duration);
+  const ok = fits && count <= MAX_FRAMES && Number.isFinite(ms) && ms > 0;
+
+  const choose = async () => {
+    const file = await pickFile([{ name: 'Imagem PNG', extensions: ['png'] }]);
+    if (!file) return;
+    try {
+      const image = await decodeImage(file.bytes);
+      const guess = guessFrameSize(image.width, image.height);
+      setSheet({ name: file.name, ...image });
+      setFw(String(guess.w));
+      setFh(String(guess.h));
+      setError(null);
+    } catch {
+      setError('Não consegui ler essa imagem.');
+    }
+  };
+
+  return (
+    <Modal title="Importar folha de sprites" onClose={close}>
+      <p className="modal-note">Cada célula da folha vira um quadro, da esquerda para a direita e de cima para baixo.</p>
+      <div className="modal-actions sheet-pick">
+        <button type="button" className="btn px" onClick={() => void choose()} data-autofocus={!sheet || undefined}>
+          {sheet ? 'Escolher outra…' : 'Escolher PNG…'}
+        </button>
+        {sheet && (
+          <span className="option-label">
+            {sheet.name}: {sheet.width} × {sheet.height} px
+          </span>
+        )}
+      </div>
+      {error && <p className="field-error">{error}</p>}
+      {sheet && (
+        <>
+          <div className="size-fields">
+            <label>
+              <span className="option-label">Largura do quadro</span>
+              <input inputMode="numeric" value={fw} onChange={(e) => setFw(e.target.value.replace(/\D/g, ''))} />
+            </label>
+            <span className="size-x">×</span>
+            <label>
+              <span className="option-label">Altura</span>
+              <input inputMode="numeric" value={fh} onChange={(e) => setFh(e.target.value.replace(/\D/g, ''))} />
+            </label>
+            <label>
+              <span className="option-label">Duração (ms)</span>
+              <input inputMode="numeric" value={duration} onChange={(e) => setDuration(e.target.value.replace(/\D/g, ''))} />
+            </label>
+          </div>
+          <p className={fits && count <= MAX_FRAMES ? 'modal-note' : 'field-error'}>
+            {!fits
+              ? 'O quadro precisa caber na folha.'
+              : count > MAX_FRAMES
+                ? `Daria ${count} quadros; o máximo é ${MAX_FRAMES}.`
+                : `${Math.floor(sheet.width / w)} × ${Math.floor(sheet.height / h)} células: até ${count} quadros (as vazias do fim ficam de fora).`}
+          </p>
+          {dirty && <p className="modal-note">A imagem atual tem alterações não salvas. Elas serão perdidas.</p>}
+        </>
+      )}
+      <div className="modal-actions">
+        <button type="button" className="btn px" onClick={close}>
+          Cancelar
+        </button>
+        <button
+          type="button"
+          className="btn btn-primary px"
+          disabled={!ok}
+          data-autofocus={sheet ? true : undefined}
+          onClick={() => {
+            if (!sheet) return;
+            close();
+            const cells = sliceSheet(sheet.pixels, sheet.width, sheet.height, w, h);
+            actions.loadDoc(docFromFrames(cells, w, h, clampDuration(ms)), {
+              fileName: withExtension(sheet.name, 'pontilha'),
+              filePath: null,
+              dirty: true,
+            });
+            actions.notify(`${cells.length} quadros importados de ${sheet.name}.`);
+          }}
+        >
+          Importar
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
+function TagDialog() {
+  const doc = useApp((s) => s.doc);
+  const current = frameIndex(doc) + 1;
+  const [name, setName] = useState('');
+  const [from, setFrom] = useState(String(current));
+  const [to, setTo] = useState(String(current));
+  const close = () => actions.openDialog(null);
+  const a = Number(from);
+  const b = Number(to);
+  const valid = (n: number) => Number.isInteger(n) && n >= 1 && n <= doc.frames.length;
+  const taken = doc.tags.some((t) => t.name === name.trim());
+  const ok = name.trim() !== '' && !taken && valid(a) && valid(b);
+  return (
+    <Modal title="Marcar trecho" onClose={close}>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (!ok) return;
+          close();
+          actions.addTag(name, doc.frames[a - 1].id, doc.frames[b - 1].id);
+        }}
+      >
+        <p className="modal-note">Um nome para um trecho da animação, como “andar” ou “pular”. Dá para tocar e exportar só ele.</p>
+        <div className="size-fields">
+          <label>
+            <span className="option-label">Nome</span>
+            <input className="tag-input" value={name} onChange={(e) => setName(e.target.value)} data-autofocus />
+          </label>
+          <label>
+            <span className="option-label">Do quadro</span>
+            <input inputMode="numeric" value={from} onChange={(e) => setFrom(e.target.value.replace(/\D/g, ''))} />
+          </label>
+          <label>
+            <span className="option-label">Ao quadro</span>
+            <input inputMode="numeric" value={to} onChange={(e) => setTo(e.target.value.replace(/\D/g, ''))} />
+          </label>
+        </div>
+        {taken && <p className="field-error">Já existe um trecho com esse nome.</p>}
+        {(!valid(a) || !valid(b)) && <p className="field-error">Use quadros de 1 a {doc.frames.length}.</p>}
+        <div className="modal-actions">
+          <button type="button" className="btn px" onClick={close}>
+            Cancelar
+          </button>
+          <button type="submit" className="btn btn-primary px" disabled={!ok}>
+            Marcar
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
 function ConfirmDialog() {
   const request = useApp((s) => s.confirm)!;
   return (
@@ -598,5 +767,7 @@ export function Dialogs() {
   if (dialog === 'canvas') return <CanvasDialog />;
   if (dialog === 'recolor') return <RecolorDialog />;
   if (dialog === 'ramp') return <RampDialog />;
+  if (dialog === 'sheet') return <SheetDialog />;
+  if (dialog === 'tag') return <TagDialog />;
   return null;
 }

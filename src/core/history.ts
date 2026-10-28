@@ -1,4 +1,4 @@
-import { type Doc, type Frame, type Layer, celOf, markAllDirty, showFrame } from './doc';
+import { type Doc, type Frame, type Layer, type Tag, celOf, markAllDirty, showFrame } from './doc';
 import type { Selection } from './transform';
 
 export interface LayerState {
@@ -20,6 +20,7 @@ export interface DocState {
   layers: LayerState[];
   frames: Frame[];
   frame: string;
+  tags: Tag[];
 }
 
 export type Entry =
@@ -50,6 +51,7 @@ export function snapshot(doc: Doc): DocState {
     })),
     frames: doc.frames.map((f) => ({ ...f })),
     frame: doc.frame,
+    tags: doc.tags.map((t) => ({ ...t })),
   };
 }
 
@@ -64,6 +66,7 @@ function restore(doc: Doc, state: DocState) {
     return s.layer;
   });
   doc.frames = state.frames.map((f) => ({ ...f }));
+  doc.tags = state.tags.map((t) => ({ ...t }));
   showFrame(doc, state.frame);
 }
 

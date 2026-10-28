@@ -4,6 +4,7 @@ import {
   type Doc,
   type Frame,
   type Layer,
+  type Tag,
   MAX_FRAMES,
   MAX_SIZE,
   celOf,
@@ -12,8 +13,11 @@ import {
   createFrame,
   createLayer,
   frameIndex,
+  newTagId,
   nextLayerName,
   showFrame,
+  tagRange,
+  tagsWithoutFrame,
 } from '../core/doc';
 import { PixelEditor } from '../core/editor';
 import { type ColorScope, scopeCels } from '../core/palette';
@@ -115,15 +119,19 @@ export interface AppState {
   canUndo: boolean;
   canRedo: boolean;
   notice: Notice | null;
-  dialog: 'new' | 'export' | 'canvas' | 'recolor' | 'ramp' | null;
+  dialog: 'new' | 'export' | 'canvas' | 'recolor' | 'ramp' | 'sheet' | 'tag' | null;
   confirm: ConfirmRequest | null;
   /** Port scripts use to drive this window, or null when control is off. */
   controlPort: number | null;
   /** The animation is playing in the editor. */
   playing: boolean;
+  /** Tag whose frames playback loops over, or null for the whole animation. */
+  playTag: string | null;
   loopMode: 'loop' | 'pingpong';
   /** Shows the neighbouring frames faintly under the one being edited. */
   onionSkin: boolean;
+  /** How many frames before and after show, and whether they are tinted (red before, blue after). */
+  onion: { before: number; after: number; tint: boolean };
   /** Pixels that selection operations act on, or null for none. Always inside the image. */
   selection: Selection | null;
   clipboard: Clip | null;
@@ -162,8 +170,10 @@ export const useApp = create<AppState>(() => ({
   confirm: null,
   controlPort: null,
   playing: false,
+  playTag: null,
   loopMode: 'loop',
   onionSkin: false,
+  onion: { before: 1, after: 1, tint: false },
   selection: null,
   clipboard: null,
 }));
@@ -350,6 +360,7 @@ export const actions = {
       needsFit: true,
       hover: null,
       playing: false,
+      playTag: null,
       selection: null,
     });
     actions.fitView();
@@ -746,7 +757,39 @@ export const actions = {
   },
 
   setLoopMode: (loopMode: AppState['loopMode']) => set({ loopMode }),
+
+  // Tags
+
+  /** Names a stretch of frames (both ends included) as one undo step. */
+  addTag(name: string, from: string, to: string): Tag {
+    const tag: Tag = { id: newTagId(), name: name.trim() || 'Trecho', from, to };
+    changeLayers((d) => {
+      d.tags = [...d.tags, tag];
+    });
+    return tag;
+  },
+
+  deleteTag(id: string) {
+    if (!get().doc.tags.some((t) => t.id === id)) return;
+    changeLayers((d) => {
+      d.tags = d.tags.filter((t) => t.id !== id);
+    });
+    if (get().playTag === id) set({ playTag: null });
+  },
+
+  /** Playback loops over this tag's frames (null: the whole animation), starting from its first frame. */
+  setPlayTag(id: string | null) {
+    const { doc } = get();
+    const tag = doc.tags.find((t) => t.id === id);
+    const range = tag && tagRange(doc, tag);
+    set({ playTag: range ? tag.id : null });
+    if (range) {
+      const index = frameIndex(doc);
+      if (index < range[0] || index > range[1]) actions.selectFrame(doc.frames[range[0]].id);
+    }
+  },
   toggleOnionSkin: () => set((s) => ({ onionSkin: !s.onionSkin })),
+  setOnion: (patch: Partial<AppState['onion']>) => set((s) => ({ onion: { ...s.onion, ...patch } })),
 
   /** Moves the frame on screen by `step`, wrapping around the ends. */
   stepFrame(step: number) {
@@ -783,6 +826,7 @@ export const actions = {
     const frame = frameById(id);
     changeLayers((d) => {
       const index = frameIndex(d, frame.id);
+      d.tags = tagsWithoutFrame(d, frame.id);
       for (const layer of d.layers) layer.cels.delete(frame.id);
       d.frames = d.frames.toSpliced(index, 1);
       if (d.frame === frame.id) showFrame(d, d.frames[Math.max(0, index - 1)].id);

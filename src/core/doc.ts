@@ -10,6 +10,15 @@ export interface Frame {
   duration: number;
 }
 
+/** A named stretch of the animation, like "andar" or "pular", from one frame to another (both included). */
+export interface Tag {
+  id: string;
+  name: string;
+  /** Frame ids of the ends. Frames added between them belong to the tag too. */
+  from: string;
+  to: string;
+}
+
 export interface Layer {
   id: string;
   name: string;
@@ -33,6 +42,8 @@ export interface Doc {
   frames: Frame[];
   /** Id of the frame being shown and edited. Change it with `showFrame`. */
   frame: string;
+  /** Named stretches of frames. Replace the array (don't mutate it) so subscribers notice. */
+  tags: Tag[];
 }
 
 export const MAX_SIZE = 2048;
@@ -47,6 +58,7 @@ export const clampDuration = (ms: number) => Math.min(MAX_DURATION, Math.max(MIN
 let seq = 0;
 const newId = (prefix: string) => `${prefix}${Date.now().toString(36)}${(seq++).toString(36)}`;
 export const newLayerId = () => newId('l');
+export const newTagId = () => newId('t');
 
 export function createFrame(duration = DEFAULT_DURATION): Frame {
   return { id: newId('f'), duration };
@@ -74,7 +86,7 @@ export function createLayer(doc: Shape, name: string, pixels?: Uint32Array): Lay
 /** A one-frame document with a single layer, empty or holding `pixels`. */
 export function createDoc(width: number, height: number, pixels?: Uint32Array): Doc {
   const frame = createFrame();
-  const doc: Doc = { width, height, layers: [], frames: [frame], frame: frame.id };
+  const doc: Doc = { width, height, layers: [], frames: [frame], frame: frame.id, tags: [] };
   doc.layers = [createLayer(doc, 'Camada 1', pixels)];
   return doc;
 }
@@ -100,6 +112,33 @@ export function showFrame(doc: Doc, frameId: string) {
 
 export function frameIndex(doc: Doc, frameId = doc.frame): number {
   return doc.frames.findIndex((f) => f.id === frameId);
+}
+
+/** First and last frame index a tag covers, in playback order; null if an end is gone. */
+export function tagRange(doc: Doc, tag: Tag): [number, number] | null {
+  const a = frameIndex(doc, tag.from);
+  const b = frameIndex(doc, tag.to);
+  return a < 0 || b < 0 ? null : [Math.min(a, b), Math.max(a, b)];
+}
+
+/**
+ * Tags as they should be once `frameId` is deleted: an end on that frame moves one
+ * frame inwards, and a tag covering only that frame goes away.
+ */
+export function tagsWithoutFrame(doc: Doc, frameId: string): Tag[] {
+  const out: Tag[] = [];
+  for (const tag of doc.tags) {
+    const range = tagRange(doc, tag);
+    if (!range) continue;
+    const [start, end] = range;
+    if (start === end && doc.frames[start].id === frameId) continue;
+    let first = doc.frames[start].id;
+    let last = doc.frames[end].id;
+    if (first === frameId) first = doc.frames[start + 1].id;
+    if (last === frameId) last = doc.frames[end - 1].id;
+    out.push({ ...tag, from: first, to: last });
+  }
+  return out;
 }
 
 export function markDirty(layer: Layer, x: number, y: number) {

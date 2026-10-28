@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { checkerTile } from '../canvas/layerCache';
-import { type Frame, MAX_DURATION, MIN_DURATION, composite } from '../core/doc';
+import { type Frame, MAX_DURATION, MIN_DURATION, composite, tagRange } from '../core/doc';
 import { actions, useApp } from '../state/store';
-import { IconButton, Segmented } from './controls';
+import { IconButton, Segmented, Stepper, Toggle } from './controls';
 
 /** Pointer travel before a press on a frame becomes a drag. */
 const DRAG_THRESHOLD = 4;
@@ -133,6 +133,48 @@ function FrameThumb({
   );
 }
 
+/** Thumbnail width plus the gap between thumbnails, in CSS pixels; matches `.frame-btn` and `.frames`. */
+const FRAME_PITCH = 58;
+const STRIP_PADDING = 10;
+
+/** Named stretches above the thumbnails. Clicking one loops playback over it. */
+function TagRow() {
+  const doc = useApp((s) => s.doc);
+  const tags = useApp((s) => s.doc.tags);
+  const playTag = useApp((s) => s.playTag);
+  if (tags.length === 0) return null;
+  return (
+    <div className="tag-row" style={{ width: STRIP_PADDING * 2 + doc.frames.length * FRAME_PITCH }}>
+      {tags.map((tag) => {
+        const range = tagRange(doc, tag);
+        if (!range) return null;
+        const [start, end] = range;
+        const on = playTag === tag.id;
+        return (
+          <div
+            key={tag.id}
+            className={`tag px${on ? ' is-on' : ''}`}
+            style={{ left: STRIP_PADDING + start * FRAME_PITCH, width: (end - start + 1) * FRAME_PITCH - 6 }}
+          >
+            <button
+              type="button"
+              className="tag-name"
+              aria-pressed={on}
+              title={on ? 'Tocando só este trecho. Clique para voltar à animação inteira.' : `Tocar só ${tag.name} (quadros ${start + 1} a ${end + 1})`}
+              onClick={() => actions.setPlayTag(on ? null : tag.id)}
+            >
+              {tag.name}
+            </button>
+            <button type="button" className="tag-delete" aria-label={`Apagar o trecho ${tag.name}`} title="Apagar o trecho (os quadros ficam)" onClick={() => actions.deleteTag(tag.id)}>
+              ×
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /** Duration of the frame on screen, committed on Enter or when the field loses focus. */
 function DurationField({ frame }: { frame: Frame }) {
   const [text, setText] = useState(String(frame.duration));
@@ -172,6 +214,7 @@ export function Timeline() {
   const playing = useApp((s) => s.playing);
   const loopMode = useApp((s) => s.loopMode);
   const onionSkin = useApp((s) => s.onionSkin);
+  const onion = useApp((s) => s.onion);
   const stripRef = useRef<HTMLOListElement>(null);
   const press = useRef<{ id: string; x: number; moved: boolean } | null>(null);
   const [drag, setDrag] = useState<{ id: string; to: number } | null>(null);
@@ -242,39 +285,56 @@ export function Timeline() {
           active={onionSkin}
           onClick={actions.toggleOnionSkin}
         />
+        {onionSkin && (
+          <>
+            <Stepper label="Antes" value={onion.before} min={0} max={3} onChange={(before) => actions.setOnion({ before })} />
+            <Stepper label="Depois" value={onion.after} min={0} max={3} onChange={(after) => actions.setOnion({ after })} />
+            <Toggle
+              label="Colorido"
+              checked={onion.tint}
+              title="Quadros anteriores em vermelho, seguintes em azul"
+              onChange={(tint) => actions.setOnion({ tint })}
+            />
+          </>
+        )}
         <DurationField frame={frames[index]} />
         <span className="timeline-meta">
           Quadro {index + 1} de {frames.length}
         </span>
         <div className="bar-spacer" />
         <div className="bar-group">
+          <IconButton icon="tag" label="Marcar trecho: dar nome a um intervalo de quadros" onClick={() => actions.openDialog('tag')} />
+          <IconButton icon="open" label="Importar folha de sprites como quadros" onClick={() => actions.openDialog('sheet')} />
           <IconButton icon="plus" label="Novo quadro vazio" onClick={() => actions.addFrame()} />
           <IconButton icon="duplicate" label="Duplicar quadro" onClick={() => actions.addFrame({ copy: true })} />
           <IconButton icon="trash" label="Excluir quadro" disabled={single} onClick={() => actions.deleteFrame()} />
         </div>
       </div>
-      <ol
-        className="frames"
-        ref={stripRef}
-        aria-label="Quadros"
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={() => {
-          press.current = null;
-          setDrag(null);
-        }}
-      >
-        {shown.map((frame) => (
-          <FrameThumb
-            key={frame.id}
-            frame={frame}
-            number={frames.indexOf(frame) + 1}
-            active={frame.id === current}
-            dragging={drag?.id === frame.id}
-            onPointerDown={onPointerDown(frame.id)}
-          />
-        ))}
-      </ol>
+      <div className="frames-scroll">
+        <TagRow />
+        <ol
+          className="frames"
+          ref={stripRef}
+          aria-label="Quadros"
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={() => {
+            press.current = null;
+            setDrag(null);
+          }}
+        >
+          {shown.map((frame) => (
+            <FrameThumb
+              key={frame.id}
+              frame={frame}
+              number={frames.indexOf(frame) + 1}
+              active={frame.id === current}
+              dragging={drag?.id === frame.id}
+              onPointerDown={onPointerDown(frame.id)}
+            />
+          ))}
+        </ol>
+      </div>
     </section>
   );
 }

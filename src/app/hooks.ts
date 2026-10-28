@@ -1,6 +1,6 @@
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useEffect } from 'react';
-import { frameIndex } from '../core/doc';
+import { frameIndex, tagRange } from '../core/doc';
 import type { ToolId } from '../core/tools';
 import { isDesktop } from '../platform/files';
 import { actions, activeLayer, useApp } from '../state/store';
@@ -204,18 +204,24 @@ export function usePlayback() {
       timer = window.setTimeout(tick, doc.frames[frameIndex(doc)].duration);
     };
     const tick = () => {
-      const { doc, loopMode } = useApp.getState();
-      const n = doc.frames.length;
+      const { doc, loopMode, playTag } = useApp.getState();
+      // Loop over the chosen tag's frames, or the whole animation.
+      const tag = doc.tags.find((t) => t.id === playTag);
+      const [start, end] = (tag && tagRange(doc, tag)) || [0, doc.frames.length - 1];
+      const n = end - start + 1;
       if (n < 2) {
         useApp.setState({ playing: false });
         return;
       }
-      let next = frameIndex(doc) + direction;
-      if (loopMode === 'pingpong' && (next < 0 || next >= n)) {
+      const current = frameIndex(doc);
+      let next = current + direction;
+      if (current < start || current > end) next = start;
+      else if (loopMode === 'pingpong' && (next < start || next > end)) {
         direction = -direction;
-        next = frameIndex(doc) + direction;
-      }
-      actions.selectFrame(doc.frames[(next + n) % n].id);
+        next = current + direction;
+      } else if (next > end) next = start;
+      else if (next < start) next = end;
+      actions.selectFrame(doc.frames[next].id);
       schedule();
     };
     schedule();

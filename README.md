@@ -75,7 +75,13 @@ duração em milissegundos.
 - `+` cria um quadro vazio, o botão de duplicar copia o atual, a lixeira exclui.
 - Arraste uma miniatura para reordenar (ou Shift+setas com ela selecionada).
 - `,` e `.` passam de quadro; Enter toca e pausa, em Repetir ou Ida e volta.
-- Papel vegetal mostra o quadro anterior e o seguinte por baixo, bem claros.
+- Papel vegetal mostra quadros vizinhos por baixo, bem claros: de 0 a 3 antes e depois, e
+  Colorido pinta os anteriores de vermelho e os seguintes de azul.
+- Marcar trecho (ícone de etiqueta) dá nome a um intervalo, como "andar" ou "pular". O nome
+  aparece sobre as miniaturas; clicar nele faz a reprodução repetir só esse trecho, e a
+  exportação de folha e GIF pode sair só dele.
+- Importar folha de sprites (ícone de pasta na linha do tempo) recorta um PNG em quadros, da
+  esquerda para a direita e de cima para baixo, sem as células vazias do fim.
 - Projetos da versão 1 (sem quadros) continuam abrindo; ao salvar viram versão 2.
 - Exportar (Ctrl+E): o quadro atual em PNG, todos os quadros numa folha de sprites (em
   linha ou em grade) ou um GIF animado que repete para sempre, com ida e volta opcional.

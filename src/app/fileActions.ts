@@ -1,4 +1,4 @@
-import { type SheetLayout, renderGif, renderSheet } from '../core/animation';
+import { type FrameRange, type SheetLayout, renderGif, renderSheet } from '../core/animation';
 import { MAX_SIZE, composite, createDoc } from '../core/doc';
 import { encodePng, scaleNearest } from '../core/png';
 import { parseProject, serializeProject } from '../core/project';
@@ -89,19 +89,23 @@ export type ExportKind = 'frame' | 'sheet' | 'gif';
 export interface ExportOptions {
   layout?: SheetLayout;
   pingpong?: boolean;
+  /** Only these frames (a tag's), for the sheet and the GIF. */
+  range?: FrameRange;
+  /** Added to the file name, like a tag's name. */
+  suffix?: string;
 }
 
 async function renderExport(kind: ExportKind, scale: number, opts: ExportOptions) {
   const { doc, fileName } = useApp.getState();
   const stem = fileName.replace(/\.pontilha$/i, '');
-  const suffix = scale > 1 ? `@${scale}x` : '';
+  const suffix = `${opts.suffix ? `-${opts.suffix}` : ''}${scale > 1 ? `@${scale}x` : ''}`;
   if (kind === 'gif') {
-    const gif = renderGif(doc, { scale, pingpong: opts.pingpong });
+    const gif = renderGif(doc, { scale, pingpong: opts.pingpong, range: opts.range });
     const note = gif.reduced ? ' Algumas cores parecidas foram unidas para caber nas 256 do GIF.' : '';
     return { bytes: gif.bytes, name: `${stem}${suffix}.gif`, filter: GIF, mime: 'image/gif', label: 'GIF', note };
   }
   if (kind === 'sheet') {
-    const sheet = renderSheet(doc, opts.layout ?? 'row', scale);
+    const sheet = renderSheet(doc, opts.layout ?? 'row', scale, opts.range);
     const bytes = await encodePng(new Uint8Array(sheet.pixels.buffer), sheet.width, sheet.height);
     const note = ` ${sheet.cols} × ${sheet.rows} quadros de ${sheet.frameWidth} × ${sheet.frameHeight} px.`;
     return { bytes, name: `${stem}-folha${suffix}.png`, filter: PNG, mime: 'image/png', label: 'Folha de sprites', note };
