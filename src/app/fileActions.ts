@@ -1,4 +1,5 @@
-import { MAX_SIZE, composite, createLayer } from '../core/doc';
+import { type SheetLayout, renderGif, renderSheet } from '../core/animation';
+import { MAX_SIZE, composite, createDoc } from '../core/doc';
 import { encodePng, scaleNearest } from '../core/png';
 import { parseProject, serializeProject } from '../core/project';
 import {
@@ -15,6 +16,7 @@ import { actions, useApp } from '../state/store';
 
 const PROJECT = { name: 'Projeto Pontilha', extensions: ['pontilha'] };
 const PNG = { name: 'Imagem PNG', extensions: ['png'] };
+const GIF = { name: 'GIF animado', extensions: ['gif'] };
 
 const reason = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
@@ -35,9 +37,8 @@ export async function openFile() {
         actions.notify(`A imagem tem ${image.width} × ${image.height} px. O limite é ${MAX_SIZE} px por lado.`, 'error');
         return;
       }
-      const layer = createLayer(image.width, image.height, 'Camada 1', image.pixels);
       actions.loadDoc(
-        { width: image.width, height: image.height, layers: [layer] },
+        createDoc(image.width, image.height, image.pixels),
         { fileName: withExtension(file.name, 'pontilha'), filePath: null },
       );
       actions.notify(`${file.name} aberto. Salve como projeto para guardar camadas e paleta.`);
@@ -82,23 +83,46 @@ export async function saveProject(saveAs = false) {
   }
 }
 
-export async function exportPng(scale: number) {
-  const { doc, fileName } = useApp.getState();
-  try {
-    const pixels = scaleNearest(composite(doc), doc.width, doc.height, scale);
-    const png = await encodePng(new Uint8Array(pixels.buffer), doc.width * scale, doc.height * scale);
-    const stem = fileName.replace(/\.pontilha$/i, '');
-    const name = `${stem}${scale > 1 ? `@${scale}x` : ''}.png`;
+/** The frame on screen, every frame as a sprite sheet, or the animation as a GIF. */
+export type ExportKind = 'frame' | 'sheet' | 'gif';
 
+export interface ExportOptions {
+  layout?: SheetLayout;
+  pingpong?: boolean;
+}
+
+async function renderExport(kind: ExportKind, scale: number, opts: ExportOptions) {
+  const { doc, fileName } = useApp.getState();
+  const stem = fileName.replace(/\.pontilha$/i, '');
+  const suffix = scale > 1 ? `@${scale}x` : '';
+  if (kind === 'gif') {
+    const gif = renderGif(doc, { scale, pingpong: opts.pingpong });
+    const note = gif.reduced ? ' Algumas cores parecidas foram unidas para caber nas 256 do GIF.' : '';
+    return { bytes: gif.bytes, name: `${stem}${suffix}.gif`, filter: GIF, mime: 'image/gif', label: 'GIF', note };
+  }
+  if (kind === 'sheet') {
+    const sheet = renderSheet(doc, opts.layout ?? 'row', scale);
+    const bytes = await encodePng(new Uint8Array(sheet.pixels.buffer), sheet.width, sheet.height);
+    const note = ` ${sheet.cols} × ${sheet.rows} quadros de ${sheet.frameWidth} × ${sheet.frameHeight} px.`;
+    return { bytes, name: `${stem}-folha${suffix}.png`, filter: PNG, mime: 'image/png', label: 'Folha de sprites', note };
+  }
+  const pixels = scaleNearest(composite(doc), doc.width, doc.height, scale);
+  const bytes = await encodePng(new Uint8Array(pixels.buffer), doc.width * scale, doc.height * scale);
+  return { bytes, name: `${stem}${suffix}.png`, filter: PNG, mime: 'image/png', label: 'PNG', note: '' };
+}
+
+export async function exportImage(kind: ExportKind, scale: number, opts: ExportOptions = {}) {
+  try {
+    const out = await renderExport(kind, scale, opts);
     if (!isDesktop) {
-      downloadFile(name, png, 'image/png');
+      downloadFile(out.name, out.bytes, out.mime);
       return;
     }
-    const chosen = await chooseSavePath(name, [PNG]);
+    const chosen = await chooseSavePath(out.name, [out.filter]);
     if (!chosen) return;
-    const path = withExtension(chosen, 'png');
-    await writeFile(path, png);
-    actions.notify(`PNG exportado em ${path}`);
+    const path = withExtension(chosen, out.filter.extensions[0]);
+    await writeFile(path, out.bytes);
+    actions.notify(`${out.label} exportado em ${path}.${out.note}`);
   } catch (err) {
     actions.notify(`Não foi possível exportar: ${reason(err)}.`, 'error');
   }

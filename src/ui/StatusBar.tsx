@@ -11,6 +11,7 @@ const HINTS: Record<ToolId, string> = {
   rect: 'Shift desenha um quadrado.',
   fill: 'Botão direito preenche com a cor secundária.',
   eyedropper: 'Botão direito define a cor secundária.',
+  select: 'Arraste para selecionar; arraste dentro para mover. Setas movem 1 px, Shift+setas 8 px.',
 };
 
 export function StatusBar() {

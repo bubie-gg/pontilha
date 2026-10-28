@@ -247,8 +247,31 @@ fn file_name(path: &Path) -> String {
     path.file_name().and_then(|n| n.to_str()).unwrap_or("imagem").to_string()
 }
 
-/// Saves the project (`.pontilha`) or exports a PNG, picking by extension.
-fn save_as(client: &Client, path: &Path, scale: u64, layer: Option<&Value>) -> Result<Value> {
+/// How to export, beyond the format the extension picks.
+struct Export {
+    scale: u64,
+    layer: Option<Value>,
+    /// PNG only: every frame in one image, `row` or `grid`.
+    sheet: Option<String>,
+    /// GIF only: play forward, then back.
+    pingpong: bool,
+}
+
+impl Export {
+    fn scale(scale: u64) -> Self {
+        Self { scale, layer: None, sheet: None, pingpong: false }
+    }
+}
+
+fn decode_base64(value: &Value, what: &str) -> Result<Vec<u8>> {
+    base64::engine::general_purpose::STANDARD
+        .decode(value.as_str().unwrap_or(""))
+        .map_err(|e| format!("{what} inválido: {e}"))
+}
+
+/// Saves the project (`.pontilha`) or exports a PNG or GIF, picking by extension.
+fn save_as(client: &Client, path: &Path, export: &Export) -> Result<Value> {
+    let scale = export.scale;
     match extension(path).as_str() {
         "pontilha" => {
             let project = client.call("project.serialize", json!({}))?;
@@ -256,12 +279,32 @@ fn save_as(client: &Client, path: &Path, scale: u64, layer: Option<&Value>) -> R
             client.call("project.markSaved", json!({ "fileName": file_name(path) }))?;
             Ok(json!({ "saved": path, "format": "pontilha" }))
         }
+        "png" if export.sheet.is_some() => {
+            let result = client.call("render.sheet", json!({ "scale": scale, "layout": export.sheet }))?;
+            let png = decode_base64(&result["png"], "PNG")?;
+            write_file(path, &png)?;
+            Ok(json!({
+                "saved": path, "format": "png", "sheet": export.sheet, "scale": scale,
+                "columns": result["columns"], "rows": result["rows"],
+                "frameWidth": result["frameWidth"], "frameHeight": result["frameHeight"],
+                "durations": result["durations"], "bytes": png.len(),
+            }))
+        }
         "png" => {
-            let png = client.png(scale, layer)?;
+            let png = client.png(scale, export.layer.as_ref())?;
             write_file(path, &png)?;
             Ok(json!({ "saved": path, "format": "png", "scale": scale, "bytes": png.len() }))
         }
-        other => Err(format!("formato .{other} não suportado; use .pontilha (projeto) ou .png")),
+        "gif" => {
+            let result = client.call("render.gif", json!({ "scale": scale, "pingpong": export.pingpong }))?;
+            let gif = decode_base64(&result["gif"], "GIF")?;
+            write_file(path, &gif)?;
+            Ok(json!({
+                "saved": path, "format": "gif", "scale": scale, "frames": result["frames"],
+                "colors": result["colors"], "reduced": result["reduced"], "bytes": gif.len(),
+            }))
+        }
+        other => Err(format!("formato .{other} não suportado; use .pontilha (projeto), .png ou .gif")),
     }
 }
 
@@ -302,7 +345,9 @@ action is a command: find ids and parameters with command_list and run them with
 with command_batch (one undo step; if one fails nothing is applied). Typical flow: app_open if needed -> \
 doc_new {width: 32, height: 32} -> command_run layer.new / draw.ellipse / draw.star / draw.pattern / \
 effect.outline (draw commands take onlyOn to shade inside a colour) -> render_preview to look at the \
-result -> doc_save (.pontilha keeps layers) and doc_export (.png, scale enlarges without blurring). \
+result -> doc_save (.pontilha keeps layers and frames) and doc_export (.png, or .gif for the animation; scale enlarges \
+without blurring). Animation: frame.new {copy?} adds a frame after the current one and shows it; every draw command \
+takes frame (number from 1) to paint any frame without switching; frame.setDuration sets milliseconds per frame. \
 doc_new refuses to drop unsaved work unless discard is true: ask the user first.";
 
 fn schema(properties: Value, required: &[&str]) -> Value {
@@ -385,16 +430,18 @@ fn tools() -> Value {
         },
         {
             "name": "doc_export",
-            "description": "Export a PNG of the visible image, or of one layer. `scale` enlarges without blurring (Bubie badges: 32 px drawn, scale 4 = 128 px).",
+            "description": "Export the image. `.png`: the frame on screen (or one layer), or with `sheet` every frame in one sprite sheet. `.gif`: the whole animation, looping, with each frame's duration. `scale` enlarges without blurring (Bubie badges: 32 px drawn, scale 4 = 128 px).",
             "inputSchema": schema(json!({
-                "path": { "type": "string", "description": "Target .png beneath the automation write root." },
+                "path": { "type": "string", "description": "Target .png or .gif beneath the automation write root." },
                 "scale": { "type": "integer", "minimum": 1 },
-                "layer": { "type": "string", "description": "Layer name or id; default: all visible layers." }
+                "layer": { "type": "string", "description": "PNG of the frame on screen only: layer name or id; default: all visible layers." },
+                "sheet": { "type": "string", "enum": ["row", "grid"], "description": "PNG only: every frame left to right in one row, or in a near-square grid." },
+                "pingpong": { "type": "boolean", "description": "GIF only: play forward, then back." }
             }), &["path"])
         },
         {
             "name": "doc_inspect",
-            "description": "Document state as JSON: size, layers (top to bottom), active layer, colours, palette, unsaved changes and undo state.",
+            "description": "Document state as JSON: size, layers (top to bottom), active layer, frames with durations and the one on screen, colours, palette, unsaved changes and undo state.",
             "inputSchema": schema(json!({}), &[])
         },
         {
@@ -490,7 +537,7 @@ impl Session {
                     Some(p) => resolve(p, &self.roots.write)?,
                     None => self.current.clone().ok_or("informe path: esta imagem ainda não foi salva")?,
                 };
-                let result = save_as(&client, &path, args["scale"].as_u64().unwrap_or(1), None)?;
+                let result = save_as(&client, &path, &Export::scale(args["scale"].as_u64().unwrap_or(1)))?;
                 if extension(&path) == "pontilha" {
                     self.current = Some(path);
                 }
@@ -498,11 +545,20 @@ impl Session {
             }
             "doc_export" => {
                 let path = resolve(arg_str(args, "path")?, &self.roots.write)?;
-                if extension(&path) != "png" {
-                    return Err("doc_export grava PNG; use um caminho terminado em .png".into());
+                if !matches!(extension(&path).as_str(), "png" | "gif") {
+                    return Err("doc_export grava PNG ou GIF; use um caminho terminado em .png ou .gif".into());
                 }
-                let layer = some(args, "layer");
-                Ok(text(save_as(&client, &path, args["scale"].as_u64().unwrap_or(1), layer.as_ref())?))
+                let sheet = args["sheet"].as_str().map(str::to_string);
+                if sheet.as_deref().is_some_and(|s| s != "row" && s != "grid") {
+                    return Err("sheet precisa ser \"row\" ou \"grid\"".into());
+                }
+                let export = Export {
+                    scale: args["scale"].as_u64().unwrap_or(1),
+                    layer: some(args, "layer"),
+                    sheet,
+                    pingpong: args["pingpong"].as_bool().unwrap_or(false),
+                };
+                Ok(text(save_as(&client, &path, &export)?))
             }
             "render_preview" => {
                 let scale = client.fit_scale(args["max_side"].as_u64().unwrap_or(512))?;
@@ -581,7 +637,8 @@ Sem comando, abre a janela. Com a janela aberta:
   run ID [JSON]              roda um comando: pontilha run draw.rect '{\"x\":0,\"y\":0,\"w\":4,\"h\":4}'
   run RECEITA.json [PAUSA]   roda os passos de um arquivo [{\"id\": ..., \"params\": ...}], ao vivo
   preview [ARQUIVO.png]      salva uma prévia ampliada (cerca de 512 px)
-  export ARQUIVO.png [ESCALA]
+  export ARQUIVO.png [ESCALA] [row|grid]   quadro atual, ou todos numa folha de sprites
+  export ARQUIVO.gif [ESCALA] [pingpong]   animação inteira, repetindo
   save ARQUIVO.pontilha
   place ARQUIVO.png [OPACIDADE]  põe um PNG como camada nova (referência: 0.5)
   mcp                        servidor MCP para agentes (stdio)";
@@ -696,8 +753,16 @@ fn terminal(args: &[String]) -> Result<()> {
         }
         "export" => {
             let path = path_arg(1)?;
-            let scale = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(1);
-            println!("{:#}", save_as(&client, &path.with_extension("png"), scale, None)?);
+            let path = if extension(&path) == "gif" { path } else { path.with_extension("png") };
+            let mut export = Export::scale(1);
+            for option in &args[2.min(args.len())..] {
+                match option.as_str() {
+                    "row" | "grid" => export.sheet = Some(option.clone()),
+                    "pingpong" => export.pingpong = true,
+                    n => export.scale = n.parse().map_err(|_| format!("opção desconhecida: {n} (use uma escala, row, grid ou pingpong)"))?,
+                }
+            }
+            println!("{:#}", save_as(&client, &path, &export)?);
         }
         "place" => {
             let path = path_arg(1)?;
@@ -706,7 +771,7 @@ fn terminal(args: &[String]) -> Result<()> {
         }
         "save" => {
             let path = path_arg(1)?;
-            println!("{:#}", save_as(&client, &path.with_extension("pontilha"), 1, None)?);
+            println!("{:#}", save_as(&client, &path.with_extension("pontilha"), &Export::scale(1))?);
         }
         other => return Err(format!("comando desconhecido: {other}\n\n{USAGE}")),
     }

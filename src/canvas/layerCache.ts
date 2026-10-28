@@ -8,14 +8,15 @@ interface Cached {
   rev: number;
 }
 
-const cache = new WeakMap<Layer, Cached>();
+/** One canvas per cel, so going back to a frame reuses its canvas instead of making a new one. */
+const cache = new WeakMap<Uint32Array, Cached>();
 
 /**
- * An image-sized canvas mirroring the layer's pixels. The ImageData shares the
- * layer's buffer, so syncing is a single putImageData of the dirty region.
+ * An image-sized canvas mirroring the layer's pixels in the frame on screen. The
+ * ImageData shares the cel's buffer, so syncing is a single putImageData of the dirty region.
  */
 export function layerCanvas(layer: Layer, width: number, height: number): HTMLCanvasElement {
-  let entry = cache.get(layer);
+  let entry = cache.get(layer.pixels);
   if (!entry || entry.buffer !== layer.pixels.buffer || entry.canvas.width !== width || entry.canvas.height !== height) {
     const canvas = document.createElement('canvas');
     canvas.width = width;
@@ -23,7 +24,7 @@ export function layerCanvas(layer: Layer, width: number, height: number): HTMLCa
     const ctx = canvas.getContext('2d')!;
     const bytes = new Uint8ClampedArray(layer.pixels.buffer as ArrayBuffer, layer.pixels.byteOffset, layer.pixels.byteLength);
     entry = { canvas, ctx, image: new ImageData(bytes, width, height), buffer: layer.pixels.buffer, rev: -1 };
-    cache.set(layer, entry);
+    cache.set(layer.pixels, entry);
   }
 
   if (entry.rev !== layer.rev) {

@@ -1,6 +1,7 @@
+import { renderGif, renderSheet, sheetGrid } from '../core/animation';
 import { fromBase64, toBase64 } from '../core/base64';
 import { parseHex, sameColor, toHex } from '../core/color';
-import { type Layer, MAX_SIZE, composite, createLayer } from '../core/doc';
+import { type Frame, type Layer, MAX_SIZE, celOf, composite, createDoc, frameIndex } from '../core/doc';
 import { PixelEditor } from '../core/editor';
 import { encodePng, scaleNearest } from '../core/png';
 import { parseProject, serializeProject } from '../core/project';
@@ -19,8 +20,9 @@ import {
   starCells,
 } from '../core/raster';
 import type { ToolId } from '../core/tools';
+import { ANCHORS, type Anchor, contentBounds } from '../core/transform';
 import { decodeImage } from '../platform/files';
-import { ZOOM_LEVELS, actions, activeLayer, useApp } from '../state/store';
+import { type Target, ZOOM_LEVELS, actions, activeLayer, useApp } from '../state/store';
 
 /**
  * Commands scripts and agents can run over the control port. Every command that
@@ -102,6 +104,31 @@ function layerRef(ref: unknown): Layer {
   return layer;
 }
 
+function frameRef(ref: unknown): Frame {
+  const { doc } = useApp.getState();
+  const frame =
+    typeof ref === 'number' && Number.isInteger(ref) ? doc.frames[ref - 1] : doc.frames.find((f) => f.id === ref);
+  if (!frame) fail(`quadro não encontrado: ${JSON.stringify(ref)}. Use o número (1 a ${doc.frames.length}) ou o id.`);
+  return frame;
+}
+
+/** `frame` param (number from 1, or id), defaulting to the frame on screen. */
+function targetFrame(p: Params): Frame {
+  const { doc } = useApp.getState();
+  return has(p, 'frame') ? frameRef(p.frame) : doc.frames[frameIndex(doc)];
+}
+
+/** `layer` and `frame` params as the cel a selection command works on. */
+function selectionTarget(p: Params): Target {
+  const { doc } = useApp.getState();
+  const layer = targetLayer(p);
+  return { layer, cel: celOf(doc, layer, targetFrame(p).id) };
+}
+
+function frameInfo(frame: Frame, index: number) {
+  return { id: frame.id, number: index + 1, duration: frame.duration };
+}
+
 /** `layer` param (id or name), defaulting to the active layer. */
 function targetLayer(p: Params): Layer {
   return has(p, 'layer') ? layerRef(p.layer) : activeLayer();
@@ -122,6 +149,9 @@ function inspect() {
     dirty: s.dirty,
     activeLayer: activeLayer().name,
     layers: s.doc.layers.map(layerInfo).reverse(),
+    frame: frameIndex(s.doc) + 1,
+    frames: s.doc.frames.map(frameInfo),
+    selection: s.selection,
     primary: toHex(s.primary),
     secondary: toHex(s.secondary),
     palette: s.palette.map(toHex),
@@ -136,21 +166,22 @@ function inspect() {
  * painted ("painted"), empty ("transparent") or of one colour. It is how shading
  * stays inside a shape: paint the shape, then paint shadows only on its colour.
  */
-function maskFor(p: Params, layer: Layer): ((index: number) => boolean) | null {
+function maskFor(p: Params, cel: Uint32Array): ((index: number) => boolean) | null {
   if (!has(p, 'onlyOn')) return null;
-  const before = layer.pixels.slice();
+  const before = cel.slice();
   if (p.onlyOn === 'painted') return (i) => before[i] >>> 24 !== 0;
   if (p.onlyOn === 'transparent') return (i) => before[i] >>> 24 === 0;
   const only = colorValue(p.onlyOn, 'onlyOn');
   return (i) => sameColor(before[i], only);
 }
 
-/** Draws through a PixelEditor on the target layer and records the result as one undo step. */
+/** Draws through a PixelEditor on the target layer and frame, and records the result as one undo step. */
 function paint(p: Params, draw: (editor: PixelEditor, width: number, height: number) => void) {
   const { doc } = useApp.getState();
   const layer = targetLayer(p);
-  const editor = new PixelEditor(layer, doc.width, doc.height);
-  editor.allow = maskFor(p, layer);
+  const cel = celOf(doc, layer, targetFrame(p).id);
+  const editor = new PixelEditor(layer, doc.width, doc.height, cel);
+  editor.allow = maskFor(p, cel);
   draw(editor, doc.width, doc.height);
   const entry = editor.toEntry();
   actions.commit(entry);
@@ -221,7 +252,7 @@ export const COMMANDS: Record<string, Command> = {
 
   'doc.ascii': {
     summary: 'Desenha a imagem (ou uma camada) como texto: uma letra por cor, ponto para transparente.',
-    params: 'layer?, x?, y?, w?, h?',
+    params: 'layer?, frame?, x?, y?, w?, h?',
     readOnly: true,
     run: (p) => {
       const { doc } = useApp.getState();
@@ -230,7 +261,8 @@ export const COMMANDS: Record<string, Command> = {
       const w = Math.min(int(p, 'w', doc.width - x0), doc.width - x0);
       const h = Math.min(int(p, 'h', doc.height - y0), doc.height - y0);
       if (w * h > 128 * 128) fail('região grande demais para texto; peça no máximo 128 × 128 com x, y, w, h');
-      const pixels = has(p, 'layer') ? layerRef(p.layer).pixels : composite(doc);
+      const frame = targetFrame(p).id;
+      const pixels = has(p, 'layer') ? celOf(doc, layerRef(p.layer), frame) : composite(doc, frame);
       const keys = new Map<number, string>();
       const rows: string[] = [];
       for (let y = y0; y < y0 + h; y++) {
@@ -367,12 +399,227 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'layer.clear': {
-    summary: 'Apaga todos os pixels de uma camada.',
-    params: 'layer?',
+    summary: 'Apaga todos os pixels de uma camada no quadro atual (ou em frame).',
+    params: 'layer?, frame?',
     run: (p) =>
       paint(p, (editor, width, height) => {
         for (let i = 0; i < width * height; i++) editor.setIndex(i, 0);
       }),
+  },
+
+  // Frames. Every layer has an image in every frame; draw commands paint on the frame on screen unless given frame.
+
+  'frame.new': {
+    summary: 'Cria um quadro logo depois do atual e passa a mostrá-lo. copy true copia o quadro atual; sem copy ele começa vazio.',
+    params: 'copy?, duration?',
+    run: (p) => {
+      const frame = actions.addFrame({ copy: bool(p, 'copy', false), duration: has(p, 'duration') ? num(p, 'duration') : undefined });
+      if (!frame) fail('a animação já tem o máximo de quadros');
+      const { doc } = useApp.getState();
+      return frameInfo(frame, frameIndex(doc, frame.id));
+    },
+  },
+
+  'frame.select': {
+    summary: 'Mostra outro quadro: os desenhos seguintes vão para ele.',
+    params: 'frame',
+    run: (p) => {
+      if (!has(p, 'frame')) fail('o parâmetro "frame" é obrigatório');
+      const frame = frameRef(p.frame);
+      actions.selectFrame(frame.id);
+      return frameInfo(frame, frameIndex(useApp.getState().doc, frame.id));
+    },
+  },
+
+  'frame.delete': {
+    summary: 'Exclui um quadro, o atual se frame não for dado (a animação mantém pelo menos um).',
+    params: 'frame?',
+    run: (p) => {
+      const frame = targetFrame(p);
+      if (useApp.getState().doc.frames.length === 1) fail('a animação precisa de pelo menos um quadro');
+      actions.deleteFrame(frame.id);
+      const { doc } = useApp.getState();
+      return { deleted: frame.id, frame: frameIndex(doc) + 1, frames: doc.frames.length };
+    },
+  },
+
+  'frame.move': {
+    summary: 'Leva um quadro para a posição to (1 = primeiro).',
+    params: 'frame?, to',
+    run: (p) => {
+      const frame = targetFrame(p);
+      actions.moveFrame(frame.id, int(p, 'to') - 1);
+      return frameInfo(frame, frameIndex(useApp.getState().doc, frame.id));
+    },
+  },
+
+  'frame.setDuration': {
+    summary: 'Quanto tempo um quadro fica na tela, em milissegundos (10 a 60000). all true muda todos os quadros.',
+    params: 'duration, frame?, all?',
+    run: (p) => {
+      const duration = num(p, 'duration');
+      actions.setFrameDuration(bool(p, 'all', false) ? null : targetFrame(p).id, duration);
+      return { frames: useApp.getState().doc.frames.map(frameInfo) };
+    },
+  },
+
+  // Image size. Every layer and frame changes together, as one undo step; the selection is dropped.
+
+  'canvas.resize': {
+    summary:
+      'Muda o tamanho da tela sem esticar a arte. anchor diz onde a imagem atual fica: center (padrão), top-left, top, top-right, left, right, bottom-left, bottom ou bottom-right. Encolher corta o que não cabe.',
+    params: 'width, height, anchor?',
+    run: (p) => {
+      const width = int(p, 'width');
+      const height = int(p, 'height');
+      checkSize(width, height);
+      const anchor = text(p, 'anchor', 'center') as Anchor;
+      if (!ANCHORS.includes(anchor)) fail(`anchor precisa ser um de: ${ANCHORS.join(', ')}`);
+      actions.resizeCanvas(width, height, anchor);
+      return inspect();
+    },
+  },
+
+  'canvas.crop': {
+    summary: 'Recorta a imagem no retângulo x, y, w, h (sem eles, na seleção).',
+    params: 'x?, y?, w?, h?',
+    run: (p) => {
+      const rect =
+        has(p, 'w') || has(p, 'h')
+          ? { x: int(p, 'x', 0), y: int(p, 'y', 0), w: int(p, 'w'), h: int(p, 'h') }
+          : useApp.getState().selection;
+      if (!rect) fail('passe x, y, w, h ou selecione a área antes');
+      if (rect.w < 1 || rect.h < 1) fail('w e h precisam ser pelo menos 1');
+      const { doc } = useApp.getState();
+      if (rect.x >= doc.width || rect.y >= doc.height || rect.x + rect.w <= 0 || rect.y + rect.h <= 0) {
+        fail('o retângulo fica fora da imagem');
+      }
+      actions.cropTo(rect);
+      return inspect();
+    },
+  },
+
+  'canvas.trim': {
+    summary: 'Corta as bordas vazias, deixando só o que está pintado em alguma camada ou quadro.',
+    params: '',
+    run: () => {
+      const bounds = contentBounds(useApp.getState().doc);
+      if (!bounds) fail('a imagem está vazia');
+      actions.cropTo(bounds);
+      return { ...inspect(), kept: bounds };
+    },
+  },
+
+  'canvas.scale': {
+    summary: 'Amplia a arte: cada pixel vira um bloco factor × factor (2 a 16), sem borrar.',
+    params: 'factor',
+    run: (p) => {
+      const factor = int(p, 'factor');
+      if (factor < 2 || factor > 16) fail('factor precisa ser de 2 a 16');
+      const { doc } = useApp.getState();
+      checkSize(doc.width * factor, doc.height * factor);
+      actions.scaleImage(factor);
+      return inspect();
+    },
+  },
+
+  // Selection. Without a selection, move, flip, rotate, copy and cut act on the whole layer.
+
+  'select.rect': {
+    summary: 'Seleciona um retângulo (cortado nas bordas da imagem).',
+    params: 'x, y, w, h',
+    run: (p) => {
+      const w = int(p, 'w');
+      const h = int(p, 'h');
+      if (w < 1 || h < 1) fail('w e h precisam ser pelo menos 1');
+      actions.select({ x: int(p, 'x'), y: int(p, 'y'), w, h });
+      const { selection } = useApp.getState();
+      if (!selection) fail('o retângulo fica fora da imagem');
+      return { selection };
+    },
+  },
+
+  'select.all': {
+    summary: 'Seleciona a imagem inteira.',
+    params: '',
+    run: () => {
+      actions.selectAll();
+      return { selection: useApp.getState().selection };
+    },
+  },
+
+  'select.none': {
+    summary: 'Desfaz a seleção.',
+    params: '',
+    run: () => {
+      actions.select(null);
+      return { selection: null };
+    },
+  },
+
+  'selection.move': {
+    summary: 'Move os pixels selecionados (e a seleção) dx, dy pixels. O que sair da imagem se perde.',
+    params: 'dx, dy, layer?, frame?',
+    run: (p) => {
+      actions.moveSelection(int(p, 'dx', 0), int(p, 'dy', 0), selectionTarget(p));
+      return { selection: useApp.getState().selection };
+    },
+  },
+
+  'selection.flip': {
+    summary: 'Espelha os pixels selecionados.',
+    params: 'axis: "horizontal" | "vertical", layer?, frame?',
+    run: (p) => {
+      const axis = text(p, 'axis');
+      if (axis !== 'horizontal' && axis !== 'vertical') fail('axis precisa ser "horizontal" ou "vertical"');
+      actions.flipSelection(axis, selectionTarget(p));
+      return { selection: useApp.getState().selection };
+    },
+  },
+
+  'selection.rotate': {
+    summary: 'Gira os pixels selecionados 90° em torno do centro da seleção. Sem seleção, só em imagens quadradas.',
+    params: 'direction: "cw" | "ccw", layer?, frame?',
+    run: (p) => {
+      const direction = text(p, 'direction');
+      if (direction !== 'cw' && direction !== 'ccw') fail('direction precisa ser "cw" (horário) ou "ccw" (anti-horário)');
+      if (!actions.rotateSelection(direction, selectionTarget(p))) fail('a imagem não é quadrada; selecione a área a girar');
+      return { selection: useApp.getState().selection };
+    },
+  },
+
+  'selection.clear': {
+    summary: 'Apaga os pixels selecionados.',
+    params: 'layer?, frame?',
+    run: (p) => {
+      if (!useApp.getState().selection) fail('nada selecionado; use select.rect antes, ou layer.clear para a camada toda');
+      actions.clearSelection(selectionTarget(p));
+      return { selection: useApp.getState().selection };
+    },
+  },
+
+  'clipboard.copy': {
+    summary: 'Copia os pixels selecionados de uma camada e quadro.',
+    params: 'layer?, frame?',
+    readOnly: true,
+    run: (p) => ({ copied: actions.copy(selectionTarget(p)).rect }),
+  },
+
+  'clipboard.cut': {
+    summary: 'Copia e apaga os pixels selecionados.',
+    params: 'layer?, frame?',
+    run: (p) => ({ copied: actions.cut(selectionTarget(p)).rect }),
+  },
+
+  'clipboard.paste': {
+    summary:
+      'Cola o que foi copiado no mesmo lugar de onde saiu (ou com o canto em x, y) e seleciona. Pixels transparentes não cobrem o que está embaixo. Útil para levar uma parte para outro quadro.',
+    params: 'x?, y?, layer?, frame?',
+    run: (p) => {
+      if (!useApp.getState().clipboard) fail('nada copiado ainda; use clipboard.copy antes');
+      const at = { x: has(p, 'x') ? int(p, 'x') : undefined, y: has(p, 'y') ? int(p, 'y') : undefined };
+      return { selection: actions.paste(at, selectionTarget(p)) };
+    },
   },
 
   // Colours
@@ -413,7 +660,7 @@ export const COMMANDS: Record<string, Command> = {
 
   'draw.pixels': {
     summary: 'Pinta pixels soltos. Cada item é [x, y] ou [x, y, cor]; "transparent" apaga.',
-    params: 'pixels: [[x, y, color?], ...], color?, onlyOn?, layer?',
+    params: 'pixels: [[x, y, color?], ...], color?, onlyOn?, layer?, frame?',
     run: (p) => {
       if (!Array.isArray(p.pixels)) fail('pixels precisa ser uma lista de [x, y] ou [x, y, cor]');
       const fallback = color(p);
@@ -431,7 +678,7 @@ export const COMMANDS: Record<string, Command> = {
 
   'draw.line': {
     summary: 'Linha de (x0, y0) a (x1, y1), incluindo as pontas. perfectAngle trava em 0°, 45°, 90° e 2:1.',
-    params: 'x0, y0, x1, y1, color?, size?, perfectAngle?, onlyOn?, layer?',
+    params: 'x0, y0, x1, y1, color?, size?, perfectAngle?, onlyOn?, layer?, frame?',
     run: (p) => {
       const c = color(p);
       const x0 = int(p, 'x0');
@@ -450,7 +697,7 @@ export const COMMANDS: Record<string, Command> = {
 
   'draw.rect': {
     summary: 'Retângulo com canto em (x, y), largura w e altura h. Contorno por padrão; filled preenche.',
-    params: 'x, y, w, h, color?, filled?, thickness?, onlyOn?, layer?',
+    params: 'x, y, w, h, color?, filled?, thickness?, onlyOn?, layer?, frame?',
     run: (p) => {
       const c = color(p);
       const x = int(p, 'x');
@@ -468,7 +715,7 @@ export const COMMANDS: Record<string, Command> = {
 
   'draw.ellipse': {
     summary: 'Elipse ou círculo dentro da caixa (x, y, w, h). Contorno limpo de 1 px por padrão; filled preenche.',
-    params: 'x, y, w, h, color?, filled?, thickness?, onlyOn?, layer?',
+    params: 'x, y, w, h, color?, filled?, thickness?, onlyOn?, layer?, frame?',
     run: (p) => {
       const c = color(p);
       const w = int(p, 'w');
@@ -484,13 +731,13 @@ export const COMMANDS: Record<string, Command> = {
 
   'draw.fill': {
     summary: 'Balde de tinta a partir de (x, y). contiguous false troca a mesma cor na camada toda.',
-    params: 'x, y, color?, contiguous?, layer?',
+    params: 'x, y, color?, contiguous?, layer?, frame?',
     run: (p) => {
       const c = color(p);
       const x = int(p, 'x');
       const y = int(p, 'y');
       return paint(p, (editor, width, height) => {
-        for (const i of floodFill(editor.layer.pixels, width, height, x, y, bool(p, 'contiguous', true))) editor.setIndex(i, c);
+        for (const i of floodFill(editor.cel, width, height, x, y, bool(p, 'contiguous', true))) editor.setIndex(i, c);
       });
     },
   },
@@ -498,7 +745,7 @@ export const COMMANDS: Record<string, Command> = {
   'draw.pattern': {
     summary:
       'Carimba um desenho em texto com o canto em (x, y). Cada caractere de rows vira a cor do legend; "." e espaço são pulados.',
-    params: 'x, y, rows: string[], legend: {caractere: cor}, onlyOn?, layer?',
+    params: 'x, y, rows: string[], legend: {caractere: cor}, onlyOn?, layer?, frame?',
     run: (p) => {
       if (!Array.isArray(p.rows) || p.rows.some((r) => typeof r !== 'string')) fail('rows precisa ser uma lista de textos');
       const legend = p.legend;
@@ -530,7 +777,7 @@ export const COMMANDS: Record<string, Command> = {
   'draw.polygon': {
     summary:
       'Polígono pelos pontos [[x, y], ...] (frações valem) ou regular com cx, cy, radius, sides e rotation em graus (padrão -90: vértice em cima). Preenchido por padrão.',
-    params: 'points? | cx, cy, radius, sides, rotation?; color?, filled?, onlyOn?, layer?',
+    params: 'points? | cx, cy, radius, sides, rotation?; color?, filled?, onlyOn?, layer?, frame?',
     run: (p) => {
       const c = color(p);
       let points: Point[];
@@ -552,7 +799,7 @@ export const COMMANDS: Record<string, Command> = {
   'draw.star': {
     summary:
       'Estrela centrada em (cx, cy); use meio pixel (15.5) para centralizar numa imagem de lado par. Com light e dark, cada faceta recebe um tom pela direção da luz (lightAngle em graus, padrão -135: de cima à esquerda), como um chanfro.',
-    params: 'cx, cy, outer, inner?, points?, rotation?, color?, light?, dark?, lightAngle?, onlyOn?, layer?',
+    params: 'cx, cy, outer, inner?, points?, rotation?, color?, light?, dark?, lightAngle?, onlyOn?, layer?, frame?',
     run: (p) => {
       const base = color(p);
       const tips = int(p, 'points', 5);
@@ -577,7 +824,7 @@ export const COMMANDS: Record<string, Command> = {
   'draw.burst': {
     summary:
       'Estouro de fogos: raios retos de inner a outer a partir de (cx, cy). colors vai do centro à ponta (gradiente). dash [aceso, apagado] em pixels tracejam os raios; alternate (0 a 1) encurta os raios ímpares.',
-    params: 'cx, cy, outer, inner?, rays?, rotation?, colors?: string[], color?, dash?: [on, off], alternate?, onlyOn?, layer?',
+    params: 'cx, cy, outer, inner?, rays?, rotation?, colors?: string[], color?, dash?: [on, off], alternate?, onlyOn?, layer?, frame?',
     run: (p) => {
       const outer = num(p, 'outer');
       const inner = num(p, 'inner', 0);
@@ -608,23 +855,23 @@ export const COMMANDS: Record<string, Command> = {
 
   'effect.outline': {
     summary: 'Contorna o que está desenhado na camada com uma cor. corners true inclui as diagonais.',
-    params: 'color, corners?, layer?',
+    params: 'color, corners?, layer?, frame?',
     run: (p) => {
       const c = requiredColor(p, 'color');
       return paint(p, (editor, width, height) => {
-        for (const i of outlineIndices(editor.layer.pixels, width, height, bool(p, 'corners', false))) editor.setIndex(i, c);
+        for (const i of outlineIndices(editor.cel, width, height, bool(p, 'corners', false))) editor.setIndex(i, c);
       });
     },
   },
 
   'effect.replaceColor': {
     summary: 'Troca uma cor por outra em toda a camada.',
-    params: 'from, to, layer?',
+    params: 'from, to, layer?, frame?',
     run: (p) => {
       const from = requiredColor(p, 'from');
       const to = requiredColor(p, 'to');
       return paint(p, (editor, width, height) => {
-        const px = editor.layer.pixels;
+        const px = editor.cel;
         for (let i = 0; i < width * height; i++) if (sameColor(px[i], from)) editor.setIndex(i, to);
       });
     },
@@ -697,16 +944,66 @@ export const COMMANDS: Record<string, Command> = {
 
   'render.png': {
     summary: 'PNG em base64 da imagem visível (ou de uma camada), ampliado por scale sem borrar.',
-    params: 'scale?, layer?',
+    params: 'scale?, layer?, frame?',
     readOnly: true,
     run: async (p) => {
       const { doc } = useApp.getState();
       const scale = int(p, 'scale', 1);
       if (scale < 1 || doc.width * scale > 8192 || doc.height * scale > 8192) fail('scale fora do limite (até 8192 px por lado)');
-      const source = has(p, 'layer') ? layerRef(p.layer).pixels : composite(doc);
+      const frame = targetFrame(p).id;
+      const source = has(p, 'layer') ? celOf(doc, layerRef(p.layer), frame) : composite(doc, frame);
       const pixels = scaleNearest(source, doc.width, doc.height, scale);
       const png = await encodePng(new Uint8Array(pixels.buffer, pixels.byteOffset, pixels.byteLength), doc.width * scale, doc.height * scale);
       return { png: toBase64(png), width: doc.width * scale, height: doc.height * scale };
+    },
+  },
+
+  'render.sheet': {
+    summary: 'Folha de sprites em PNG (base64): todos os quadros lado a lado (layout "row") ou numa grade quase quadrada ("grid").',
+    params: 'scale?, layout?: "row" | "grid"',
+    readOnly: true,
+    run: async (p) => {
+      const { doc } = useApp.getState();
+      const scale = int(p, 'scale', 1);
+      const layout = text(p, 'layout', 'row');
+      if (layout !== 'row' && layout !== 'grid') fail('layout precisa ser "row" ou "grid"');
+      const { cols, rows } = sheetGrid(doc.frames.length, layout);
+      if (scale < 1 || cols * doc.width * scale > 16384 || rows * doc.height * scale > 16384) {
+        fail('folha grande demais (até 16384 px por lado); use scale menor ou layout "grid"');
+      }
+      const sheet = renderSheet(doc, layout, scale);
+      const png = await encodePng(new Uint8Array(sheet.pixels.buffer), sheet.width, sheet.height);
+      return {
+        png: toBase64(png),
+        width: sheet.width,
+        height: sheet.height,
+        columns: sheet.cols,
+        rows: sheet.rows,
+        frameWidth: sheet.frameWidth,
+        frameHeight: sheet.frameHeight,
+        durations: doc.frames.map((f) => f.duration),
+      };
+    },
+  },
+
+  'render.gif': {
+    summary:
+      'GIF animado (base64) com todos os quadros e suas durações, repetindo para sempre. pingpong true vai e volta. GIF guarda até 256 cores e transparência total ou nenhuma.',
+    params: 'scale?, pingpong?',
+    readOnly: true,
+    run: (p) => {
+      const { doc } = useApp.getState();
+      const scale = int(p, 'scale', 1);
+      if (scale < 1 || doc.width * scale > 4096 || doc.height * scale > 4096) fail('scale fora do limite (até 4096 px por lado)');
+      const gif = renderGif(doc, { scale, pingpong: bool(p, 'pingpong', false) });
+      return {
+        gif: toBase64(gif.bytes),
+        width: doc.width * scale,
+        height: doc.height * scale,
+        frames: doc.frames.length,
+        colors: gif.colors,
+        reduced: gif.reduced,
+      };
     },
   },
 
@@ -754,7 +1051,7 @@ export const COMMANDS: Record<string, Command> = {
       const image = await decodeImage(fromBase64(text(p, 'png')));
       checkSize(image.width, image.height);
       actions.loadDoc(
-        { width: image.width, height: image.height, layers: [createLayer(image.width, image.height, 'Camada 1', image.pixels)] },
+        createDoc(image.width, image.height, image.pixels),
         { fileName: text(p, 'fileName', 'imagem.pontilha'), filePath: null },
       );
       return inspect();

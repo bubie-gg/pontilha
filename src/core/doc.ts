@@ -3,11 +3,21 @@ import { blendOver } from './color';
 /** Region of a layer changed since the last upload to its canvas. `x1`/`y1` are exclusive. */
 export type Dirty = { x0: number; y0: number; x1: number; y1: number } | 'all' | null;
 
+/** One step of an animation. Every layer has an image (a cel) for every frame. */
+export interface Frame {
+  id: string;
+  /** How long the frame stays on screen during playback, in milliseconds. */
+  duration: number;
+}
+
 export interface Layer {
   id: string;
   name: string;
   visible: boolean;
   opacity: number;
+  /** The layer's image in each frame, by frame id. */
+  cels: Map<string, Uint32Array>;
+  /** The cel of the frame being shown: what tools and commands paint on. Kept in step by `showFrame`. */
   pixels: Uint32Array;
   /** Bumped on every pixel change so render caches know to re-upload. */
   rev: number;
@@ -19,27 +29,77 @@ export interface Doc {
   height: number;
   /** Bottom layer first. Replace the array (don't mutate it) so subscribers notice. */
   layers: Layer[];
+  /** Playback order. Replace the array (don't mutate it) so subscribers notice. */
+  frames: Frame[];
+  /** Id of the frame being shown and edited. Change it with `showFrame`. */
+  frame: string;
 }
 
 export const MAX_SIZE = 2048;
+export const MAX_FRAMES = 512;
+export const DEFAULT_DURATION = 100;
+/** Shortest and longest frame durations, in ms. GIF counts in hundredths of a second. */
+export const MIN_DURATION = 10;
+export const MAX_DURATION = 60000;
+
+export const clampDuration = (ms: number) => Math.min(MAX_DURATION, Math.max(MIN_DURATION, Math.round(ms)));
 
 let seq = 0;
-export const newLayerId = () => `l${Date.now().toString(36)}${(seq++).toString(36)}`;
+const newId = (prefix: string) => `${prefix}${Date.now().toString(36)}${(seq++).toString(36)}`;
+export const newLayerId = () => newId('l');
 
-export function createLayer(width: number, height: number, name: string, pixels?: Uint32Array): Layer {
+export function createFrame(duration = DEFAULT_DURATION): Frame {
+  return { id: newId('f'), duration };
+}
+
+/** What creating a layer needs to know about its document. */
+type Shape = Pick<Doc, 'width' | 'height' | 'frames' | 'frame'>;
+
+/** A layer with an empty cel in every frame, or `pixels` in the frame being shown. */
+export function createLayer(doc: Shape, name: string, pixels?: Uint32Array): Layer {
+  const cels = new Map<string, Uint32Array>(doc.frames.map((f) => [f.id, new Uint32Array(doc.width * doc.height)]));
+  if (pixels) cels.set(doc.frame, pixels);
   return {
     id: newLayerId(),
     name,
     visible: true,
     opacity: 1,
-    pixels: pixels ?? new Uint32Array(width * height),
+    cels,
+    pixels: cels.get(doc.frame)!,
     rev: 0,
     dirty: 'all',
   };
 }
 
-export function createDoc(width: number, height: number): Doc {
-  return { width, height, layers: [createLayer(width, height, 'Camada 1')] };
+/** A one-frame document with a single layer, empty or holding `pixels`. */
+export function createDoc(width: number, height: number, pixels?: Uint32Array): Doc {
+  const frame = createFrame();
+  const doc: Doc = { width, height, layers: [], frames: [frame], frame: frame.id };
+  doc.layers = [createLayer(doc, 'Camada 1', pixels)];
+  return doc;
+}
+
+/** The layer's cel in a frame, created empty if it is missing. */
+export function celOf(doc: Doc, layer: Layer, frameId: string): Uint32Array {
+  let cel = layer.cels.get(frameId);
+  if (!cel) {
+    cel = new Uint32Array(doc.width * doc.height);
+    layer.cels.set(frameId, cel);
+  }
+  return cel;
+}
+
+/** Shows and edits `frameId` from now on: every layer's `pixels` becomes that frame's cel. */
+export function showFrame(doc: Doc, frameId: string) {
+  doc.frame = frameId;
+  for (const layer of doc.layers) {
+    layer.pixels = celOf(doc, layer, frameId);
+    markAllDirty(layer);
+  }
+}
+
+export function frameIndex(doc: Doc, frameId = doc.frame): number {
+  return doc.frames.findIndex((f) => f.id === frameId);
 }
 
 export function markDirty(layer: Layer, x: number, y: number) {
@@ -74,11 +134,12 @@ export function sampleComposite(doc: Doc, x: number, y: number): number {
   return out;
 }
 
-export function composite(doc: Doc): Uint32Array {
+/** Visible layers flattened, for the frame being shown or another one. */
+export function composite(doc: Doc, frameId = doc.frame): Uint32Array {
   const out = new Uint32Array(doc.width * doc.height);
   for (const layer of doc.layers) {
     if (!layer.visible || layer.opacity <= 0) continue;
-    const px = layer.pixels;
+    const px = celOf(doc, layer, frameId);
     for (let i = 0; i < out.length; i++) if (px[i] >>> 24) out[i] = blendOver(out[i], px[i], layer.opacity);
   }
   return out;

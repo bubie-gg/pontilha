@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { toBase64 } from './base64';
 import { blendOver, pack, parseHex, toHex } from './color';
-import { createDoc, sampleComposite } from './doc';
+import { createDoc, createFrame, sampleComposite, showFrame } from './doc';
 import { History } from './history';
-import { encodePng, scaleNearest, zlibInflate } from './png';
+import { encodePng, scaleNearest, zlibDeflate, zlibInflate } from './png';
 import { parseProject, serializeProject } from './project';
 import { brushOffsets, floodFill, line, snapToPerfectAngle } from './raster';
 import { DEFAULT_SETTINGS, startSession } from './tools';
@@ -159,6 +160,27 @@ describe('files', () => {
     expect(loaded.doc.layers[0].pixels[4]).toBe(pack(1, 2, 3, 40));
     expect(loaded.doc.layers[0].opacity).toBe(0.5);
     expect(loaded.palette).toEqual([RED]);
+  });
+
+  it('round-trips animations', async () => {
+    const doc = createDoc(2, 1);
+    const second = createFrame(250);
+    doc.frames = [...doc.frames, second];
+    doc.layers[0].cels.set(second.id, Uint32Array.from([0, BLUE]));
+    showFrame(doc, second.id);
+    const loaded = await parseProject(await serializeProject(doc, [], doc.layers[0].id));
+    expect(loaded.doc.frames.map((f) => f.duration)).toEqual([100, 250]);
+    expect(loaded.doc.frame).toBe(loaded.doc.frames[1].id);
+    expect([...loaded.doc.layers[0].pixels]).toEqual([0, BLUE]);
+    expect([...loaded.doc.layers[0].cels.get(loaded.doc.frames[0].id)!]).toEqual([0, 0]);
+  });
+
+  it('opens version 1 projects as one frame', async () => {
+    const rgba = toBase64(await zlibDeflate(new Uint8Array(Uint32Array.from([RED, 0]).buffer)));
+    const v1 = { app: 'pontilha', version: 1, width: 2, height: 1, palette: [], activeLayer: 0, layers: [{ name: 'A', visible: true, opacity: 1, rgba }] };
+    const loaded = await parseProject(JSON.stringify(v1));
+    expect(loaded.doc.frames).toHaveLength(1);
+    expect([...loaded.doc.layers[0].pixels]).toEqual([RED, 0]);
   });
 
   it('rejects files that are not projects', async () => {

@@ -1,11 +1,13 @@
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { useEffect } from 'react';
+import { frameIndex } from '../core/doc';
 import type { ToolId } from '../core/tools';
 import { isDesktop } from '../platform/files';
-import { actions, useApp } from '../state/store';
+import { actions, activeLayer, useApp } from '../state/store';
 import { openFile, saveProject } from './fileActions';
 
 const TOOL_KEYS: Record<string, ToolId> = {
+  m: 'select',
   b: 'pencil',
   e: 'eraser',
   l: 'line',
@@ -14,9 +16,24 @@ const TOOL_KEYS: Record<string, ToolId> = {
   i: 'eyedropper',
 };
 
+/** Selection edits change the active layer, so they wait until it is visible. */
+export function onVisibleLayer(edit: () => void) {
+  if (activeLayer().visible) edit();
+  else actions.notify('Essa camada está oculta. Mostre a camada para editar os pixels dela.', 'error');
+}
+
+const NUDGE: Record<string, [number, number]> = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, -1],
+  ArrowDown: [0, 1],
+};
+
 export function useShortcuts() {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      // A focused control (a timeline frame, say) already handled this key.
+      if (e.defaultPrevented) return;
       const target = e.target as HTMLElement | null;
       if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
       const s = useApp.getState();
@@ -59,11 +76,59 @@ export function useShortcuts() {
             case "'":
               actions.toggleGrid();
               return true;
+            case 'a':
+              actions.selectAll();
+              return true;
+            case 'd':
+              actions.select(null);
+              return true;
+            case 'c':
+              actions.copy();
+              actions.notify(s.selection ? 'Seleção copiada.' : 'Camada inteira copiada.');
+              return true;
+            case 'x':
+              onVisibleLayer(() => actions.cut());
+              return true;
+            case 'v':
+              onVisibleLayer(() => actions.paste());
+              return true;
             default:
               return false;
           }
         })();
         if (handled) e.preventDefault();
+        return;
+      }
+
+      if (e.key === 'Escape' && s.selection) {
+        actions.select(null);
+        return;
+      }
+      if ((e.key === 'Delete' || e.key === 'Backspace') && s.selection) {
+        e.preventDefault();
+        onVisibleLayer(() => actions.clearSelection());
+        return;
+      }
+      if (NUDGE[e.key] && s.selection) {
+        e.preventDefault();
+        const [dx, dy] = NUDGE[e.key];
+        const step = e.shiftKey ? 8 : 1;
+        onVisibleLayer(() => actions.moveSelection(dx * step, dy * step));
+        return;
+      }
+      if (e.shiftKey && (key === 'h' || key === 'v' || key === 'r')) {
+        onVisibleLayer(() => {
+          if (key === 'h') actions.flipSelection('horizontal');
+          else if (key === 'v') actions.flipSelection('vertical');
+          else actions.rotateSelection('cw');
+        });
+        return;
+      }
+
+      // Enter on a focused button presses the button, so only play from elsewhere.
+      if (e.key === 'Enter' && !target?.closest('button, a')) {
+        e.preventDefault();
+        actions.togglePlay();
         return;
       }
 
@@ -94,6 +159,12 @@ export function useShortcuts() {
         case '1':
           actions.zoomActual();
           break;
+        case ',':
+          actions.stepFrame(-1);
+          break;
+        case '.':
+          actions.stepFrame(1);
+          break;
       }
     };
 
@@ -115,6 +186,38 @@ export function useShortcuts() {
       window.removeEventListener('blur', onBlur);
     };
   }, []);
+}
+
+/** Advances frames while `playing`, each one on screen for its own duration. */
+export function usePlayback() {
+  const playing = useApp((s) => s.playing);
+
+  useEffect(() => {
+    if (!playing) return;
+    let direction = 1;
+    let timer = 0;
+    const schedule = () => {
+      const { doc } = useApp.getState();
+      timer = window.setTimeout(tick, doc.frames[frameIndex(doc)].duration);
+    };
+    const tick = () => {
+      const { doc, loopMode } = useApp.getState();
+      const n = doc.frames.length;
+      if (n < 2) {
+        useApp.setState({ playing: false });
+        return;
+      }
+      let next = frameIndex(doc) + direction;
+      if (loopMode === 'pingpong' && (next < 0 || next >= n)) {
+        direction = -direction;
+        next = frameIndex(doc) + direction;
+      }
+      actions.selectFrame(doc.frames[(next + n) % n].id);
+      schedule();
+    };
+    schedule();
+    return () => clearTimeout(timer);
+  }, [playing]);
 }
 
 /** Keeps the window title in sync and asks before closing with unsaved changes. */

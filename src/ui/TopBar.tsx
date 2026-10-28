@@ -1,8 +1,66 @@
 import { openFile, saveProject } from '../app/fileActions';
+import { onVisibleLayer } from '../app/hooks';
 import type { ToolId } from '../core/tools';
 import { actions, useApp } from '../state/store';
 import { IconButton, Segmented, Stepper, Toggle } from './controls';
 import { Mark } from './icons';
+
+function OptButton({ label, title, onClick, disabled }: { label: string; title: string; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button type="button" className="opt-btn px" title={title} disabled={disabled} onClick={onClick}>
+      {label}
+    </button>
+  );
+}
+
+function SelectionOptions() {
+  const selection = useApp((s) => s.selection);
+  const hasClip = useApp((s) => s.clipboard !== null);
+  const square = useApp((s) => s.doc.width === s.doc.height);
+  const scope = selection ? 'a seleção' : 'a camada inteira';
+  const edit = (fn: () => void) => () => onVisibleLayer(fn);
+  return (
+    <>
+      <span className="options-meta">
+        {selection ? `${selection.w} × ${selection.h} px em ${selection.x}, ${selection.y}` : 'Nada selecionado: as ações valem para a camada inteira'}
+      </span>
+      <div className="bar-group">
+        <OptButton label="Espelhar ↔" title={`Espelha ${scope} na horizontal (Shift+H)`} onClick={edit(() => actions.flipSelection('horizontal'))} />
+        <OptButton label="Espelhar ↕" title={`Espelha ${scope} na vertical (Shift+V)`} onClick={edit(() => actions.flipSelection('vertical'))} />
+        <OptButton
+          label="Girar ↻"
+          title={`Gira ${scope} 90° no sentido horário (Shift+R)`}
+          disabled={!selection && !square}
+          onClick={edit(() => actions.rotateSelection('cw'))}
+        />
+        <OptButton
+          label="Girar ↺"
+          title={`Gira ${scope} 90° no sentido anti-horário`}
+          disabled={!selection && !square}
+          onClick={edit(() => actions.rotateSelection('ccw'))}
+        />
+      </div>
+      <div className="bar-group">
+        <OptButton label="Copiar" title={`Copia ${scope} (Ctrl+C)`} onClick={() => actions.copy()} />
+        <OptButton label="Recortar" title={`Copia e apaga ${scope} (Ctrl+X)`} onClick={edit(() => actions.cut())} />
+        <OptButton label="Colar" title="Cola no mesmo lugar de onde copiou (Ctrl+V)" disabled={!hasClip} onClick={edit(() => actions.paste())} />
+        <OptButton label="Apagar" title="Apaga os pixels da seleção (Delete)" disabled={!selection} onClick={edit(() => actions.clearSelection())} />
+      </div>
+      <div className="bar-group">
+        <OptButton label="Tudo" title="Seleciona a imagem inteira (Ctrl+A)" onClick={actions.selectAll} />
+        <OptButton label="Nada" title="Desfaz a seleção (Ctrl+D ou Esc)" disabled={!selection} onClick={() => actions.select(null)} />
+      </div>
+      <div className="bar-group">
+        <OptButton
+          label="Recortar imagem"
+          title="Deixa só a área selecionada, em todas as camadas e quadros"
+          disabled={!selection}
+          onClick={() => actions.cropTo()}
+        />
+      </div>
+    </>
+  );
+}
 
 function ToolOptions() {
   const tool = useApp((s) => s.tool);
@@ -14,6 +72,8 @@ function ToolOptions() {
   );
 
   switch (tool) {
+    case 'select':
+      return <SelectionOptions />;
     case 'pencil':
     case 'eraser':
       return (
@@ -107,7 +167,8 @@ export function TopBar() {
         <IconButton icon="newFile" label="Nova imagem (Ctrl+N)" onClick={() => actions.openDialog('new')} />
         <IconButton icon="open" label="Abrir (Ctrl+O)" onClick={openFile} />
         <IconButton icon="save" label="Salvar (Ctrl+S)" onClick={() => saveProject()} />
-        <IconButton icon="export" label="Exportar PNG (Ctrl+E)" onClick={() => actions.openDialog('export')} />
+        <IconButton icon="export" label="Exportar (Ctrl+E)" onClick={() => actions.openDialog('export')} />
+        <IconButton icon="crop" label="Tamanho da imagem: tela, ampliar, recortar" onClick={() => actions.openDialog('canvas')} />
       </div>
 
       <div className="bar-spacer" />
@@ -137,6 +198,7 @@ const TOOL_NAMES: Record<ToolId, string> = {
   rect: 'Retângulo',
   fill: 'Balde',
   eyedropper: 'Conta-gotas',
+  select: 'Seleção',
 };
 
 /** Options for the active tool, in their own row so they never get squeezed by the top bar. */

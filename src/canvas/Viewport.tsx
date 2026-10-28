@@ -1,13 +1,18 @@
 import { useEffect, useRef } from 'react';
 import { pixelAt, sampleComposite } from '../core/doc';
 import { type Session, startSession } from '../core/tools';
+import { type Rect, contains, rectBetween, startMove } from '../core/transform';
 import { type View, actions, activeLayer, useApp } from '../state/store';
 import { renderViewport } from './renderer';
 
 type Gesture =
   | { kind: 'pan'; lastX: number; lastY: number }
   | { kind: 'draw'; session: Session }
-  | { kind: 'pick'; secondary: boolean };
+  | { kind: 'pick'; secondary: boolean }
+  /** Dragging out a new selection from (x0, y0). */
+  | { kind: 'select'; x0: number; y0: number; moved: boolean }
+  /** Dragging the selected pixels. */
+  | { kind: 'move'; session: ReturnType<typeof startMove>; before: Rect };
 
 /** Wheel distance (in deltaY units) that counts as one zoom step; keeps touchpads from racing. */
 const WHEEL_STEP = 60;
@@ -100,6 +105,19 @@ export function Viewport() {
       gesture.current = { kind: 'pick', secondary };
       return;
     }
+    if (s.tool === 'select') {
+      if (secondary) return;
+      if (s.selection && contains(s.selection, x, y)) {
+        if (!activeLayer().visible) {
+          actions.notify('Essa camada está oculta. Mostre a camada para mover os pixels dela.', 'error');
+          return;
+        }
+        gesture.current = { kind: 'move', session: startMove(s.doc, activeLayer(), s.selection, x, y), before: s.selection };
+      } else {
+        gesture.current = { kind: 'select', x0: x, y0: y, moved: false };
+      }
+      return;
+    }
     const layer = activeLayer();
     if (!layer.visible) {
       actions.notify('Essa camada está oculta. Mostre a camada para desenhar nela.', 'error');
@@ -133,6 +151,13 @@ export function Viewport() {
       actions.touch();
     } else if (g?.kind === 'pick') {
       pickColor(here.x, here.y, g.secondary);
+    } else if (g?.kind === 'select') {
+      if (here.x !== g.x0 || here.y !== g.y0) g.moved = true;
+      if (g.moved) actions.select(rectBetween(g.x0, g.y0, here.x, here.y));
+    } else if (g?.kind === 'move') {
+      // The selection outline travels with the pixels, even past the edge of the image.
+      useApp.setState({ selection: g.session.move(here.x, here.y) });
+      actions.touch();
     }
     actions.setHover(here);
   };
@@ -142,9 +167,16 @@ export function Viewport() {
     gesture.current = null;
     if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
     if (g?.kind === 'draw') actions.commit(g.session.end());
+    // A click without dragging drops the selection.
+    if (g?.kind === 'select' && !g.moved) actions.select(null);
+    if (g?.kind === 'move') {
+      const { entry, to } = g.session.end();
+      actions.finishMove(entry, g.before, to);
+    }
   };
 
-  const cursor = panKey ? 'grab' : tool === 'eyedropper' ? 'copy' : 'crosshair';
+  const overSelection = useApp((s) => !!s.selection && !!s.hover && contains(s.selection, s.hover.x, s.hover.y));
+  const cursor = panKey ? 'grab' : tool === 'eyedropper' ? 'copy' : tool === 'select' && overSelection ? 'move' : 'crosshair';
 
   return (
     <div className="stage" ref={wrapRef}>

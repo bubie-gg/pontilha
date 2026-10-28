@@ -1,53 +1,92 @@
-import { type Doc, type Layer, markAllDirty } from './doc';
+import { type Doc, type Frame, type Layer, celOf, markAllDirty, showFrame } from './doc';
+import type { Rect } from './transform';
 
 export interface LayerState {
   layer: Layer;
   name: string;
   visible: boolean;
   opacity: number;
+  cels: Map<string, Uint32Array>;
+}
+
+/**
+ * Size, layers, frames and the frame on screen. Cels are shared, not copied: their
+ * pixels are tracked by pixel entries, and resizing swaps in new cels instead of
+ * changing the old ones.
+ */
+export interface DocState {
+  width: number;
+  height: number;
+  layers: LayerState[];
+  frames: Frame[];
+  frame: string;
 }
 
 export type Entry =
-  | { kind: 'pixels'; layer: Layer; indices: Uint32Array; before: Uint32Array; after: Uint32Array }
-  | { kind: 'layers'; before: LayerState[]; after: LayerState[]; activeBefore: string; activeAfter: string }
+  | { kind: 'pixels'; layer: Layer; frame: string; indices: Uint32Array; before: Uint32Array; after: Uint32Array }
+  | { kind: 'structure'; before: DocState; after: DocState; activeBefore: string; activeAfter: string }
+  /** The selection moving with the pixels it holds, so undo puts it back too. */
+  | { kind: 'selection'; before: Rect | null; after: Rect | null }
   | { kind: 'group'; entries: Entry[] };
 
-export function snapshotLayers(doc: Doc): LayerState[] {
-  return doc.layers.map((layer) => ({
-    layer,
-    name: layer.name,
-    visible: layer.visible,
-    opacity: layer.opacity,
-  }));
+/** What undo or redo touched, so the editor can show it: a layer to activate, a frame to go to, a selection. */
+export interface Focus {
+  layer?: string;
+  frame?: string;
+  /** Present only when the entry changed the selection; null means nothing selected. */
+  selection?: Rect | null;
 }
 
-function restoreLayers(doc: Doc, states: LayerState[]) {
-  doc.layers = states.map((s) => {
+export function snapshot(doc: Doc): DocState {
+  return {
+    width: doc.width,
+    height: doc.height,
+    layers: doc.layers.map((layer) => ({
+      layer,
+      name: layer.name,
+      visible: layer.visible,
+      opacity: layer.opacity,
+      cels: new Map(layer.cels),
+    })),
+    frames: doc.frames.map((f) => ({ ...f })),
+    frame: doc.frame,
+  };
+}
+
+function restore(doc: Doc, state: DocState) {
+  doc.width = state.width;
+  doc.height = state.height;
+  doc.layers = state.layers.map((s) => {
     s.layer.name = s.name;
     s.layer.visible = s.visible;
     s.layer.opacity = s.opacity;
+    s.layer.cels = new Map(s.cels);
     return s.layer;
   });
+  doc.frames = state.frames.map((f) => ({ ...f }));
+  showFrame(doc, state.frame);
 }
 
-/** Applies an entry in one direction and returns the layer that should become active, if any. */
-function apply(doc: Doc, entry: Entry, undo: boolean): string | undefined {
+/** Applies an entry in one direction and returns what it touched. */
+function apply(doc: Doc, entry: Entry, undo: boolean): Focus {
   switch (entry.kind) {
     case 'pixels': {
       const values = undo ? entry.before : entry.after;
-      const px = entry.layer.pixels;
+      const px = celOf(doc, entry.layer, entry.frame);
       for (let i = 0; i < entry.indices.length; i++) px[entry.indices[i]] = values[i];
       markAllDirty(entry.layer);
-      return undefined;
+      return { frame: entry.frame };
     }
-    case 'layers':
-      restoreLayers(doc, undo ? entry.before : entry.after);
-      return undo ? entry.activeBefore : entry.activeAfter;
+    case 'structure':
+      restore(doc, undo ? entry.before : entry.after);
+      return { layer: undo ? entry.activeBefore : entry.activeAfter, frame: doc.frame };
+    case 'selection':
+      return { selection: undo ? entry.before : entry.after };
     case 'group': {
-      let active: string | undefined;
+      const focus: Focus = {};
       const list = undo ? [...entry.entries].reverse() : entry.entries;
-      for (const e of list) active = apply(doc, e, undo) ?? active;
-      return active;
+      for (const e of list) Object.assign(focus, apply(doc, e, undo));
+      return focus;
     }
   }
 }
@@ -95,29 +134,29 @@ export class History {
   }
 
   /** Closes a group without recording it, reverting everything applied inside it. */
-  abortGroup(doc: Doc): { activeLayerId?: string } {
+  abortGroup(doc: Doc): Focus {
     if (this.groupDepth === 0) return {};
     this.groupDepth--;
     if (this.groupDepth > 0) return {};
     const entries = this.grouped;
     this.grouped = [];
-    let activeLayerId: string | undefined;
-    for (const entry of [...entries].reverse()) activeLayerId = apply(doc, entry, true) ?? activeLayerId;
-    return { activeLayerId };
+    const focus: Focus = {};
+    for (const entry of [...entries].reverse()) Object.assign(focus, apply(doc, entry, true));
+    return focus;
   }
 
-  undo(doc: Doc): { activeLayerId?: string } | null {
+  undo(doc: Doc): Focus | null {
     const entry = this.undoStack.pop();
     if (!entry) return null;
     this.redoStack.push(entry);
-    return { activeLayerId: apply(doc, entry, true) };
+    return apply(doc, entry, true);
   }
 
-  redo(doc: Doc): { activeLayerId?: string } | null {
+  redo(doc: Doc): Focus | null {
     const entry = this.redoStack.pop();
     if (!entry) return null;
     this.undoStack.push(entry);
-    return { activeLayerId: apply(doc, entry, false) };
+    return apply(doc, entry, false);
   }
 
   clear() {

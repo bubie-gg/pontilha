@@ -3,7 +3,7 @@ import { PixelEditor } from './editor';
 import type { Entry } from './history';
 import { type BrushShape, brushOffsets, floodFill, line, rectCells, snapToPerfectAngle } from './raster';
 
-export type ToolId = 'pencil' | 'eraser' | 'line' | 'rect' | 'fill' | 'eyedropper';
+export type ToolId = 'pencil' | 'eraser' | 'line' | 'rect' | 'fill' | 'eyedropper' | 'select';
 
 export interface ToolSettings {
   brushSize: number;
@@ -33,7 +33,7 @@ export interface Session {
 }
 
 export function startSession(
-  tool: Exclude<ToolId, 'eyedropper'>,
+  tool: Exclude<ToolId, 'eyedropper' | 'select'>,
   doc: Doc,
   layer: Layer,
   color: number,
