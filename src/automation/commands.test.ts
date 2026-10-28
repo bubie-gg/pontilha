@@ -344,3 +344,43 @@ describe('colours', () => {
     expect((await execute('palette.ramp', { steps: 40 })).ok).toBe(false);
   });
 });
+
+/** Rows with R for red and B for blue, whatever letters doc.ascii picked. */
+async function rgRows() {
+  const { rows, legend } = await ascii();
+  const name: Record<string, string> = { '#ff0000': 'R', '#0000ff': 'B' };
+  return rows.map((row) => [...row].map((ch) => (ch === '.' ? '.' : (name[legend[ch]] ?? '?'))).join(''));
+}
+
+describe('magic wand', () => {
+  // Two red blobs and a blue pixel between them on row 0.
+  async function setup() {
+    await run('draw.pixels', { pixels: [[0, 0], [1, 0], [0, 1], [3, 0], [5, 0], [6, 0]], color: '#ff0000' });
+    await run('draw.pixels', { pixels: [[4, 0]], color: '#0000ff' });
+  }
+
+  it('selects the connected area, or the colour everywhere', async () => {
+    await setup();
+    expect((await run('select.color', { x: 0, y: 0 })).selection).toEqual({ x: 0, y: 0, w: 2, h: 2, pixels: 3, shaped: true });
+    const all = (await run('select.color', { x: 0, y: 0, contiguous: false })).selection as { pixels: number };
+    expect(all.pixels).toBe(6);
+    const added = (await run('select.color', { x: 4, y: 0, add: true })).selection as { pixels: number };
+    expect(added.pixels).toBe(7);
+  });
+
+  it('moves and flips only the selected pixels', async () => {
+    await setup();
+    await run('select.color', { x: 3, y: 0 }); // the lone red pixel at x 3
+    await run('select.color', { x: 0, y: 0, add: true }); // plus the L in the corner
+    await run('selection.move', { dx: 0, dy: 2 });
+    // Blue at (4, 0) and the right blob stay; the selected red pixels drop two rows.
+    expect((await rgRows()).slice(0, 4)).toEqual(['....BRR.', '........', 'RR.R....', 'R.......']);
+    actions.undo();
+    expect((await rgRows())[0]).toBe('RR.RBRR.');
+    expect((await run('doc.inspect')).selection).toMatchObject({ pixels: 4, shaped: true });
+
+    await run('select.color', { x: 0, y: 0 });
+    await run('selection.flip', { axis: 'horizontal' });
+    expect((await rgRows()).slice(0, 2)).toEqual(['RR.RBRR.', '.R......']);
+  });
+});

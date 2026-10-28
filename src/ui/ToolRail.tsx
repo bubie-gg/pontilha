@@ -5,6 +5,7 @@ import { Icon, type IconName } from './icons';
 
 const TOOLS: Array<{ id: ToolId; icon: IconName; label: string; key: string }> = [
   { id: 'select', icon: 'select', label: 'Seleção', key: 'M' },
+  { id: 'wand', icon: 'wand', label: 'Varinha mágica', key: 'W' },
   { id: 'pencil', icon: 'pencil', label: 'Lápis', key: 'B' },
   { id: 'eraser', icon: 'eraser', label: 'Borracha', key: 'E' },
   { id: 'line', icon: 'line', label: 'Linha', key: 'L' },

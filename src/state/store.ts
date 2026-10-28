@@ -17,24 +17,29 @@ import {
 } from '../core/doc';
 import { PixelEditor } from '../core/editor';
 import { type ColorScope, scopeCels } from '../core/palette';
+import { floodFill } from '../core/raster';
 import { scaleNearest } from '../core/png';
 import { type DocState, type Entry, type Focus, History, snapshot } from '../core/history';
 import {
   type Anchor,
   type Flip,
   type Rect,
+  type Selection,
   type Turn,
   anchorOffset,
   clearRegion,
   clipRect,
+  clipSelection,
   contentBounds,
-  copyRegion,
+  copySelected,
   flipRegion,
   relocate,
   rotateRegion,
-  sameRect,
+  sameSelection,
+  selectionFromIndices,
   shiftCel,
   turnedRect,
+  unionSelection,
 } from '../core/transform';
 import { DEFAULT_PALETTE } from '../core/palette';
 import { DEFAULT_SETTINGS, type ToolId, type ToolSettings } from '../core/tools';
@@ -61,7 +66,8 @@ interface ConfirmRequest {
 /** Copied pixels and where they came from, so pasting puts them back in the same place. */
 export interface Clip {
   pixels: Uint32Array;
-  rect: Rect;
+  /** Where the pixels came from, with the selection's shape. */
+  rect: Selection;
 }
 
 /** Which layer and cel a selection operation works on; by default the active layer in the frame on screen. */
@@ -109,8 +115,8 @@ export interface AppState {
   loopMode: 'loop' | 'pingpong';
   /** Shows the neighbouring frames faintly under the one being edited. */
   onionSkin: boolean;
-  /** Area that selection operations act on, or null for none. Always inside the image. */
-  selection: Rect | null;
+  /** Pixels that selection operations act on, or null for none. Always inside the image. */
+  selection: Selection | null;
   clipboard: Clip | null;
 }
 
@@ -227,24 +233,26 @@ function defaultTarget(): Target {
 }
 
 /** Records a pixel change together with the selection it leaves behind, as one undo step. */
-function recordSelectionEdit(entry: Entry | null, before: Rect | null, after: Rect | null) {
+function recordSelectionEdit(entry: Entry | null, before: Selection | null, after: Selection | null) {
   const entries: Entry[] = entry ? [entry] : [];
-  if (!sameRect(before, after)) entries.push({ kind: 'selection', before, after });
+  if (!sameSelection(before, after)) entries.push({ kind: 'selection', before, after });
   if (entries.length === 0) return;
   recorded(entries.length === 1 ? entries[0] : { kind: 'group', entries }, { selection: after });
 }
 
 /**
  * Replaces the selected pixels (or the whole layer when nothing is selected) with
- * `make(pixels)`, placed at the rectangle it returns. The selection follows them.
+ * `make(pixels)`, placed at the rectangle it returns. The selection follows them,
+ * its shape transformed the same way.
  */
 function transformRegion(target: Target, make: (pixels: Uint32Array, region: Rect) => { pixels: Uint32Array; to: Rect }) {
   const { doc, selection } = get();
-  const region = selection ?? { x: 0, y: 0, w: doc.width, h: doc.height };
-  const { pixels, to } = make(copyRegion(target.cel, doc.width, region), region);
+  const region: Selection = selection ?? { x: 0, y: 0, w: doc.width, h: doc.height };
+  const { pixels, to } = make(copySelected(target.cel, doc.width, region), region);
   const editor = new PixelEditor(target.layer, doc.width, doc.height, target.cel);
   relocate(editor, region, pixels, to);
-  recordSelectionEdit(editor.toEntry(), selection, selection && clipRect(to, doc.width, doc.height));
+  const moved: Selection | null = selection && { ...to, mask: selection.mask && make(selection.mask, region).pixels };
+  recordSelectionEdit(editor.toEntry(), selection, moved && clipSelection(moved, doc.width, doc.height));
 }
 
 function frameById(id?: string): Frame {
@@ -558,10 +566,23 @@ export const actions = {
 
   // Selection
 
-  /** Selects a rectangle (clipped to the image), or nothing. Not an undo step, like picking a layer. */
-  select(rect: Rect | null) {
+  /**
+   * Selects a rectangle or shape (clipped to the image), or nothing; `add` joins it to
+   * what is already selected. Not an undo step, like picking a layer.
+   */
+  select(selection: Selection | null, add = false, base = get().selection) {
     const { doc } = get();
-    set({ selection: rect && clipRect(rect, doc.width, doc.height) });
+    const next = selection && clipSelection(selection, doc.width, doc.height);
+    set({ selection: add && base && next ? unionSelection(base, next, doc.width) : add ? (next ?? base) : next });
+  },
+
+  /** Magic wand: selects the pixels of the colour at (x, y), touching it or anywhere in the layer. */
+  selectColor(x: number, y: number, opts: { contiguous?: boolean; add?: boolean } = {}, target = defaultTarget()): Selection | null {
+    const { doc } = get();
+    if (x < 0 || y < 0 || x >= doc.width || y >= doc.height) return get().selection;
+    const indices = floodFill(target.cel, doc.width, doc.height, x, y, opts.contiguous ?? true);
+    actions.select(selectionFromIndices(indices, doc.width), opts.add);
+    return get().selection;
   },
 
   selectAll() {
@@ -602,8 +623,8 @@ export const actions = {
   /** Copies the selection (or the whole layer). Returns what was copied. */
   copy(target = defaultTarget()): Clip {
     const { doc, selection } = get();
-    const rect = selection ?? { x: 0, y: 0, w: doc.width, h: doc.height };
-    const clip = { pixels: copyRegion(target.cel, doc.width, rect), rect };
+    const rect: Selection = selection ?? { x: 0, y: 0, w: doc.width, h: doc.height };
+    const clip = { pixels: copySelected(target.cel, doc.width, rect), rect };
     set({ clipboard: clip });
     return clip;
   },
@@ -618,7 +639,7 @@ export const actions = {
   },
 
   /** Paints the clipboard where it was copied from (or at x, y) and selects it, ready to be dragged. */
-  paste(at: { x?: number; y?: number } = {}, target = defaultTarget()): Rect | null {
+  paste(at: { x?: number; y?: number } = {}, target = defaultTarget()): Selection | null {
     const { doc, selection, clipboard } = get();
     if (!clipboard) {
       actions.notify('Nada copiado ainda. Selecione uma área e use Ctrl+C.');
@@ -627,15 +648,15 @@ export const actions = {
     const to = { ...clipboard.rect, x: at.x ?? clipboard.rect.x, y: at.y ?? clipboard.rect.y };
     const editor = new PixelEditor(target.layer, doc.width, doc.height, target.cel);
     relocate(editor, null, clipboard.pixels, to);
-    const after = clipRect(to, doc.width, doc.height);
+    const after = clipSelection(to, doc.width, doc.height);
     recordSelectionEdit(editor.toEntry(), selection, after);
     return after;
   },
 
   /** Ends a drag of the selected pixels: records the move and where the selection landed. */
-  finishMove(entry: Entry | null, before: Rect, to: Rect) {
+  finishMove(entry: Entry | null, before: Selection, to: Selection) {
     const { doc } = get();
-    recordSelectionEdit(entry, before, clipRect(to, doc.width, doc.height));
+    recordSelectionEdit(entry, before, clipSelection(to, doc.width, doc.height));
     changed();
   },
 

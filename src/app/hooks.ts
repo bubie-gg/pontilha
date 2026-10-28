@@ -8,6 +8,7 @@ import { openFile, saveProject } from './fileActions';
 
 const TOOL_KEYS: Record<string, ToolId> = {
   m: 'select',
+  w: 'wand',
   b: 'pencil',
   e: 'eraser',
   l: 'line',

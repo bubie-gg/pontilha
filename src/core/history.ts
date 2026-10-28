@@ -1,5 +1,5 @@
 import { type Doc, type Frame, type Layer, celOf, markAllDirty, showFrame } from './doc';
-import type { Rect } from './transform';
+import type { Selection } from './transform';
 
 export interface LayerState {
   layer: Layer;
@@ -26,7 +26,7 @@ export type Entry =
   | { kind: 'pixels'; layer: Layer; frame: string; indices: Uint32Array; before: Uint32Array; after: Uint32Array }
   | { kind: 'structure'; before: DocState; after: DocState; activeBefore: string; activeAfter: string }
   /** The selection moving with the pixels it holds, so undo puts it back too. */
-  | { kind: 'selection'; before: Rect | null; after: Rect | null }
+  | { kind: 'selection'; before: Selection | null; after: Selection | null }
   | { kind: 'group'; entries: Entry[] };
 
 /** What undo or redo touched, so the editor can show it: a layer to activate, a frame to go to, a selection. */
@@ -34,7 +34,7 @@ export interface Focus {
   layer?: string;
   frame?: string;
   /** Present only when the entry changed the selection; null means nothing selected. */
-  selection?: Rect | null;
+  selection?: Selection | null;
 }
 
 export function snapshot(doc: Doc): DocState {

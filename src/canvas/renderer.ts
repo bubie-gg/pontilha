@@ -1,6 +1,7 @@
 import { toCss } from '../core/color';
 import { type Doc, composite, frameIndex } from '../core/doc';
 import { brushOffsets } from '../core/raster';
+import type { Selection } from '../core/transform';
 import type { AppState } from '../state/store';
 import { checkerTile, layerCanvas } from './layerCache';
 
@@ -119,22 +120,52 @@ function drawAxes(ctx: CanvasRenderingContext2D, s: AppState, dw: number, dh: nu
   }
 }
 
+/** The selection's edge on screen: its box, or the border between selected and unselected cells. */
+function selectionPath(r: Selection, view: AppState['view']): Path2D {
+  const sx = (x: number) => view.panX + Math.round((r.x + x) * view.zoom) - 0.5;
+  const sy = (y: number) => view.panY + Math.round((r.y + y) * view.zoom) - 0.5;
+  const path = new Path2D();
+  const mask = r.mask;
+  if (!mask) {
+    path.rect(sx(0), sy(0), sx(r.w) - sx(0) + 1, sy(r.h) - sy(0) + 1);
+    return path;
+  }
+  const on = (x: number, y: number) => x >= 0 && y >= 0 && x < r.w && y < r.h && mask[y * r.w + x] !== 0;
+  // Like the box above, lines sit just outside the selected cells: left and top edges
+  // half a pixel before the boundary, right and bottom ones half a pixel after it.
+  const line = (x0: number, y0: number, x1: number, y1: number) => {
+    path.moveTo(x0, y0);
+    path.lineTo(x1, y1);
+  };
+  for (let y = 0; y < r.h; y++) {
+    for (let x = 0; x < r.w; x++) {
+      if (!on(x, y)) continue;
+      const left = sx(x);
+      const right = sx(x + 1) + 1;
+      const top = sy(y);
+      const bottom = sy(y + 1) + 1;
+      if (!on(x, y - 1)) line(left, top, right, top);
+      if (!on(x, y + 1)) line(left, bottom, right, bottom);
+      if (!on(x - 1, y)) line(left, top, left, bottom);
+      if (!on(x + 1, y)) line(right, top, right, bottom);
+    }
+  }
+  return path;
+}
+
 /** Dashed black-and-white outline, readable over any colour. */
 function drawSelection(ctx: CanvasRenderingContext2D, s: AppState) {
-  const { selection: r, view } = s;
-  if (!r) return;
-  const x = view.panX + Math.round(r.x * view.zoom) - 0.5;
-  const y = view.panY + Math.round(r.y * view.zoom) - 0.5;
-  const w = Math.round(r.w * view.zoom) + 1;
-  const h = Math.round(r.h * view.zoom) + 1;
+  const { selection, view } = s;
+  if (!selection) return;
+  const path = selectionPath(selection, view);
   const dash = Math.max(3, Math.round(4 * view.dpr));
   ctx.lineWidth = 1;
   ctx.setLineDash([]);
   ctx.strokeStyle = 'rgba(16, 15, 22, 0.9)';
-  ctx.strokeRect(x, y, w, h);
+  ctx.stroke(path);
   ctx.setLineDash([dash, dash]);
   ctx.strokeStyle = '#ffffff';
-  ctx.strokeRect(x, y, w, h);
+  ctx.stroke(path);
   ctx.setLineDash([]);
 }
 

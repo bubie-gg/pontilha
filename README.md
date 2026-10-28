@@ -7,7 +7,7 @@ apps do ArtCraft. Nos dois casos, cada passo aparece na tela na hora.
 ## Usar
 
 - Abrir: `pontilha` (ou pelo lançador de apps).
-- Atalhos: M seleção, B lápis, E borracha, L linha, U retângulo, O elipse, G balde, I conta-gotas, X troca as
+- Atalhos: M seleção, W varinha mágica, B lápis, E borracha, L linha, U retângulo, O elipse, G balde, I conta-gotas, X troca as
   cores, `[` e `]` mudam o pincel, Alt segurado pega uma cor, Espaço e arrastar move a
   tela, Ctrl+Z/Ctrl+Shift+Z desfazem e refazem, Ctrl+S salva, Ctrl+E exporta (PNG, folha de sprites ou GIF).
 - Formato próprio: `.pontilha` (camadas, quadros e paleta). PNG exportado sem borrar, em
@@ -44,7 +44,9 @@ quadros, e Ctrl+Z desfaz:
 ## Seleção
 
 Com a ferramenta de seleção (M), arraste para selecionar um retângulo e arraste dentro
-dele para mover os pixels. A barra de opções e os atalhos agem na seleção, ou na camada
+dele para mover os pixels. A varinha mágica (W) seleciona pela cor: só a área conectada ao
+clique, ou a mesma cor na camada toda; a seleção segue a forma, e mover, espelhar, girar,
+copiar e apagar valem só para os pixels dela. Shift soma à seleção nas duas ferramentas. A barra de opções e os atalhos agem na seleção, ou na camada
 inteira quando nada está selecionado:
 
 - Com algo selecionado, setas movem 1 px (Shift+setas, 8 px). Shift+H e Shift+V espelham; Shift+R gira 90°.

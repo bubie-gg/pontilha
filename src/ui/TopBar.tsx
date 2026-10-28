@@ -1,6 +1,7 @@
 import { openFile, saveProject } from '../app/fileActions';
 import { onVisibleLayer } from '../app/hooks';
 import type { ToolId } from '../core/tools';
+import { selectedCount } from '../core/transform';
 import { actions, useApp } from '../state/store';
 import { IconButton, Segmented, Stepper, Toggle } from './controls';
 import { Mark } from './icons';
@@ -22,7 +23,11 @@ function SelectionOptions() {
   return (
     <>
       <span className="options-meta">
-        {selection ? `${selection.w} × ${selection.h} px em ${selection.x}, ${selection.y}` : 'Nada selecionado: as ações valem para a camada inteira'}
+        {!selection
+          ? 'Nada selecionado: as ações valem para a camada inteira'
+          : selection.mask
+            ? `${selectedCount(selection)} pixels numa área de ${selection.w} × ${selection.h} em ${selection.x}, ${selection.y}`
+            : `${selection.w} × ${selection.h} px em ${selection.x}, ${selection.y}`}
       </span>
       <div className="bar-group">
         <OptButton label="Espelhar ↔" title={`Espelha ${scope} na horizontal (Shift+H)`} onClick={edit(() => actions.flipSelection('horizontal'))} />
@@ -74,6 +79,21 @@ function ToolOptions() {
   switch (tool) {
     case 'select':
       return <SelectionOptions />;
+    case 'wand':
+      return (
+        <>
+          <Segmented
+            label="Alcance da varinha"
+            value={settings.wandContiguous ? 'area' : 'all'}
+            options={[
+              { value: 'area', label: 'Área conectada' },
+              { value: 'all', label: 'Mesma cor na camada toda' },
+            ]}
+            onChange={(v) => set({ wandContiguous: v === 'area' })}
+          />
+          <SelectionOptions />
+        </>
+      );
     case 'pencil':
     case 'eraser':
       return (
@@ -207,6 +227,7 @@ const TOOL_NAMES: Record<ToolId, string> = {
   fill: 'Balde',
   eyedropper: 'Conta-gotas',
   select: 'Seleção',
+  wand: 'Varinha mágica',
 };
 
 /** Options for the active tool, in their own row so they never get squeezed by the top bar. */

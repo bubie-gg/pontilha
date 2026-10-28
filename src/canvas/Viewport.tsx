@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { pixelAt, sampleComposite } from '../core/doc';
 import { type Session, startSession } from '../core/tools';
-import { type Rect, contains, rectBetween, startMove } from '../core/transform';
+import { type Selection, isSelected, rectBetween, startMove } from '../core/transform';
 import { type View, actions, activeLayer, useApp } from '../state/store';
 import { renderViewport } from './renderer';
 
@@ -9,10 +9,10 @@ type Gesture =
   | { kind: 'pan'; lastX: number; lastY: number }
   | { kind: 'draw'; session: Session }
   | { kind: 'pick'; secondary: boolean }
-  /** Dragging out a new selection from (x0, y0). */
-  | { kind: 'select'; x0: number; y0: number; moved: boolean }
-  /** Dragging the selected pixels. */
-  | { kind: 'move'; session: ReturnType<typeof startMove>; before: Rect };
+  /** Dragging out a new selection from (x0, y0), added to `base` when Shift was held. */
+  | { kind: 'select'; x0: number; y0: number; moved: boolean; base: Selection | null; add: boolean }
+  /** Dragging the selected pixels; a wand press that never moves becomes a wand click at (x, y). */
+  | { kind: 'move'; session: ReturnType<typeof startMove>; before: Selection; wandAt: { x: number; y: number } | null };
 
 /** Wheel distance (in deltaY units) that counts as one zoom step; keeps touchpads from racing. */
 const WHEEL_STEP = 60;
@@ -105,16 +105,15 @@ export function Viewport() {
       gesture.current = { kind: 'pick', secondary };
       return;
     }
-    if (s.tool === 'select') {
+    if (s.tool === 'select' || s.tool === 'wand') {
       if (secondary) return;
-      if (s.selection && contains(s.selection, x, y)) {
-        if (!activeLayer().visible) {
-          actions.notify('Essa camada está oculta. Mostre a camada para mover os pixels dela.', 'error');
-          return;
-        }
-        gesture.current = { kind: 'move', session: startMove(s.doc, activeLayer(), s.selection, x, y), before: s.selection };
+      const wandAt = s.tool === 'wand' ? { x, y } : null;
+      if (s.selection && !e.shiftKey && isSelected(s.selection, x, y) && activeLayer().visible) {
+        gesture.current = { kind: 'move', session: startMove(s.doc, activeLayer(), s.selection, x, y), before: s.selection, wandAt };
+      } else if (wandAt) {
+        actions.selectColor(x, y, { contiguous: s.settings.wandContiguous, add: e.shiftKey });
       } else {
-        gesture.current = { kind: 'select', x0: x, y0: y, moved: false };
+        gesture.current = { kind: 'select', x0: x, y0: y, moved: false, base: s.selection, add: e.shiftKey };
       }
       return;
     }
@@ -153,7 +152,7 @@ export function Viewport() {
       pickColor(here.x, here.y, g.secondary);
     } else if (g?.kind === 'select') {
       if (here.x !== g.x0 || here.y !== g.y0) g.moved = true;
-      if (g.moved) actions.select(rectBetween(g.x0, g.y0, here.x, here.y));
+      if (g.moved) actions.select(rectBetween(g.x0, g.y0, here.x, here.y), g.add, g.base);
     } else if (g?.kind === 'move') {
       // The selection outline travels with the pixels, even past the edge of the image.
       useApp.setState({ selection: g.session.move(here.x, here.y) });
@@ -167,16 +166,22 @@ export function Viewport() {
     gesture.current = null;
     if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
     if (g?.kind === 'draw') actions.commit(g.session.end());
-    // A click without dragging drops the selection.
-    if (g?.kind === 'select' && !g.moved) actions.select(null);
+    // A click without dragging drops the selection (Shift-click keeps it).
+    if (g?.kind === 'select' && !g.moved && !g.add) actions.select(null);
     if (g?.kind === 'move') {
       const { entry, to } = g.session.end();
-      actions.finishMove(entry, g.before, to);
+      if (to === g.before && g.wandAt) {
+        const s = useApp.getState();
+        actions.selectColor(g.wandAt.x, g.wandAt.y, { contiguous: s.settings.wandContiguous });
+      } else {
+        actions.finishMove(entry, g.before, to);
+      }
     }
   };
 
-  const overSelection = useApp((s) => !!s.selection && !!s.hover && contains(s.selection, s.hover.x, s.hover.y));
-  const cursor = panKey ? 'grab' : tool === 'eyedropper' ? 'copy' : tool === 'select' && overSelection ? 'move' : 'crosshair';
+  const overSelection = useApp((s) => !!s.selection && !!s.hover && isSelected(s.selection, s.hover.x, s.hover.y));
+  const selecting = tool === 'select' || tool === 'wand';
+  const cursor = panKey ? 'grab' : tool === 'eyedropper' ? 'copy' : selecting && overSelection ? 'move' : 'crosshair';
 
   return (
     <div className="stage" ref={wrapRef}>

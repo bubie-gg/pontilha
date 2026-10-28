@@ -10,6 +10,15 @@ export interface Rect {
   h: number;
 }
 
+/**
+ * What is selected: a rectangle, optionally narrowed by a mask of w × h cells
+ * (non-zero = selected), as the magic wand makes. Masks are never changed in
+ * place, so history can keep old selections by reference.
+ */
+export interface Selection extends Rect {
+  mask?: Uint32Array;
+}
+
 export type Flip = 'horizontal' | 'vertical';
 export type Turn = 'cw' | 'ccw';
 
@@ -31,6 +40,85 @@ export const contains = (r: Rect, x: number, y: number) => x >= r.x && y >= r.y 
 
 export const sameRect = (a: Rect | null, b: Rect | null) =>
   a === b || (!!a && !!b && a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h);
+
+/** Same selection: the same object, or two plain rectangles that match. */
+export const sameSelection = (a: Selection | null, b: Selection | null) =>
+  a === b || (!!a && !!b && !a.mask && !b.mask && sameRect(a, b));
+
+/** Whether pixel (x, y) is selected. */
+export const isSelected = (s: Selection, x: number, y: number) =>
+  contains(s, x, y) && (!s.mask || s.mask[(y - s.y) * s.w + (x - s.x)] !== 0);
+
+/** How many pixels a selection holds. */
+export function selectedCount(s: Selection): number {
+  if (!s.mask) return s.w * s.h;
+  let n = 0;
+  for (const m of s.mask) if (m) n++;
+  return n;
+}
+
+/** A selection holding exactly the pixels at `indices` of a `width`-wide image, or null for none. */
+export function selectionFromIndices(indices: Iterable<number>, width: number): Selection | null {
+  const list = [...indices];
+  if (list.length === 0) return null;
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -1;
+  let y1 = -1;
+  for (const i of list) {
+    const x = i % width;
+    const y = (i - x) / width;
+    x0 = Math.min(x0, x);
+    y0 = Math.min(y0, y);
+    x1 = Math.max(x1, x);
+    y1 = Math.max(y1, y);
+  }
+  const w = x1 - x0 + 1;
+  const h = y1 - y0 + 1;
+  if (list.length === w * h) return { x: x0, y: y0, w, h };
+  const mask = new Uint32Array(w * h);
+  for (const i of list) {
+    const x = i % width;
+    mask[((i - x) / width - y0) * w + (x - x0)] = 1;
+  }
+  return { x: x0, y: y0, w, h, mask };
+}
+
+/** Every selected pixel as an index into a `width`-wide image. */
+function selectedIndices(s: Selection, width: number): number[] {
+  const out: number[] = [];
+  for (let y = 0; y < s.h; y++) {
+    for (let x = 0; x < s.w; x++) if (!s.mask || s.mask[y * s.w + x]) out.push((s.y + y) * width + s.x + x);
+  }
+  return out;
+}
+
+/**
+ * The part of a selection inside a width × height image, shrunk to the box around
+ * what is still selected; null when nothing is left.
+ */
+export function clipSelection(s: Selection, width: number, height: number): Selection | null {
+  const r = clipRect(s, width, height);
+  if (!r) return null;
+  if (!s.mask) return r;
+  const inside: number[] = [];
+  for (let y = r.y; y < r.y + r.h; y++) {
+    for (let x = r.x; x < r.x + r.w; x++) if (s.mask[(y - s.y) * s.w + (x - s.x)]) inside.push(y * width + x);
+  }
+  return selectionFromIndices(inside, width);
+}
+
+/** Everything in either selection; both must lie inside a `width`-wide image. */
+export function unionSelection(a: Selection, b: Selection, width: number): Selection {
+  return selectionFromIndices(new Set([...selectedIndices(a, width), ...selectedIndices(b, width)]), width)!;
+}
+
+/** Pixels of `cel` inside the selection's box, with unselected cells left transparent. */
+export function copySelected(cel: Uint32Array, width: number, s: Selection): Uint32Array {
+  const out = copyRegion(cel, width, s);
+  if (s.mask) for (let i = 0; i < out.length; i++) if (!s.mask[i]) out[i] = 0;
+  return out;
+}
 
 /**
  * A copy of a w × h cel on a new nw × nh canvas, with old pixel (x, y) at (x + dx, y + dy).
@@ -120,8 +208,11 @@ export function turnedRect(r: Rect): Rect {
   return { x: r.x + Math.floor((r.w - r.h) / 2), y: r.y + Math.floor((r.h - r.w) / 2), w: r.h, h: r.w };
 }
 
-export function clearRegion(editor: PixelEditor, r: Rect) {
-  for (let y = r.y; y < r.y + r.h; y++) for (let x = r.x; x < r.x + r.w; x++) editor.set(x, y, 0);
+/** Empties the selected pixels (every pixel of a plain rectangle). */
+export function clearRegion(editor: PixelEditor, s: Selection) {
+  for (let y = 0; y < s.h; y++) {
+    for (let x = 0; x < s.w; x++) if (!s.mask || s.mask[y * s.w + x]) editor.set(s.x + x, s.y + y, 0);
+  }
 }
 
 /**
@@ -129,7 +220,7 @@ export function clearRegion(editor: PixelEditor, r: Rect) {
  * don't paint, so what was under the destination shows through them. Anything
  * outside the image is dropped.
  */
-export function relocate(editor: PixelEditor, from: Rect | null, pixels: Uint32Array, to: Rect) {
+export function relocate(editor: PixelEditor, from: Selection | null, pixels: Uint32Array, to: Rect) {
   if (from) clearRegion(editor, from);
   for (let y = 0; y < to.h; y++) {
     for (let x = 0; x < to.w; x++) {
@@ -144,19 +235,19 @@ export function relocate(editor: PixelEditor, from: Rect | null, pixels: Uint32A
  * until release. Nothing under the path is harmed: every move starts from the
  * pixels as they were before the drag.
  */
-export function startMove(doc: Doc, layer: Layer, region: Rect, x: number, y: number) {
+export function startMove(doc: Doc, layer: Layer, region: Selection, x: number, y: number) {
   const editor = new PixelEditor(layer, doc.width, doc.height);
-  const pixels = copyRegion(layer.pixels, doc.width, region);
-  let to = region;
+  const pixels = copySelected(layer.pixels, doc.width, region);
+  let to: Selection = region;
   return {
-    /** Moves the lifted pixels so they follow the pointer; returns where they are now. */
-    move(px: number, py: number): Rect {
+    /** Moves the lifted pixels so they follow the pointer; returns where they and their selection are now. */
+    move(px: number, py: number): Selection {
       to = { ...region, x: region.x + px - x, y: region.y + py - y };
       editor.revertAll();
       relocate(editor, region, pixels, to);
       return to;
     },
-    end(): { entry: Entry | null; to: Rect } {
+    end(): { entry: Entry | null; to: Selection } {
       return { entry: editor.toEntry(), to };
     },
   };

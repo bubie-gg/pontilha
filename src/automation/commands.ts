@@ -21,7 +21,7 @@ import {
   starCells,
 } from '../core/raster';
 import type { ToolId } from '../core/tools';
-import { ANCHORS, type Anchor, contentBounds } from '../core/transform';
+import { ANCHORS, type Anchor, type Selection, contentBounds, selectedCount } from '../core/transform';
 import { decodeImage } from '../platform/files';
 import { type Target, ZOOM_LEVELS, actions, activeLayer, useApp } from '../state/store';
 
@@ -126,6 +126,13 @@ function selectionTarget(p: Params): Target {
   return { layer, cel: celOf(doc, layer, targetFrame(p).id) };
 }
 
+/** A selection for JSON: its box and how many pixels it holds; `shaped` when it isn't the whole box. */
+function selectionInfo(sel: Selection | null) {
+  return sel && { x: sel.x, y: sel.y, w: sel.w, h: sel.h, pixels: selectedCount(sel), shaped: !!sel.mask };
+}
+
+const currentSelection = () => selectionInfo(useApp.getState().selection);
+
 function frameInfo(frame: Frame, index: number) {
   return { id: frame.id, number: index + 1, duration: frame.duration };
 }
@@ -158,7 +165,7 @@ function inspect() {
     layers: s.doc.layers.map(layerInfo).reverse(),
     frame: frameIndex(s.doc) + 1,
     frames: s.doc.frames.map(frameInfo),
-    selection: s.selection,
+    selection: selectionInfo(s.selection),
     primary: toHex(s.primary),
     secondary: toHex(s.secondary),
     palette: s.palette.map(toHex),
@@ -533,16 +540,31 @@ export const COMMANDS: Record<string, Command> = {
   // Selection. Without a selection, move, flip, rotate, copy and cut act on the whole layer.
 
   'select.rect': {
-    summary: 'Seleciona um retângulo (cortado nas bordas da imagem).',
-    params: 'x, y, w, h',
+    summary: 'Seleciona um retângulo (cortado nas bordas da imagem). add true soma à seleção atual.',
+    params: 'x, y, w, h, add?',
     run: (p) => {
       const w = int(p, 'w');
       const h = int(p, 'h');
       if (w < 1 || h < 1) fail('w e h precisam ser pelo menos 1');
-      actions.select({ x: int(p, 'x'), y: int(p, 'y'), w, h });
+      const before = useApp.getState().selection;
+      actions.select({ x: int(p, 'x'), y: int(p, 'y'), w, h }, bool(p, 'add', false));
       const { selection } = useApp.getState();
-      if (!selection) fail('o retângulo fica fora da imagem');
-      return { selection };
+      if (!selection || selection === before) fail('o retângulo fica fora da imagem');
+      return { selection: selectionInfo(selection) };
+    },
+  },
+
+  'select.color': {
+    summary:
+      'Varinha mágica: seleciona os pixels da cor em (x, y), só a área conectada a ele (padrão) ou com contiguous false a mesma cor na camada toda. add true soma à seleção atual. Lê a camada e o quadro indicados.',
+    params: 'x, y, contiguous?, add?, layer?, frame?',
+    run: (p) => {
+      const { doc } = useApp.getState();
+      const x = int(p, 'x');
+      const y = int(p, 'y');
+      if (x < 0 || y < 0 || x >= doc.width || y >= doc.height) fail(`(${x}, ${y}) fica fora da imagem`);
+      const selection = actions.selectColor(x, y, { contiguous: bool(p, 'contiguous', true), add: bool(p, 'add', false) }, selectionTarget(p));
+      return { selection: selectionInfo(selection) };
     },
   },
 
@@ -551,7 +573,7 @@ export const COMMANDS: Record<string, Command> = {
     params: '',
     run: () => {
       actions.selectAll();
-      return { selection: useApp.getState().selection };
+      return { selection: currentSelection() };
     },
   },
 
@@ -569,7 +591,7 @@ export const COMMANDS: Record<string, Command> = {
     params: 'dx, dy, layer?, frame?',
     run: (p) => {
       actions.moveSelection(int(p, 'dx', 0), int(p, 'dy', 0), selectionTarget(p));
-      return { selection: useApp.getState().selection };
+      return { selection: currentSelection() };
     },
   },
 
@@ -580,7 +602,7 @@ export const COMMANDS: Record<string, Command> = {
       const axis = text(p, 'axis');
       if (axis !== 'horizontal' && axis !== 'vertical') fail('axis precisa ser "horizontal" ou "vertical"');
       actions.flipSelection(axis, selectionTarget(p));
-      return { selection: useApp.getState().selection };
+      return { selection: currentSelection() };
     },
   },
 
@@ -591,7 +613,7 @@ export const COMMANDS: Record<string, Command> = {
       const direction = text(p, 'direction');
       if (direction !== 'cw' && direction !== 'ccw') fail('direction precisa ser "cw" (horário) ou "ccw" (anti-horário)');
       if (!actions.rotateSelection(direction, selectionTarget(p))) fail('a imagem não é quadrada; selecione a área a girar');
-      return { selection: useApp.getState().selection };
+      return { selection: currentSelection() };
     },
   },
 
@@ -601,7 +623,7 @@ export const COMMANDS: Record<string, Command> = {
     run: (p) => {
       if (!useApp.getState().selection) fail('nada selecionado; use select.rect antes, ou layer.clear para a camada toda');
       actions.clearSelection(selectionTarget(p));
-      return { selection: useApp.getState().selection };
+      return { selection: currentSelection() };
     },
   },
 
@@ -609,13 +631,13 @@ export const COMMANDS: Record<string, Command> = {
     summary: 'Copia os pixels selecionados de uma camada e quadro.',
     params: 'layer?, frame?',
     readOnly: true,
-    run: (p) => ({ copied: actions.copy(selectionTarget(p)).rect }),
+    run: (p) => ({ copied: selectionInfo(actions.copy(selectionTarget(p)).rect) }),
   },
 
   'clipboard.cut': {
     summary: 'Copia e apaga os pixels selecionados.',
     params: 'layer?, frame?',
-    run: (p) => ({ copied: actions.cut(selectionTarget(p)).rect }),
+    run: (p) => ({ copied: selectionInfo(actions.cut(selectionTarget(p)).rect) }),
   },
 
   'clipboard.paste': {
@@ -625,7 +647,7 @@ export const COMMANDS: Record<string, Command> = {
     run: (p) => {
       if (!useApp.getState().clipboard) fail('nada copiado ainda; use clipboard.copy antes');
       const at = { x: has(p, 'x') ? int(p, 'x') : undefined, y: has(p, 'y') ? int(p, 'y') : undefined };
-      return { selection: actions.paste(at, selectionTarget(p)) };
+      return { selection: selectionInfo(actions.paste(at, selectionTarget(p))) };
     },
   },
 

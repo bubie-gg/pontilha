@@ -4,7 +4,7 @@ import type { Entry } from './history';
 import { type BrushShape, brushOffsets, ellipseCells, floodFill, line, rectCells, snapToPerfectAngle } from './raster';
 import { rectBetween } from './transform';
 
-export type ToolId = 'pencil' | 'eraser' | 'line' | 'rect' | 'ellipse' | 'fill' | 'eyedropper' | 'select';
+export type ToolId = 'pencil' | 'eraser' | 'line' | 'rect' | 'ellipse' | 'fill' | 'eyedropper' | 'select' | 'wand';
 
 /** Mirror lines through the centre of the image: left-right, top-bottom, or both. */
 export type Symmetry = 'none' | 'vertical' | 'horizontal' | 'both';
@@ -19,6 +19,8 @@ export interface ToolSettings {
   rectFilled: boolean;
   ellipseFilled: boolean;
   fillContiguous: boolean;
+  /** Magic wand takes only the area touching the click, not the colour everywhere. */
+  wandContiguous: boolean;
   sampleAllLayers: boolean;
   /** Painting tools repeat every pixel in its mirror images. */
   symmetry: Symmetry;
@@ -32,6 +34,7 @@ export const DEFAULT_SETTINGS: ToolSettings = {
   rectFilled: false,
   ellipseFilled: false,
   fillContiguous: true,
+  wandContiguous: true,
   sampleAllLayers: true,
   symmetry: 'none',
 };
@@ -89,7 +92,7 @@ export interface Session {
 }
 
 export function startSession(
-  tool: Exclude<ToolId, 'eyedropper' | 'select'>,
+  tool: Exclude<ToolId, 'eyedropper' | 'select' | 'wand'>,
   doc: Doc,
   layer: Layer,
   color: number,

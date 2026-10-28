@@ -12,7 +12,8 @@ const HINTS: Record<ToolId, string> = {
   ellipse: 'Shift desenha um círculo.',
   fill: 'Botão direito preenche com a cor secundária.',
   eyedropper: 'Botão direito define a cor secundária.',
-  select: 'Arraste para selecionar; arraste dentro para mover. Setas movem 1 px, Shift+setas 8 px.',
+  select: 'Arraste para selecionar; arraste dentro para mover. Shift soma à seleção. Setas movem 1 px, Shift+setas 8 px.',
+  wand: 'Clique numa cor para selecionar; Shift+clique soma. Arraste dentro da seleção para mover.',
 };
 
 export function StatusBar() {
