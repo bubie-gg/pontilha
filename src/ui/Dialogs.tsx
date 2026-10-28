@@ -12,7 +12,8 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
-    ref.current?.querySelector<HTMLElement>('[data-autofocus], button, input')?.focus();
+    const root = ref.current;
+    (root?.querySelector<HTMLElement>('[data-autofocus]') ?? root?.querySelector<HTMLElement>('button, input'))?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
@@ -569,13 +570,18 @@ function RampDialog() {
 function ConfirmDialog() {
   const request = useApp((s) => s.confirm)!;
   return (
-    <Modal title="Confirmar" onClose={() => request.resolve(false)}>
+    <Modal title={request.title ?? 'Confirmar'} onClose={() => request.resolve(false)}>
       <p className="modal-text">{request.message}</p>
       <div className="modal-actions">
-        <button type="button" className="btn px" data-autofocus onClick={() => request.resolve(false)}>
-          Voltar
+        <button type="button" className="btn px" data-autofocus={request.tone === 'danger' || undefined} onClick={() => request.resolve(false)}>
+          {request.cancelLabel ?? 'Voltar'}
         </button>
-        <button type="button" className="btn btn-danger px" onClick={() => request.resolve(true)}>
+        <button
+          type="button"
+          className={`btn ${request.tone === 'danger' ? 'btn-danger' : 'btn-primary'} px`}
+          data-autofocus={request.tone === 'safe' || undefined}
+          onClick={() => request.resolve(true)}
+        >
           {request.confirmLabel}
         </button>
       </div>

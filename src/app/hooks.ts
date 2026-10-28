@@ -5,6 +5,7 @@ import type { ToolId } from '../core/tools';
 import { isDesktop } from '../platform/files';
 import { actions, activeLayer, useApp } from '../state/store';
 import { openFile, saveProject } from './fileActions';
+import { clearRecovery } from './recovery';
 
 const TOOL_KEYS: Record<string, ToolId> = {
   m: 'select',
@@ -253,6 +254,8 @@ export function useWindowIntegration() {
         const ok = await actions.confirm('Há alterações não salvas. Fechar o Pontilha mesmo assim?', 'Fechar sem salvar');
         if (!ok) return;
         closing = true;
+        // Closing without saving on purpose: don't offer this work back next time.
+        await clearRecovery();
         await win.destroy();
       })
       .then((fn) => {

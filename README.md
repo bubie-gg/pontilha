@@ -47,6 +47,13 @@ quadros, e Ctrl+Z desfaz:
 - Recortar: cortar as bordas vazias em volta da arte, ou recortar na seleção (também na
   barra da ferramenta Seleção).
 
+## Salvamento automático
+
+Enquanto há alterações não salvas, o Pontilha guarda uma cópia por minuto em
+`~/.config/pontilha/recovery.pontilha`. Salvar, ou fechar escolhendo não salvar, apaga a
+cópia. Se o app fechar de outro jeito (travou, foi encerrado), na próxima abertura ele
+oferece recuperar o trabalho.
+
 ## Seleção
 
 Com a ferramenta de seleção (M), arraste para selecionar um retângulo e arraste dentro

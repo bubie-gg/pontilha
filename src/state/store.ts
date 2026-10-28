@@ -60,6 +60,11 @@ export interface View {
 interface ConfirmRequest {
   message: string;
   confirmLabel: string;
+  /** Defaults to "Voltar". */
+  cancelLabel?: string;
+  title?: string;
+  /** Confirming loses something (the default), or confirming is the safe choice. */
+  tone: 'danger' | 'safe';
   resolve: (ok: boolean) => void;
 }
 
@@ -281,12 +286,19 @@ export const actions = {
     set({ notice: { text, tone, id: Date.now() } });
   },
 
-  confirm(message: string, confirmLabel: string): Promise<boolean> {
+  confirm(
+    message: string,
+    confirmLabel: string,
+    opts: { cancelLabel?: string; title?: string; tone?: ConfirmRequest['tone'] } = {},
+  ): Promise<boolean> {
     return new Promise((resolve) => {
       set({
         confirm: {
           message,
           confirmLabel,
+          cancelLabel: opts.cancelLabel,
+          title: opts.title,
+          tone: opts.tone ?? 'danger',
           resolve: (ok) => {
             set({ confirm: null });
             resolve(ok);

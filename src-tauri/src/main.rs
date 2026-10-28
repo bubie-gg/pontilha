@@ -48,6 +48,36 @@ fn read_file(path: String) -> Result<Response, String> {
         .map_err(|e| format!("{path}: {e}"))
 }
 
+/// Autosaved copy of unsaved work, so a crash or a forced close doesn't lose it.
+fn recovery_paths() -> (PathBuf, PathBuf) {
+    let dir = control::config_dir();
+    (dir.join("recovery.pontilha"), dir.join("recovery.json"))
+}
+
+#[tauri::command]
+fn recovery_write(project: String, meta: String) -> Result<(), String> {
+    let (project_path, meta_path) = recovery_paths();
+    if let Some(dir) = project_path.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+    }
+    write_atomic(&project_path, project.as_bytes()).map_err(|e| e.to_string())?;
+    write_atomic(&meta_path, meta.as_bytes()).map_err(|e| e.to_string())
+}
+
+/// The autosaved project and its description, or null when there is nothing to recover.
+#[tauri::command]
+fn recovery_read() -> Option<(String, String)> {
+    let (project_path, meta_path) = recovery_paths();
+    Some((std::fs::read_to_string(project_path).ok()?, std::fs::read_to_string(meta_path).ok()?))
+}
+
+#[tauri::command]
+fn recovery_clear() {
+    let (project_path, meta_path) = recovery_paths();
+    let _ = std::fs::remove_file(project_path);
+    let _ = std::fs::remove_file(meta_path);
+}
+
 fn main() {
     // `pontilha mcp`, `pontilha status`… talk to an open window instead of opening one.
     if cli::requested() {
@@ -63,6 +93,9 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             read_file,
             write_file,
+            recovery_write,
+            recovery_read,
+            recovery_clear,
             control::control_ready,
             control::control_reply,
             control::control_info,
