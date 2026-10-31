@@ -1,0 +1,348 @@
+{
+ "name": "entrance_pad.2x2",
+ "description": "Plataforma de entrada (spawn) com seta para a frente. 3 quadros: o anel pulsa (tag \"pulso\", ida e volta).",
+ "anchor": {
+  "x": 70.0,
+  "y": 80
+ },
+ "steps": [
+  {
+   "id": "doc.new",
+   "params": {
+    "width": 140,
+    "height": 80,
+    "name": "entrance_pad.2x2"
+   }
+  },
+  {
+   "id": "palette.set",
+   "params": {
+    "colors": [
+     "#262234",
+     "#65596e",
+     "#423343",
+     "#94899c",
+     "#c3b9cb",
+     "#241d2a",
+     "#2c5669",
+     "#53aaa9",
+     "#233b51",
+     "#f4bf69",
+     "#91dfd4",
+     "#bcece0",
+     "#fff1d6"
+    ]
+   }
+  },
+  {
+   "id": "layer.setProps",
+   "params": {
+    "name": "sombra"
+   }
+  },
+  {
+   "id": "draw.ellipse",
+   "params": {
+    "x": 14,
+    "y": 15,
+    "w": 112,
+    "h": 50,
+    "color": "#262234",
+    "filled": true
+   }
+  },
+  {
+   "id": "layer.new",
+   "params": {
+    "name": "plataforma"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      2.0,
+      36
+     ],
+     [
+      70.0,
+      70
+     ],
+     [
+      70.0,
+      74
+     ],
+     [
+      2.0,
+      40
+     ]
+    ],
+    "color": "#65596e"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      70.0,
+      70
+     ],
+     [
+      138.0,
+      36
+     ],
+     [
+      138.0,
+      40
+     ],
+     [
+      70.0,
+      74
+     ]
+    ],
+    "color": "#423343"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      70.0,
+      2
+     ],
+     [
+      138.0,
+      36
+     ],
+     [
+      70.0,
+      70
+     ],
+     [
+      2.0,
+      36
+     ]
+    ],
+    "color": "#94899c"
+   }
+  },
+  {
+   "id": "draw.line",
+   "params": {
+    "x0": 2,
+    "y0": 36,
+    "x1": 69,
+    "y1": 70,
+    "color": "#c3b9cb"
+   }
+  },
+  {
+   "id": "effect.outline",
+   "params": {
+    "color": "#241d2a"
+   }
+  },
+  {
+   "id": "layer.new",
+   "params": {
+    "name": "desenho"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      70.0,
+      10
+     ],
+     [
+      122.0,
+      36
+     ],
+     [
+      70.0,
+      62
+     ],
+     [
+      18.0,
+      36
+     ]
+    ],
+    "color": "#2c5669"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      70.0,
+      16
+     ],
+     [
+      110.0,
+      36
+     ],
+     [
+      70.0,
+      56
+     ],
+     [
+      30.0,
+      36
+     ]
+    ],
+    "color": "#53aaa9"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      70.0,
+      20
+     ],
+     [
+      102.0,
+      36
+     ],
+     [
+      70.0,
+      52
+     ],
+     [
+      38.0,
+      36
+     ]
+    ],
+    "color": "#233b51"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      64.0,
+      27
+     ],
+     [
+      64.0,
+      39
+     ],
+     [
+      88.0,
+      39
+     ],
+     [
+      80.0,
+      43
+     ],
+     [
+      56.0,
+      43
+     ],
+     [
+      56.0,
+      31
+     ]
+    ],
+    "color": "#f4bf69"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      76.0,
+      21
+     ],
+     [
+      76.0,
+      33
+     ],
+     [
+      100.0,
+      33
+     ],
+     [
+      92.0,
+      37
+     ],
+     [
+      68.0,
+      37
+     ],
+     [
+      68.0,
+      25
+     ]
+    ],
+    "color": "#f4bf69"
+   }
+  },
+  {
+   "id": "frame.new",
+   "params": {
+    "copy": true,
+    "duration": 160
+   }
+  },
+  {
+   "id": "color.replaceAll",
+   "params": {
+    "from": "#53aaa9",
+    "to": "#91dfd4",
+    "scope": "frame"
+   }
+  },
+  {
+   "id": "frame.new",
+   "params": {
+    "copy": true,
+    "duration": 160
+   }
+  },
+  {
+   "id": "color.replaceAll",
+   "params": {
+    "from": "#91dfd4",
+    "to": "#bcece0",
+    "scope": "frame"
+   }
+  },
+  {
+   "id": "color.replaceAll",
+   "params": {
+    "from": "#f4bf69",
+    "to": "#fff1d6",
+    "scope": "frame"
+   }
+  },
+  {
+   "id": "frame.setDuration",
+   "params": {
+    "frame": 1,
+    "duration": 500
+   }
+  },
+  {
+   "id": "tag.add",
+   "params": {
+    "name": "pulso",
+    "from": 1,
+    "to": 3
+   }
+  },
+  {
+   "id": "view.fit",
+   "params": {}
+  }
+ ]
+}

@@ -1,0 +1,598 @@
+{
+ "name": "plant.1x1",
+ "description": "Planta grande em vaso de cerâmica turquesa.",
+ "anchor": {
+  "x": 34.0,
+  "y": 104
+ },
+ "steps": [
+  {
+   "id": "doc.new",
+   "params": {
+    "width": 68,
+    "height": 104,
+    "name": "plant.1x1"
+   }
+  },
+  {
+   "id": "palette.set",
+   "params": {
+    "colors": [
+     "#262234",
+     "#53aaa9",
+     "#347a88",
+     "#91dfd4",
+     "#4d302c",
+     "#241d2a",
+     "#724533",
+     "#1f5e45",
+     "#3a9150",
+     "#7dc25b"
+    ]
+   }
+  },
+  {
+   "id": "layer.setProps",
+   "params": {
+    "name": "sombra"
+   }
+  },
+  {
+   "id": "draw.ellipse",
+   "params": {
+    "x": 14,
+    "y": 75,
+    "w": 40,
+    "h": 18,
+    "color": "#262234",
+    "filled": true
+   }
+  },
+  {
+   "id": "layer.new",
+   "params": {
+    "name": "vaso"
+   }
+  },
+  {
+   "id": "draw.ellipse",
+   "params": {
+    "x": 23,
+    "y": 76,
+    "w": 22,
+    "h": 10,
+    "color": "#53aaa9",
+    "filled": true
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      23.0,
+      81
+     ],
+     [
+      45.0,
+      81
+     ],
+     [
+      49.0,
+      57
+     ],
+     [
+      19.0,
+      57
+     ]
+    ],
+    "color": "#53aaa9"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      34.0,
+      57
+     ],
+     [
+      49.0,
+      57
+     ],
+     [
+      45.0,
+      81
+     ],
+     [
+      45.0,
+      86
+     ],
+     [
+      34.0,
+      86
+     ]
+    ],
+    "color": "#347a88",
+    "onlyOn": "#53aaa9"
+   }
+  },
+  {
+   "id": "draw.ellipse",
+   "params": {
+    "x": 18,
+    "y": 50,
+    "w": 32,
+    "h": 14,
+    "color": "#91dfd4",
+    "filled": true
+   }
+  },
+  {
+   "id": "draw.ellipse",
+   "params": {
+    "x": 21,
+    "y": 51,
+    "w": 26,
+    "h": 10,
+    "color": "#4d302c",
+    "filled": true
+   }
+  },
+  {
+   "id": "effect.outline",
+   "params": {
+    "color": "#241d2a"
+   }
+  },
+  {
+   "id": "layer.new",
+   "params": {
+    "name": "caule"
+   }
+  },
+  {
+   "id": "draw.line",
+   "params": {
+    "x0": 34,
+    "y0": 54,
+    "x1": 32,
+    "y1": 33,
+    "color": "#724533"
+   }
+  },
+  {
+   "id": "draw.line",
+   "params": {
+    "x0": 35,
+    "y0": 54,
+    "x1": 37,
+    "y1": 26,
+    "color": "#724533"
+   }
+  },
+  {
+   "id": "draw.line",
+   "params": {
+    "x0": 33,
+    "y0": 54,
+    "x1": 33,
+    "y1": 44,
+    "color": "#724533"
+   }
+  },
+  {
+   "id": "layer.new",
+   "params": {
+    "name": "folhas"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      37.0,
+      26
+     ],
+     [
+      47.9,
+      16.38
+     ],
+     [
+      50.0,
+      2
+     ],
+     [
+      39.1,
+      11.62
+     ]
+    ],
+    "color": "#1f5e45"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      37.0,
+      26
+     ],
+     [
+      39.1,
+      11.62
+     ],
+     [
+      50.0,
+      2
+     ]
+    ],
+    "color": "#3a9150"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      32.0,
+      33
+     ],
+     [
+      32.83,
+      16.71
+     ],
+     [
+      24.0,
+      3
+     ],
+     [
+      23.17,
+      19.29
+     ]
+    ],
+    "color": "#1f5e45"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      32.0,
+      33
+     ],
+     [
+      32.83,
+      16.71
+     ],
+     [
+      24.0,
+      3
+     ]
+    ],
+    "color": "#3a9150"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      37.0,
+      28
+     ],
+     [
+      51.78,
+      30.99
+     ],
+     [
+      66.0,
+      26
+     ],
+     [
+      51.22,
+      23.01
+     ]
+    ],
+    "color": "#3a9150"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      37.0,
+      28
+     ],
+     [
+      51.22,
+      23.01
+     ],
+     [
+      66.0,
+      26
+     ]
+    ],
+    "color": "#7dc25b"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      32.0,
+      33
+     ],
+     [
+      21.24,
+      18.95
+     ],
+     [
+      4.0,
+      15
+     ],
+     [
+      14.76,
+      29.05
+     ]
+    ],
+    "color": "#3a9150"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      32.0,
+      33
+     ],
+     [
+      21.24,
+      18.95
+     ],
+     [
+      4.0,
+      15
+     ]
+    ],
+    "color": "#7dc25b"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      32.0,
+      33
+     ],
+     [
+      49.49,
+      27.88
+     ],
+     [
+      60.0,
+      13
+     ],
+     [
+      42.51,
+      18.12
+     ]
+    ],
+    "color": "#3a9150"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      32.0,
+      33
+     ],
+     [
+      42.51,
+      18.12
+     ],
+     [
+      60.0,
+      13
+     ]
+    ],
+    "color": "#7dc25b"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      33.0,
+      44
+     ],
+     [
+      18.45,
+      36.09
+     ],
+     [
+      2.0,
+      38
+     ],
+     [
+      16.55,
+      45.91
+     ]
+    ],
+    "color": "#3a9150"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      33.0,
+      44
+     ],
+     [
+      18.45,
+      36.09
+     ],
+     [
+      2.0,
+      38
+     ]
+    ],
+    "color": "#7dc25b"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      33.0,
+      44
+     ],
+     [
+      48.98,
+      47.48
+     ],
+     [
+      64.0,
+      41
+     ],
+     [
+      48.02,
+      37.52
+     ]
+    ],
+    "color": "#3a9150"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      33.0,
+      44
+     ],
+     [
+      48.02,
+      37.52
+     ],
+     [
+      64.0,
+      41
+     ]
+    ],
+    "color": "#7dc25b"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      33.0,
+      46
+     ],
+     [
+      19.28,
+      46.19
+     ],
+     [
+      8.0,
+      54
+     ],
+     [
+      21.72,
+      53.81
+     ]
+    ],
+    "color": "#1f5e45"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      33.0,
+      46
+     ],
+     [
+      19.28,
+      46.19
+     ],
+     [
+      8.0,
+      54
+     ]
+    ],
+    "color": "#3a9150"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      34.0,
+      46
+     ],
+     [
+      44.74,
+      53.79
+     ],
+     [
+      58.0,
+      54
+     ],
+     [
+      47.26,
+      46.21
+     ]
+    ],
+    "color": "#1f5e45"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      34.0,
+      46
+     ],
+     [
+      47.26,
+      46.21
+     ],
+     [
+      58.0,
+      54
+     ]
+    ],
+    "color": "#3a9150"
+   }
+  },
+  {
+   "id": "effect.outline",
+   "params": {
+    "color": "#241d2a"
+   }
+  },
+  {
+   "id": "view.fit",
+   "params": {}
+  }
+ ]
+}

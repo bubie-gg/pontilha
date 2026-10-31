@@ -1,0 +1,281 @@
+{
+ "name": "wall_screen.3x1",
+ "description": "Telão de parede para vídeos, 3 ladrilhos de largura. Fica colado na parede do fundo (borda v = 0 do losango 3 × 1), com a base da tela a 38 px do chão. A âncora é o vértice da frente desse losango 3 × 1, como nas outras peças.",
+ "anchor": {
+  "x": 80.0,
+  "y": 178
+ },
+ "steps": [
+  {
+   "id": "doc.new",
+   "params": {
+    "width": 160,
+    "height": 178,
+    "name": "wall_screen.3x1"
+   }
+  },
+  {
+   "id": "palette.set",
+   "params": {
+    "colors": [
+     "#353144",
+     "#262234",
+     "#494256",
+     "#65596e",
+     "#241d2a",
+     "#233b51",
+     "#2c5669",
+     "#f4bf69",
+     "#91dfd4",
+     "#487588"
+    ]
+   }
+  },
+  {
+   "id": "layer.setProps",
+   "params": {
+    "name": "moldura"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      2.0,
+      5
+     ],
+     [
+      106.0,
+      57
+     ],
+     [
+      106.0,
+      119
+     ],
+     [
+      2.0,
+      67
+     ]
+    ],
+    "color": "#353144"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      106.0,
+      57
+     ],
+     [
+      112.0,
+      54
+     ],
+     [
+      112.0,
+      116
+     ],
+     [
+      106.0,
+      119
+     ]
+    ],
+    "color": "#262234"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      8.0,
+      2
+     ],
+     [
+      112.0,
+      54
+     ],
+     [
+      106.0,
+      57
+     ],
+     [
+      2.0,
+      5
+     ]
+    ],
+    "color": "#494256"
+   }
+  },
+  {
+   "id": "draw.line",
+   "params": {
+    "x0": 2,
+    "y0": 5,
+    "x1": 105,
+    "y1": 57,
+    "color": "#65596e"
+   }
+  },
+  {
+   "id": "effect.outline",
+   "params": {
+    "color": "#241d2a"
+   }
+  },
+  {
+   "id": "layer.new",
+   "params": {
+    "name": "tela"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      6.0,
+      11
+     ],
+     [
+      102.0,
+      59
+     ],
+     [
+      102.0,
+      113
+     ],
+     [
+      6.0,
+      65
+     ]
+    ],
+    "color": "#233b51"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      6.0,
+      11
+     ],
+     [
+      30.0,
+      23
+     ],
+     [
+      14.0,
+      69
+     ],
+     [
+      6.0,
+      65
+     ]
+    ],
+    "color": "#2c5669",
+    "onlyOn": "#233b51"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      34.0,
+      25
+     ],
+     [
+      42.0,
+      29
+     ],
+     [
+      22.0,
+      73
+     ],
+     [
+      14.0,
+      69
+     ]
+    ],
+    "color": "#2c5669",
+    "onlyOn": "#233b51"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      44.0,
+      50
+     ],
+     [
+      64.0,
+      60
+     ],
+     [
+      64.0,
+      74
+     ],
+     [
+      44.0,
+      64
+     ]
+    ],
+    "color": "#f4bf69"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      50.0,
+      56
+     ],
+     [
+      60.0,
+      65
+     ],
+     [
+      50.0,
+      64
+     ]
+    ],
+    "color": "#241d2a"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      96.0,
+      112
+     ],
+     [
+      100.0,
+      114
+     ],
+     [
+      100.0,
+      115
+     ],
+     [
+      96.0,
+      113
+     ]
+    ],
+    "color": "#91dfd4"
+   }
+  },
+  {
+   "id": "view.fit",
+   "params": {}
+  }
+ ]
+}

@@ -1,0 +1,1161 @@
+[
+{
+"id": "doc.new",
+"params": {
+"width": 320,
+"height": 125,
+"name": "banner-faq"
+}
+},
+{
+"id": "palette.set",
+"params": {
+"colors": [
+"#231a24",
+"#3d2a3a",
+"#fffaf0",
+"#f3e6cf",
+"#dcc6a3",
+"#b39575",
+"#fff3b0",
+"#ffd66b",
+"#f4bf69",
+"#d9902f",
+"#a65a26",
+"#bff3ea",
+"#8fe0d6",
+"#5fbdb7",
+"#3f8f93",
+"#2a5f6b",
+"#e8b27a",
+"#d0925a",
+"#a86b3f",
+"#7a4a2e",
+"#ff8fa3",
+"#e3566f",
+"#a83252"
+]
+}
+},
+{
+"id": "layer.setProps",
+"params": {
+"name": "floor"
+}
+},
+{
+"id": "draw.polygon",
+"params": {
+"points": [
+[
+0,
+176
+],
+[
+236,
+58
+],
+[
+320,
+100
+],
+[
+320,
+125
+],
+[
+0,
+125
+]
+],
+"color": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 136,
+"x1": 320,
+"y1": -24,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 143,
+"x1": 320,
+"y1": -17,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 150,
+"x1": 320,
+"y1": -10,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 157,
+"x1": 320,
+"y1": -3,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 164,
+"x1": 320,
+"y1": 4,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 171,
+"x1": 320,
+"y1": 11,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 178,
+"x1": 320,
+"y1": 18,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 185,
+"x1": 320,
+"y1": 25,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 192,
+"x1": 320,
+"y1": 32,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 199,
+"x1": 320,
+"y1": 39,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 206,
+"x1": 320,
+"y1": 46,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 213,
+"x1": 320,
+"y1": 53,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 220,
+"x1": 320,
+"y1": 60,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 227,
+"x1": 320,
+"y1": 67,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 234,
+"x1": 320,
+"y1": 74,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 241,
+"x1": 320,
+"y1": 81,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 248,
+"x1": 320,
+"y1": 88,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 255,
+"x1": 320,
+"y1": 95,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 262,
+"x1": 320,
+"y1": 102,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 269,
+"x1": 320,
+"y1": 109,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 276,
+"x1": 320,
+"y1": 116,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 283,
+"x1": 320,
+"y1": 123,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 290,
+"x1": 320,
+"y1": 130,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 297,
+"x1": 320,
+"y1": 137,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 304,
+"x1": 320,
+"y1": 144,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 311,
+"x1": 320,
+"y1": 151,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 318,
+"x1": 320,
+"y1": 158,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 325,
+"x1": 320,
+"y1": 165,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 332,
+"x1": 320,
+"y1": 172,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 339,
+"x1": 320,
+"y1": 179,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 346,
+"x1": 320,
+"y1": 186,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 353,
+"x1": 320,
+"y1": 193,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 360,
+"x1": 320,
+"y1": 200,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 367,
+"x1": 320,
+"y1": 207,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 0,
+"y0": 374,
+"x1": 320,
+"y1": 214,
+"color": "#b97c45",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 150,
+"y0": 101,
+"x1": 151,
+"y1": 103,
+"color": "#a86b3f",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 190,
+"y0": 92,
+"x1": 191,
+"y1": 94,
+"color": "#a86b3f",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 230,
+"y0": 84,
+"x1": 231,
+"y1": 86,
+"color": "#a86b3f",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 262,
+"y0": 94,
+"x1": 263,
+"y1": 96,
+"color": "#a86b3f",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 210,
+"y0": 112,
+"x1": 211,
+"y1": 114,
+"color": "#a86b3f",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 280,
+"y0": 108,
+"x1": 281,
+"y1": 110,
+"color": "#a86b3f",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 120,
+"y0": 117,
+"x1": 121,
+"y1": 119,
+"color": "#a86b3f",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 300,
+"y0": 80,
+"x1": 301,
+"y1": 82,
+"color": "#a86b3f",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "draw.polygon",
+"params": {
+"points": [
+[
+176,
+88
+],
+[
+236,
+58
+],
+[
+306,
+93
+],
+[
+246,
+123
+]
+],
+"color": "#dfa56b",
+"onlyOn": "#d0925a"
+}
+},
+{
+"id": "layer.new",
+"params": {
+"name": "walls"
+}
+},
+{
+"id": "draw.polygon",
+"params": {
+"points": [
+[
+0,
+140
+],
+[
+236,
+22
+],
+[
+236,
+58
+],
+[
+0,
+176
+]
+],
+"color": "#5fbdb7"
+}
+},
+{
+"id": "draw.polygon",
+"params": {
+"points": [
+[
+236,
+22
+],
+[
+320,
+64
+],
+[
+320,
+100
+],
+[
+236,
+58
+]
+],
+"color": "#3f8f93"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 230,
+"y0": 28,
+"x1": 230,
+"y1": 58,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 222,
+"y0": 32,
+"x1": 222,
+"y1": 62,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 214,
+"y0": 36,
+"x1": 214,
+"y1": 66,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 206,
+"y0": 40,
+"x1": 206,
+"y1": 70,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 198,
+"y0": 44,
+"x1": 198,
+"y1": 74,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 190,
+"y0": 48,
+"x1": 190,
+"y1": 78,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 182,
+"y0": 52,
+"x1": 182,
+"y1": 82,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 174,
+"y0": 56,
+"x1": 174,
+"y1": 86,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 166,
+"y0": 60,
+"x1": 166,
+"y1": 90,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 158,
+"y0": 64,
+"x1": 158,
+"y1": 94,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 150,
+"y0": 68,
+"x1": 150,
+"y1": 98,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 142,
+"y0": 72,
+"x1": 142,
+"y1": 102,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 134,
+"y0": 76,
+"x1": 134,
+"y1": 106,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 126,
+"y0": 80,
+"x1": 126,
+"y1": 110,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 118,
+"y0": 84,
+"x1": 118,
+"y1": 114,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 110,
+"y0": 88,
+"x1": 110,
+"y1": 118,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 102,
+"y0": 92,
+"x1": 102,
+"y1": 122,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 94,
+"y0": 96,
+"x1": 94,
+"y1": 126,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 86,
+"y0": 100,
+"x1": 86,
+"y1": 130,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 78,
+"y0": 104,
+"x1": 78,
+"y1": 134,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 70,
+"y0": 108,
+"x1": 70,
+"y1": 138,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 62,
+"y0": 112,
+"x1": 62,
+"y1": 142,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 54,
+"y0": 116,
+"x1": 54,
+"y1": 146,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 46,
+"y0": 120,
+"x1": 46,
+"y1": 150,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 38,
+"y0": 124,
+"x1": 38,
+"y1": 154,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 30,
+"y0": 128,
+"x1": 30,
+"y1": 158,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 22,
+"y0": 132,
+"x1": 22,
+"y1": 162,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 14,
+"y0": 136,
+"x1": 14,
+"y1": 166,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 6,
+"y0": 140,
+"x1": 6,
+"y1": 170,
+"color": "#72cbc4",
+"onlyOn": "#5fbdb7"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 242,
+"y0": 28,
+"x1": 242,
+"y1": 58,
+"color": "#4a9da0",
+"onlyOn": "#3f8f93"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 250,
+"y0": 32,
+"x1": 250,
+"y1": 62,
+"color": "#4a9da0",
+"onlyOn": "#3f8f93"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 258,
+"y0": 36,
+"x1": 258,
+"y1": 66,
+"color": "#4a9da0",
+"onlyOn": "#3f8f93"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 266,
+"y0": 40,
+"x1": 266,
+"y1": 70,
+"color": "#4a9da0",
+"onlyOn": "#3f8f93"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 274,
+"y0": 44,
+"x1": 274,
+"y1": 74,
+"color": "#4a9da0",
+"onlyOn": "#3f8f93"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 282,
+"y0": 48,
+"x1": 282,
+"y1": 78,
+"color": "#4a9da0",
+"onlyOn": "#3f8f93"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 290,
+"y0": 52,
+"x1": 290,
+"y1": 82,
+"color": "#4a9da0",
+"onlyOn": "#3f8f93"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 298,
+"y0": 56,
+"x1": 298,
+"y1": 86,
+"color": "#4a9da0",
+"onlyOn": "#3f8f93"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 306,
+"y0": 60,
+"x1": 306,
+"y1": 90,
+"color": "#4a9da0",
+"onlyOn": "#3f8f93"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 314,
+"y0": 64,
+"x1": 314,
+"y1": 94,
+"color": "#4a9da0",
+"onlyOn": "#3f8f93"
+}
+},
+{
+"id": "draw.polygon",
+"params": {
+"points": [
+[
+0,
+173
+],
+[
+236,
+55
+],
+[
+236,
+58
+],
+[
+0,
+176
+]
+],
+"color": "#f3e6cf"
+}
+},
+{
+"id": "draw.polygon",
+"params": {
+"points": [
+[
+236,
+55
+],
+[
+320,
+97
+],
+[
+320,
+100
+],
+[
+236,
+58
+]
+],
+"color": "#dcc6a3"
+}
+},
+{
+"id": "draw.polygon",
+"params": {
+"points": [
+[
+0,
+137
+],
+[
+236,
+19
+],
+[
+236,
+22
+],
+[
+0,
+140
+]
+],
+"color": "#fffaf0"
+}
+},
+{
+"id": "draw.polygon",
+"params": {
+"points": [
+[
+236,
+19
+],
+[
+320,
+61
+],
+[
+320,
+64
+],
+[
+236,
+22
+]
+],
+"color": "#f3e6cf"
+}
+},
+{
+"id": "draw.line",
+"params": {
+"x0": 236,
+"y0": 19,
+"x1": 236,
+"y1": 58,
+"color": "#2f7a7e"
+}
+}
+]

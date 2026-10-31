@@ -1,0 +1,301 @@
+{
+ "name": "floor_lamp.1x1",
+ "description": "Abajur de pé. Quadro 1 desligado, quadro 2 ligado (luz quente no chão).",
+ "anchor": {
+  "x": 38.0,
+  "y": 114
+ },
+ "steps": [
+  {
+   "id": "doc.new",
+   "params": {
+    "width": 76,
+    "height": 114,
+    "name": "floor_lamp.1x1"
+   }
+  },
+  {
+   "id": "palette.set",
+   "params": {
+    "colors": [
+     "#262234",
+     "#65596e",
+     "#94899c",
+     "#241d2a",
+     "#c3b9cb",
+     "#423343",
+     "#d7ac73",
+     "#b77d4d",
+     "#724533",
+     "#fff1d6",
+     "#f4bf69",
+     "#ffd88f"
+    ]
+   }
+  },
+  {
+   "id": "layer.setProps",
+   "params": {
+    "name": "brilho"
+   }
+  },
+  {
+   "id": "layer.new",
+   "params": {
+    "name": "sombra"
+   }
+  },
+  {
+   "id": "draw.ellipse",
+   "params": {
+    "x": 18,
+    "y": 85,
+    "w": 40,
+    "h": 18,
+    "color": "#262234",
+    "filled": true
+   }
+  },
+  {
+   "id": "layer.new",
+   "params": {
+    "name": "pe"
+   }
+  },
+  {
+   "id": "draw.ellipse",
+   "params": {
+    "x": 26,
+    "y": 85,
+    "w": 24,
+    "h": 12,
+    "color": "#65596e",
+    "filled": true
+   }
+  },
+  {
+   "id": "draw.ellipse",
+   "params": {
+    "x": 28,
+    "y": 86,
+    "w": 20,
+    "h": 9,
+    "color": "#94899c",
+    "filled": true
+   }
+  },
+  {
+   "id": "effect.outline",
+   "params": {
+    "color": "#241d2a"
+   }
+  },
+  {
+   "id": "layer.new",
+   "params": {
+    "name": "haste"
+   }
+  },
+  {
+   "id": "draw.line",
+   "params": {
+    "x0": 37,
+    "y0": 32,
+    "x1": 37,
+    "y1": 89,
+    "color": "#c3b9cb"
+   }
+  },
+  {
+   "id": "draw.line",
+   "params": {
+    "x0": 38,
+    "y0": 32,
+    "x1": 38,
+    "y1": 89,
+    "color": "#65596e"
+   }
+  },
+  {
+   "id": "draw.line",
+   "params": {
+    "x0": 39,
+    "y0": 32,
+    "x1": 39,
+    "y1": 89,
+    "color": "#423343"
+   }
+  },
+  {
+   "id": "effect.outline",
+   "params": {
+    "color": "#241d2a"
+   }
+  },
+  {
+   "id": "layer.new",
+   "params": {
+    "name": "cupula"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      30.0,
+      12
+     ],
+     [
+      46.0,
+      12
+     ],
+     [
+      55.0,
+      30
+     ],
+     [
+      21.0,
+      30
+     ]
+    ],
+    "color": "#d7ac73"
+   }
+  },
+  {
+   "id": "draw.ellipse",
+   "params": {
+    "x": 21,
+    "y": 25,
+    "w": 34,
+    "h": 10,
+    "color": "#d7ac73",
+    "filled": true
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      38.0,
+      12
+     ],
+     [
+      46.0,
+      12
+     ],
+     [
+      55.0,
+      30
+     ],
+     [
+      55.0,
+      37
+     ],
+     [
+      38.0,
+      37
+     ]
+    ],
+    "color": "#b77d4d",
+    "onlyOn": "#d7ac73"
+   }
+  },
+  {
+   "id": "draw.ellipse",
+   "params": {
+    "x": 30,
+    "y": 9,
+    "w": 16,
+    "h": 6,
+    "color": "#724533",
+    "filled": true
+   }
+  },
+  {
+   "id": "effect.outline",
+   "params": {
+    "color": "#241d2a"
+   }
+  },
+  {
+   "id": "frame.new",
+   "params": {
+    "copy": true,
+    "duration": 600
+   }
+  },
+  {
+   "id": "color.replaceAll",
+   "params": {
+    "from": "#d7ac73",
+    "to": "#fff1d6",
+    "scope": "frame"
+   }
+  },
+  {
+   "id": "color.replaceAll",
+   "params": {
+    "from": "#b77d4d",
+    "to": "#f4bf69",
+    "scope": "frame"
+   }
+  },
+  {
+   "id": "color.replaceAll",
+   "params": {
+    "from": "#724533",
+    "to": "#ffd88f",
+    "scope": "frame"
+   }
+  },
+  {
+   "id": "draw.ellipse",
+   "params": {
+    "x": 2,
+    "y": 78,
+    "w": 72,
+    "h": 32,
+    "color": "#f4bf6966",
+    "filled": true,
+    "onlyOn": "transparent",
+    "frame": 2,
+    "layer": "sombra"
+   }
+  },
+  {
+   "id": "draw.ellipse",
+   "params": {
+    "x": 12,
+    "y": 2,
+    "w": 52,
+    "h": 40,
+    "color": "#fff1d633",
+    "filled": true,
+    "frame": 2,
+    "layer": "brilho"
+   }
+  },
+  {
+   "id": "tag.add",
+   "params": {
+    "name": "desligado",
+    "from": 1,
+    "to": 1
+   }
+  },
+  {
+   "id": "tag.add",
+   "params": {
+    "name": "ligado",
+    "from": 2,
+    "to": 2
+   }
+  },
+  {
+   "id": "view.fit",
+   "params": {}
+  }
+ ]
+}

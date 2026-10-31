@@ -1,0 +1,361 @@
+{
+ "name": "rug.3x2",
+ "description": "Tapete turquesa com borda dourada e medalhão no centro. Plano: dá para pisar e pôr móveis em cima.",
+ "anchor": {
+  "x": 114.0,
+  "y": 100
+ },
+ "steps": [
+  {
+   "id": "doc.new",
+   "params": {
+    "width": 228,
+    "height": 100,
+    "name": "rug.3x2"
+   }
+  },
+  {
+   "id": "palette.set",
+   "params": {
+    "colors": [
+     "#2c5669",
+     "#233b51",
+     "#347a88",
+     "#241d2a",
+     "#f4bf69",
+     "#fff1d6",
+     "#53aaa9",
+     "#91dfd4"
+    ]
+   }
+  },
+  {
+   "id": "layer.setProps",
+   "params": {
+    "name": "tapete"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      2.0,
+      38
+     ],
+     [
+      114.0,
+      94
+     ],
+     [
+      114.0,
+      96
+     ],
+     [
+      2.0,
+      40
+     ]
+    ],
+    "color": "#2c5669"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      114.0,
+      94
+     ],
+     [
+      186.0,
+      58
+     ],
+     [
+      186.0,
+      60
+     ],
+     [
+      114.0,
+      96
+     ]
+    ],
+    "color": "#233b51"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      74.0,
+      2
+     ],
+     [
+      186.0,
+      58
+     ],
+     [
+      114.0,
+      94
+     ],
+     [
+      2.0,
+      38
+     ]
+    ],
+    "color": "#347a88"
+   }
+  },
+  {
+   "id": "effect.outline",
+   "params": {
+    "color": "#241d2a"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      74.0,
+      6
+     ],
+     [
+      178.0,
+      58
+     ],
+     [
+      114.0,
+      90
+     ],
+     [
+      10.0,
+      38
+     ]
+    ],
+    "color": "#f4bf69"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      74.0,
+      10
+     ],
+     [
+      170.0,
+      58
+     ],
+     [
+      114.0,
+      86
+     ],
+     [
+      18.0,
+      38
+     ]
+    ],
+    "color": "#fff1d6"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      74.0,
+      12
+     ],
+     [
+      166.0,
+      58
+     ],
+     [
+      114.0,
+      84
+     ],
+     [
+      22.0,
+      38
+     ]
+    ],
+    "color": "#347a88"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      90.0,
+      30
+     ],
+     [
+      130.0,
+      50
+     ],
+     [
+      98.0,
+      66
+     ],
+     [
+      58.0,
+      46
+     ]
+    ],
+    "color": "#53aaa9"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      92.0,
+      39
+     ],
+     [
+      112.0,
+      49
+     ],
+     [
+      96.0,
+      57
+     ],
+     [
+      76.0,
+      47
+     ]
+    ],
+    "color": "#91dfd4"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      94.0,
+      44
+     ],
+     [
+      102.0,
+      48
+     ],
+     [
+      94.0,
+      52
+     ],
+     [
+      86.0,
+      48
+     ]
+    ],
+    "color": "#f4bf69"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      58.0,
+      26
+     ],
+     [
+      66.0,
+      30
+     ],
+     [
+      58.0,
+      34
+     ],
+     [
+      50.0,
+      30
+     ]
+    ],
+    "color": "#53aaa9"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      130.0,
+      62
+     ],
+     [
+      138.0,
+      66
+     ],
+     [
+      130.0,
+      70
+     ],
+     [
+      122.0,
+      66
+     ]
+    ],
+    "color": "#53aaa9"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      114.0,
+      34
+     ],
+     [
+      122.0,
+      38
+     ],
+     [
+      114.0,
+      42
+     ],
+     [
+      106.0,
+      38
+     ]
+    ],
+    "color": "#53aaa9"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      74.0,
+      54
+     ],
+     [
+      82.0,
+      58
+     ],
+     [
+      74.0,
+      62
+     ],
+     [
+      66.0,
+      58
+     ]
+    ],
+    "color": "#53aaa9"
+   }
+  },
+  {
+   "id": "view.fit",
+   "params": {}
+  }
+ ]
+}

@@ -1,0 +1,783 @@
+{
+ "name": "coffee_table.2x1",
+ "description": "Mesa de centro baixa: tampo de madeira, pés de metal, livros e caneca.",
+ "anchor": {
+  "x": 74.0,
+  "y": 74
+ },
+ "steps": [
+  {
+   "id": "doc.new",
+   "params": {
+    "width": 148,
+    "height": 74,
+    "name": "coffee_table.2x1"
+   }
+  },
+  {
+   "id": "palette.set",
+   "params": {
+    "colors": [
+     "#262234",
+     "#65596e",
+     "#423343",
+     "#94899c",
+     "#c3b9cb",
+     "#241d2a",
+     "#b77d4d",
+     "#724533",
+     "#d7ac73",
+     "#f2cf96",
+     "#f4bf69",
+     "#c98a3a",
+     "#fff1d6",
+     "#53aaa9",
+     "#347a88",
+     "#91dfd4",
+     "#bcece0",
+     "#ffd88f"
+    ]
+   }
+  },
+  {
+   "id": "layer.setProps",
+   "params": {
+    "name": "sombra"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      36.0,
+      27
+     ],
+     [
+      88.0,
+      53
+     ],
+     [
+      70.0,
+      62
+     ],
+     [
+      18.0,
+      36
+     ]
+    ],
+    "color": "#262234"
+   }
+  },
+  {
+   "id": "layer.new",
+   "params": {
+    "name": "pes"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      30.0,
+      10
+     ],
+     [
+      34.0,
+      12
+     ],
+     [
+      34.0,
+      24
+     ],
+     [
+      30.0,
+      22
+     ]
+    ],
+    "color": "#65596e"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      34.0,
+      12
+     ],
+     [
+      38.0,
+      10
+     ],
+     [
+      38.0,
+      22
+     ],
+     [
+      34.0,
+      24
+     ]
+    ],
+    "color": "#423343"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      34.0,
+      8
+     ],
+     [
+      38.0,
+      10
+     ],
+     [
+      34.0,
+      12
+     ],
+     [
+      30.0,
+      10
+     ]
+    ],
+    "color": "#94899c"
+   }
+  },
+  {
+   "id": "draw.line",
+   "params": {
+    "x0": 30,
+    "y0": 10,
+    "x1": 33,
+    "y1": 12,
+    "color": "#c3b9cb"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      6.0,
+      22
+     ],
+     [
+      10.0,
+      24
+     ],
+     [
+      10.0,
+      36
+     ],
+     [
+      6.0,
+      34
+     ]
+    ],
+    "color": "#65596e"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      10.0,
+      24
+     ],
+     [
+      14.0,
+      22
+     ],
+     [
+      14.0,
+      34
+     ],
+     [
+      10.0,
+      36
+     ]
+    ],
+    "color": "#423343"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      10.0,
+      20
+     ],
+     [
+      14.0,
+      22
+     ],
+     [
+      10.0,
+      24
+     ],
+     [
+      6.0,
+      22
+     ]
+    ],
+    "color": "#94899c"
+   }
+  },
+  {
+   "id": "draw.line",
+   "params": {
+    "x0": 6,
+    "y0": 22,
+    "x1": 9,
+    "y1": 24,
+    "color": "#c3b9cb"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      94.0,
+      42
+     ],
+     [
+      98.0,
+      44
+     ],
+     [
+      98.0,
+      56
+     ],
+     [
+      94.0,
+      54
+     ]
+    ],
+    "color": "#65596e"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      98.0,
+      44
+     ],
+     [
+      102.0,
+      42
+     ],
+     [
+      102.0,
+      54
+     ],
+     [
+      98.0,
+      56
+     ]
+    ],
+    "color": "#423343"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      98.0,
+      40
+     ],
+     [
+      102.0,
+      42
+     ],
+     [
+      98.0,
+      44
+     ],
+     [
+      94.0,
+      42
+     ]
+    ],
+    "color": "#94899c"
+   }
+  },
+  {
+   "id": "draw.line",
+   "params": {
+    "x0": 94,
+    "y0": 42,
+    "x1": 97,
+    "y1": 44,
+    "color": "#c3b9cb"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      70.0,
+      54
+     ],
+     [
+      74.0,
+      56
+     ],
+     [
+      74.0,
+      68
+     ],
+     [
+      70.0,
+      66
+     ]
+    ],
+    "color": "#65596e"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      74.0,
+      56
+     ],
+     [
+      78.0,
+      54
+     ],
+     [
+      78.0,
+      66
+     ],
+     [
+      74.0,
+      68
+     ]
+    ],
+    "color": "#423343"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      74.0,
+      52
+     ],
+     [
+      78.0,
+      54
+     ],
+     [
+      74.0,
+      56
+     ],
+     [
+      70.0,
+      54
+     ]
+    ],
+    "color": "#94899c"
+   }
+  },
+  {
+   "id": "draw.line",
+   "params": {
+    "x0": 70,
+    "y0": 54,
+    "x1": 73,
+    "y1": 56,
+    "color": "#c3b9cb"
+   }
+  },
+  {
+   "id": "effect.outline",
+   "params": {
+    "color": "#241d2a"
+   }
+  },
+  {
+   "id": "layer.new",
+   "params": {
+    "name": "tampo"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      2.0,
+      18
+     ],
+     [
+      74.0,
+      54
+     ],
+     [
+      74.0,
+      58
+     ],
+     [
+      2.0,
+      22
+     ]
+    ],
+    "color": "#b77d4d"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      74.0,
+      54
+     ],
+     [
+      106.0,
+      38
+     ],
+     [
+      106.0,
+      42
+     ],
+     [
+      74.0,
+      58
+     ]
+    ],
+    "color": "#724533"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      34.0,
+      2
+     ],
+     [
+      106.0,
+      38
+     ],
+     [
+      74.0,
+      54
+     ],
+     [
+      2.0,
+      18
+     ]
+    ],
+    "color": "#d7ac73"
+   }
+  },
+  {
+   "id": "draw.line",
+   "params": {
+    "x0": 2,
+    "y0": 18,
+    "x1": 73,
+    "y1": 54,
+    "color": "#f2cf96"
+   }
+  },
+  {
+   "id": "effect.outline",
+   "params": {
+    "color": "#241d2a"
+   }
+  },
+  {
+   "id": "layer.new",
+   "params": {
+    "name": "livro_de_baixo"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      22.0,
+      15
+     ],
+     [
+      42.0,
+      25
+     ],
+     [
+      42.0,
+      28
+     ],
+     [
+      22.0,
+      18
+     ]
+    ],
+    "color": "#f4bf69"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      42.0,
+      25
+     ],
+     [
+      56.0,
+      18
+     ],
+     [
+      56.0,
+      21
+     ],
+     [
+      42.0,
+      28
+     ]
+    ],
+    "color": "#c98a3a"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      36.0,
+      8
+     ],
+     [
+      56.0,
+      18
+     ],
+     [
+      42.0,
+      25
+     ],
+     [
+      22.0,
+      15
+     ]
+    ],
+    "color": "#fff1d6"
+   }
+  },
+  {
+   "id": "effect.outline",
+   "params": {
+    "color": "#241d2a"
+   }
+  },
+  {
+   "id": "layer.new",
+   "params": {
+    "name": "livro_de_cima"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      26.0,
+      13
+     ],
+     [
+      42.0,
+      21
+     ],
+     [
+      42.0,
+      23
+     ],
+     [
+      26.0,
+      15
+     ]
+    ],
+    "color": "#53aaa9"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      42.0,
+      21
+     ],
+     [
+      52.0,
+      16
+     ],
+     [
+      52.0,
+      18
+     ],
+     [
+      42.0,
+      23
+     ]
+    ],
+    "color": "#347a88"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      36.0,
+      8
+     ],
+     [
+      52.0,
+      16
+     ],
+     [
+      42.0,
+      21
+     ],
+     [
+      26.0,
+      13
+     ]
+    ],
+    "color": "#91dfd4"
+   }
+  },
+  {
+   "id": "draw.line",
+   "params": {
+    "x0": 26,
+    "y0": 13,
+    "x1": 41,
+    "y1": 21,
+    "color": "#bcece0"
+   }
+  },
+  {
+   "id": "effect.outline",
+   "params": {
+    "color": "#241d2a"
+   }
+  },
+  {
+   "id": "layer.new",
+   "params": {
+    "name": "caneca"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      68.0,
+      31
+     ],
+     [
+      74.0,
+      34
+     ],
+     [
+      74.0,
+      40
+     ],
+     [
+      68.0,
+      37
+     ]
+    ],
+    "color": "#f4bf69"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      74.0,
+      34
+     ],
+     [
+      80.0,
+      31
+     ],
+     [
+      80.0,
+      37
+     ],
+     [
+      74.0,
+      40
+     ]
+    ],
+    "color": "#c98a3a"
+   }
+  },
+  {
+   "id": "draw.polygon",
+   "params": {
+    "points": [
+     [
+      74.0,
+      28
+     ],
+     [
+      80.0,
+      31
+     ],
+     [
+      74.0,
+      34
+     ],
+     [
+      68.0,
+      31
+     ]
+    ],
+    "color": "#ffd88f"
+   }
+  },
+  {
+   "id": "draw.line",
+   "params": {
+    "x0": 68,
+    "y0": 31,
+    "x1": 73,
+    "y1": 34,
+    "color": "#fff1d6"
+   }
+  },
+  {
+   "id": "effect.outline",
+   "params": {
+    "color": "#241d2a"
+   }
+  },
+  {
+   "id": "view.fit",
+   "params": {}
+  }
+ ]
+}
