@@ -358,6 +358,11 @@ effect.outline (draw commands take onlyOn to shade inside a colour) -> render_pr
 result -> doc_save (.pontilha keeps layers and frames) and doc_export (.png, or .gif for the animation; scale enlarges \
 without blurring). Animation: frame.new {copy?} adds a frame after the current one and shows it; every draw command \
 takes frame (number from 1) to paint any frame without switching; frame.setDuration sets milliseconds per frame. \
+Looping motion without redrawing: anim.oscillate bobs a layer (phase delays an accessory behind the body), \
+effect.wave {animate: true} ripples a hem, draw.particles floats dust on its own layer. Volume: effect.shade (light \
+and dark sides by the edge), effect.bands (rings by distance to the edge), effect.blobify (melt shapes together). \
+Finish with effect.posterize {preset} and check with color.check. recipe.start/stop records a piece; recipe.run \
+{colors: {old: new}} replays it in other colours. \
 doc_new refuses to drop unsaved work unless discard is true: ask the user first.";
 
 fn schema(properties: Value, required: &[&str]) -> Value {
@@ -440,7 +445,7 @@ fn tools() -> Value {
         },
         {
             "name": "doc_export",
-            "description": "Export the image. `.png`: the frame on screen (or one layer), or with `sheet` every frame in one sprite sheet. `.gif`: the whole animation, looping, with each frame's duration. `scale` enlarges without blurring (Bubie badges: 32 px drawn, scale 4 = 128 px).",
+            "description": "Export the image. `.png`: the frame on screen (or one layer), or with `sheet` every frame in one sprite sheet. `.gif`: the whole animation, looping, with each frame's duration. `scale` enlarges without blurring (Bubie badges: 40 px drawn and delivered at scale 1; scale 4 for a preview).",
             "inputSchema": schema(json!({
                 "path": { "type": "string", "description": "Target .png or .gif beneath the automation write root." },
                 "scale": { "type": "integer", "minimum": 1 },

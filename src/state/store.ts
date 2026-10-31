@@ -46,6 +46,7 @@ import {
   unionSelection,
 } from '../core/transform';
 import { DEFAULT_PALETTE } from '../core/palette';
+import type { Recipe } from '../core/project';
 import { DEFAULT_SETTINGS, type ToolId, type ToolSettings } from '../core/tools';
 
 /** Zoom steps in device pixels per image pixel. Integers keep every pixel the same size on screen. */
@@ -106,6 +107,8 @@ export interface AppState {
   primary: number;
   secondary: number;
   palette: number[];
+  /** Recorded command lists, saved in the project. */
+  recipes: Recipe[];
   showGrid: boolean;
   /** Shows the image repeated around itself, to check that a tile's edges meet. */
   tileMode: boolean;
@@ -156,6 +159,7 @@ export const useApp = create<AppState>(() => ({
   primary: DEFAULT_PALETTE[1],
   secondary: DEFAULT_PALETTE[6],
   palette: DEFAULT_PALETTE,
+  recipes: [],
   showGrid: true,
   tileMode: false,
   isoGrid: 0,
@@ -345,13 +349,17 @@ export const actions = {
 
   // Documents
 
-  loadDoc(doc: Doc, opts: { activeLayerId?: string; palette?: number[]; fileName: string; filePath: string | null; dirty?: boolean }) {
+  loadDoc(
+    doc: Doc,
+    opts: { activeLayerId?: string; palette?: number[]; recipes?: Recipe[]; fileName: string; filePath: string | null; dirty?: boolean },
+  ) {
     history.clear();
     showFrame(doc, doc.frames.some((f) => f.id === doc.frame) ? doc.frame : doc.frames[0].id);
     changed({
       doc,
       activeLayerId: opts.activeLayerId ?? doc.layers[doc.layers.length - 1].id,
       palette: opts.palette && opts.palette.length > 0 ? opts.palette : get().palette,
+      recipes: opts.recipes ?? get().recipes,
       fileName: opts.fileName,
       filePath: opts.filePath,
       dirty: opts.dirty ?? false,

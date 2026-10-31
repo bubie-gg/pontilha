@@ -87,6 +87,26 @@ duração em milissegundos.
   linha ou em grade) ou um GIF animado que repete para sempre, com ida e volta opcional.
   GIF guarda até 256 cores e cada pixel é opaco ou transparente.
 
+## Efeitos, loops calculados e receitas
+
+Ideias tiradas dos grafos de nós do Pixel Composer (o projeto Boo), como comandos para agentes
+e scripts. Todos valem como um passo de desfazer, mesmo quando mexem em vários quadros.
+
+- Paleta: `palette.preset` (bubie, slso8, boo, pico8, sweetie16); `effect.posterize` força
+  cada pixel para a cor mais próxima da paleta, com pontilhado ordenado opcional;
+  `color.check` lista o que está fora dela.
+- Volume pela borda: `effect.shade` pinta o lado da luz e o da sombra a partir da direção da
+  luz; `effect.bands` faz faixas pela distância até a borda (aros e brilhos);
+  `effect.blobify` funde formas próximas numa gosma arredondada.
+- Movimento em loop sem redesenhar: `anim.oscillate` balança uma camada (com `phase` para um
+  acessório vir atrasado), `effect.wave {animate: true}` ondula uma barra ou capa, e
+  `draw.particles` solta poeira ou brilhos que renascem a cada volta.
+- Receitas: `recipe.start` … `recipe.stop` grava os comandos que montam a peça e os guarda no
+  `.pontilha`; `recipe.run {colors: {"#de": "#para"}}` refaz a peça em outras cores. O arquivo
+  também guarda uma miniatura PNG (`thumbnail`) para galerias.
+
+Exemplo completo em `examples/fantasma-lanterna/`.
+
 ## Controlar por agentes e terminal
 
 Com a janela aberta, ela escuta em `127.0.0.1:7990` (porta e token publicados em

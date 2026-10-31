@@ -19,6 +19,39 @@ const HEX = [
 
 export const DEFAULT_PALETTE: number[] = HEX.map((h) => parseHex(h)!);
 
+/** Known palettes by name, for `palette.preset` and for forcing art into one with `effect.posterize`. */
+export const PRESETS: Record<string, { label: string; colors: number[] }> = Object.fromEntries(
+  Object.entries({
+    pontilha: { label: 'Pontilha (padrão)', hex: HEX },
+    // Bubie master palette (art-src/palette/bubie-paleta-mestre.hex in the Bubie repo): every badge colour comes from here.
+    bubie: {
+      label: 'Bubie (paleta mestre)',
+      hex: [
+        '#16141c', '#262838', '#3a3d50', '#565b72', '#8187a0', '#c8ccd8',
+        '#2b1b12', '#49372e', '#74502d', '#9c7a58', '#bfa586', '#ddcbb2',
+        '#f3e7d5', '#fffdf8', '#5c2a0c', '#8d4814', '#c98f3a', '#f4bf69',
+        '#ffd95a', '#3d0d24', '#7a1a33', '#c4363c', '#ec6a3a', '#ffa860',
+        '#451640', '#852d6a', '#cc5c9a', '#f598bf', '#ffd6e2', '#1a1236',
+        '#3a2068', '#6a43a3', '#a07ad6', '#e8d0f5', '#171538', '#263a7c',
+        '#3d66bd', '#5ea3e0', '#b6e4f7', '#0e2a30', '#1b5a5a', '#2a9480',
+        '#66d1a8', '#cdf5d8', '#16332a', '#2f6430', '#6a9e34', '#c2d95c',
+      ],
+    },
+    // SLSO8 by Luis Miguel Maldonado: warm lights over deep blue nights.
+    slso8: { label: 'SLSO8', hex: ['#0d2b45', '#203c56', '#544e68', '#8d697a', '#d08159', '#ffaa5e', '#ffd4a3', '#ffecd6'] },
+    // SLSO8 with the extra night blue the Boo showcase adds for its darkest background.
+    boo: { label: 'Boo (SLSO8 + noite)', hex: ['#061a2c', '#0d2b45', '#203c56', '#544e68', '#8d697a', '#d08159', '#ffaa5e', '#ffd4a3', '#ffecd6'] },
+    pico8: {
+      label: 'PICO-8',
+      hex: ['#000000', '#1d2b53', '#7e2553', '#008751', '#ab5236', '#5f574f', '#c2c3c7', '#fff1e8', '#ff004d', '#ffa300', '#ffec27', '#00e436', '#29adff', '#83769c', '#ff77a8', '#ffccaa'],
+    },
+    sweetie16: {
+      label: 'Sweetie 16',
+      hex: ['#1a1c2c', '#5d275d', '#b13e53', '#ef7d57', '#ffcd75', '#a7f070', '#38b764', '#257179', '#29366f', '#3b5dc9', '#41a6f6', '#73eff7', '#f4f4f4', '#94b0c2', '#566c86', '#333c57'],
+    },
+  }).map(([id, { label, hex }]) => [id, { label, colors: hex.map((h) => parseHex(h)!) }]),
+);
+
 /** Where shadows and lights lean: blue and yellow. */
 const COOL = 240;
 const WARM = 60;

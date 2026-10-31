@@ -49,6 +49,7 @@ export async function openFile() {
     actions.loadDoc(project.doc, {
       activeLayerId: project.activeLayerId,
       palette: project.palette,
+      recipes: project.recipes,
       fileName: file.name,
       filePath: file.path,
     });
@@ -58,9 +59,9 @@ export async function openFile() {
 }
 
 export async function saveProject(saveAs = false) {
-  const { doc, palette, activeLayerId, fileName, filePath } = useApp.getState();
+  const { doc, palette, activeLayerId, recipes, fileName, filePath } = useApp.getState();
   try {
-    const bytes = new TextEncoder().encode(await serializeProject(doc, palette, activeLayerId));
+    const bytes = new TextEncoder().encode(await serializeProject(doc, palette, activeLayerId, recipes));
     const name = withExtension(fileName, 'pontilha');
 
     if (!isDesktop) {

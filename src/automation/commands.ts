@@ -15,9 +15,24 @@ import {
   tagRange,
 } from '../core/doc';
 import { PixelEditor } from '../core/editor';
+import {
+  type WaveDirection,
+  type WaveShape,
+  blobify,
+  edgeDistance,
+  loopOffset,
+  offPalette,
+  paintedMask,
+  particlesAt,
+  posterize,
+  rotate,
+  shadeSides,
+  wave,
+} from '../core/effects';
+import type { Entry } from '../core/history';
 import { encodePng, scaleNearest } from '../core/png';
-import { type ColorScope, hueShiftRamp, usedColors } from '../core/palette';
-import { parseProject, serializeProject } from '../core/project';
+import { type ColorScope, PRESETS, hueShiftRamp, scopeCels, usedColors } from '../core/palette';
+import { type Recipe, parseProject, serializeProject } from '../core/project';
 import {
   type Point,
   brushOffsets,
@@ -33,7 +48,7 @@ import {
   starCells,
 } from '../core/raster';
 import type { ToolId } from '../core/tools';
-import { ANCHORS, type Anchor, type Selection, contentBounds, selectedCount } from '../core/transform';
+import { ANCHORS, type Anchor, type Selection, contentBounds, selectedCount, shiftCel } from '../core/transform';
 import { decodeImage } from '../platform/files';
 import { type Target, ZOOM_LEVELS, actions, activeLayer, useApp } from '../state/store';
 
@@ -203,6 +218,8 @@ function inspect() {
     tool: s.tool,
     canUndo: s.canUndo,
     canRedo: s.canRedo,
+    recipes: s.recipes.map((r) => ({ name: r.name, steps: r.steps.length })),
+    recording: recording?.name ?? null,
   };
 }
 
@@ -231,6 +248,162 @@ function paint(p: Params, draw: (editor: PixelEditor, width: number, height: num
   const entry = editor.toEntry();
   actions.commit(entry);
   return { layer: layer.name, changed: entry?.kind === 'pixels' ? entry.indices.length : 0 };
+}
+
+/** Paints several cels and records them all as one undo step. `draw` gets each editor and its index in the list. */
+function paintCels(
+  p: Params,
+  cels: Array<{ layer: Layer; frame: Frame }>,
+  draw: (editor: PixelEditor, index: number, width: number, height: number) => void,
+) {
+  const { doc } = useApp.getState();
+  const entries: Entry[] = [];
+  let changed = 0;
+  cels.forEach(({ layer, frame }, index) => {
+    const cel = celOf(doc, layer, frame.id);
+    const editor = new PixelEditor(layer, doc.width, doc.height, cel);
+    editor.allow = maskFor(p, cel);
+    draw(editor, index, doc.width, doc.height);
+    const entry = editor.toEntry();
+    if (entry?.kind !== 'pixels') return;
+    entries.push(entry);
+    changed += entry.indices.length;
+  });
+  actions.commit(entries.length === 0 ? null : entries.length === 1 ? entries[0] : { kind: 'group', entries });
+  return { changed, cels: cels.length };
+}
+
+/** Writes whole new pixels into a cel through an editor, so only real changes are recorded. */
+function writeAll(editor: PixelEditor, pixels: Uint32Array) {
+  for (let i = 0; i < pixels.length; i++) if (editor.cel[i] !== pixels[i]) editor.setIndex(i, pixels[i]);
+}
+
+/** Frames an animation command covers: a tag's, from..to (numbers from 1), or every frame. */
+function frameSpan(p: Params): Frame[] {
+  const { doc } = useApp.getState();
+  if (has(p, 'tag')) {
+    const [a, b] = exportRange(p)!;
+    return doc.frames.slice(a, b + 1);
+  }
+  if (has(p, 'from') || has(p, 'to')) {
+    const a = has(p, 'from') ? frameIndex(doc, frameRef(p.from).id) : 0;
+    const b = has(p, 'to') ? frameIndex(doc, frameRef(p.to).id) : doc.frames.length - 1;
+    if (b < a) fail('to precisa vir depois de from');
+    return doc.frames.slice(a, b + 1);
+  }
+  return doc.frames;
+}
+
+/** Frames a whole-cel effect paints: the one on screen (or frame), or with allFrames/tag every frame in the span. */
+function effectFrames(p: Params): Frame[] {
+  return bool(p, 'allFrames', false) || has(p, 'tag') || has(p, 'from') || has(p, 'to') ? frameSpan(p) : [targetFrame(p)];
+}
+
+/** Adds copies of the last frame until the animation has `count` frames. */
+function ensureFrames(count: number) {
+  if (count > MAX_FRAMES) fail(`o máximo é ${MAX_FRAMES} quadros`);
+  while (useApp.getState().doc.frames.length < count) {
+    const { doc } = useApp.getState();
+    actions.selectFrame(doc.frames[doc.frames.length - 1].id);
+    if (!actions.addFrame({ copy: true })) fail('não foi possível criar os quadros');
+  }
+}
+
+/** `frames` param: grow the animation to that many frames first (copying the last one). */
+function framesParam(p: Params) {
+  if (!has(p, 'frames')) return;
+  const n = int(p, 'frames');
+  if (n < 1) fail('frames precisa ser pelo menos 1');
+  ensureFrames(n);
+}
+
+/** `palette` (list of colours) or `preset` (name), defaulting to the editor's palette. */
+function paletteParam(p: Params): number[] {
+  if (has(p, 'preset')) return presetRef(p.preset).colors;
+  if (has(p, 'palette')) {
+    if (!Array.isArray(p.palette) || p.palette.length === 0) fail('palette precisa ser uma lista de cores');
+    return p.palette.map((c, i) => colorValue(c, `palette[${i}]`)).filter((c) => c >>> 24);
+  }
+  const { palette } = useApp.getState();
+  if (palette.length === 0) fail('a paleta está vazia; passe palette ou preset');
+  return palette;
+}
+
+function presetRef(name: unknown) {
+  const preset = typeof name === 'string' ? PRESETS[name.toLowerCase()] : undefined;
+  if (!preset) fail(`paleta desconhecida: ${JSON.stringify(name)}. Conhecidas: ${Object.keys(PRESETS).join(', ')}`);
+  return preset;
+}
+
+/** `on` param: the shape an effect works on, as a mask of a cel: painted pixels (default) or one colour. */
+function regionOf(p: Params, cel: Uint32Array): Uint8Array {
+  if (!has(p, 'on') || p.on === 'painted') return paintedMask(cel);
+  const only = colorValue(p.on, 'on');
+  const mask = new Uint8Array(cel.length);
+  for (let i = 0; i < cel.length; i++) mask[i] = sameColor(cel[i], only) && cel[i] >>> 24 ? 1 : 0;
+  return mask;
+}
+
+function colorList(p: Params, key: string): number[] {
+  const list = p[key];
+  if (!Array.isArray(list) || list.length === 0) fail(`${key} precisa ser uma lista de cores`);
+  return list.map((c, i) => colorValue(c, `${key}[${i}]`));
+}
+
+function choice<T extends string>(p: Params, key: string, options: readonly T[], fallback: T): T {
+  const v = text(p, key, fallback);
+  if (!options.includes(v as T)) fail(`${key} precisa ser um de: ${options.join(', ')}`);
+  return v as T;
+}
+
+// Recipes: while one is recording, every command that changes the image is kept, in order.
+
+/**
+ * The recipe being recorded. `units` counts the steps each undo step added (a batch
+ * is one undo step but several recipe steps), so undo and redo move whole units.
+ */
+let recording: (Recipe & { units: number[]; undone: Array<Recipe['steps']> }) | null = null;
+let replaying = false;
+
+const NOT_RECORDED = ['recipe.', 'project.', 'image.', 'history.'];
+
+function record(method: string, params: Params) {
+  if (!recording || replaying || NOT_RECORDED.some((prefix) => method.startsWith(prefix))) return;
+  recording.steps.push({ method, params: structuredClone(params) });
+  recording.undone = [];
+}
+
+/** Runs `work` (one undo step) and groups the recipe steps it recorded into one unit; mirrors undo and redo. */
+async function recordUnit<T>(method: string, work: () => Promise<T>): Promise<T> {
+  const before = recording?.steps.length ?? 0;
+  const result = await work();
+  if (!recording || replaying) return result;
+  if (method === 'history.undo') {
+    const n = recording.units.pop();
+    if (n) recording.undone.push(recording.steps.splice(recording.steps.length - n, n));
+  } else if (method === 'history.redo') {
+    const steps = recording.undone.pop();
+    if (steps) {
+      recording.steps.push(...steps);
+      recording.units.push(steps.length);
+    }
+  } else if (recording.steps.length > before) {
+    recording.units.push(recording.steps.length - before);
+  }
+  return result;
+}
+
+/** Params with every colour found in `swap` (old → new) replaced, at any depth. */
+function swapColors(value: unknown, swap: Map<number, string>): unknown {
+  if (typeof value === 'string') {
+    const c = parseHex(value);
+    return c !== null && swap.has(c) ? swap.get(c) : value;
+  }
+  if (Array.isArray(value)) return value.map((v) => swapColors(v, swap));
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, swapColors(v, swap)]));
+  }
+  return value;
 }
 
 function guardUnsaved(p: Params) {
@@ -756,6 +929,32 @@ export const COMMANDS: Record<string, Command> = {
     },
   },
 
+  'palette.preset': {
+    summary: `Troca a paleta por uma conhecida: ${Object.keys(PRESETS).join(', ')}. add true acrescenta em vez de trocar.`,
+    params: 'name, add?',
+    run: (p) => {
+      const preset = presetRef(text(p, 'name'));
+      if (bool(p, 'add', false)) actions.addColors(preset.colors);
+      else useApp.setState({ palette: [...preset.colors], dirty: true });
+      return { name: preset.label, palette: useApp.getState().palette.map(toHex) };
+    },
+  },
+
+  'color.check': {
+    summary:
+      'Confere se a arte usa só cores da paleta (a do editor, palette ou preset). Lista as cores de fora e quantos pixels usam cada uma; semitransparentes também contam como fora.',
+    params: 'palette? | preset?, scope?, layer?, frame?',
+    readOnly: true,
+    run: (p) => {
+      const { doc } = useApp.getState();
+      const palette = paletteParam(p);
+      const off = new Map<number, number>();
+      for (const { cel } of scopeCels(doc, colorScope(p), targetLayer(p).id, targetFrame(p).id)) offPalette(cel, palette, off);
+      const colors = [...off].sort((a, b) => b[1] - a[1]).map(([c, pixels]) => ({ color: toHex(c), pixels }));
+      return { ok: colors.length === 0, pixels: colors.reduce((n, c) => n + c.pixels, 0), colors };
+    },
+  },
+
   'color.used': {
     summary: 'Cores pintadas e quantos pixels usam cada uma, da mais usada para a menos. scope: all (padrão), layer (a camada em todos os quadros) ou frame (o quadro em todas as camadas).',
     params: 'scope?, layer?, frame?',
@@ -819,8 +1018,9 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'draw.rect': {
-    summary: 'Retângulo com canto em (x, y), largura w e altura h. Contorno por padrão; filled preenche.',
-    params: 'x, y, w, h, color?, filled?, thickness?, onlyOn?, layer?, frame?',
+    summary:
+      'Retângulo com canto em (x, y), largura w e altura h. Contorno por padrão; filled preenche. radius arredonda os cantos (frações valem).',
+    params: 'x, y, w, h, color?, filled?, thickness?, radius?, onlyOn?, layer?, frame?',
     run: (p) => {
       const c = color(p);
       const x = int(p, 'x');
@@ -828,9 +1028,18 @@ export const COMMANDS: Record<string, Command> = {
       const w = int(p, 'w');
       const h = int(p, 'h');
       if (w < 1 || h < 1) fail('w e h precisam ser pelo menos 1');
+      const radius = num(p, 'radius', 0);
+      if (radius < 0) fail('radius não pode ser negativo');
       return paint(p, (editor) =>
-        rectCells(x, y, x + w - 1, y + h - 1, bool(p, 'filled', false), Math.max(1, int(p, 'thickness', 1)), (px, py) =>
-          editor.set(px, py, c),
+        rectCells(
+          x,
+          y,
+          x + w - 1,
+          y + h - 1,
+          bool(p, 'filled', false),
+          Math.max(1, int(p, 'thickness', 1)),
+          (px, py) => editor.set(px, py, c),
+          radius,
         ),
       );
     },
@@ -977,11 +1186,12 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'effect.outline': {
-    summary: 'Contorna o que está desenhado na camada com uma cor. corners true inclui as diagonais.',
-    params: 'color, corners?, layer?, frame?',
+    summary: 'Contorna o que está desenhado na camada com uma cor. corners true inclui as diagonais. allFrames true (ou tag, from/to) contorna cada quadro.',
+    params: 'color, corners?, layer?, frame?, allFrames?, tag?, from?, to?',
     run: (p) => {
       const c = requiredColor(p, 'color');
-      return paint(p, (editor, width, height) => {
+      const layer = targetLayer(p);
+      return paintCels(p, effectFrames(p).map((frame) => ({ layer, frame })), (editor, _i, width, height) => {
         for (const i of outlineIndices(editor.cel, width, height, bool(p, 'corners', false))) editor.setIndex(i, c);
       });
     },
@@ -998,6 +1208,219 @@ export const COMMANDS: Record<string, Command> = {
         for (let i = 0; i < width * height; i++) if (sameColor(px[i], from)) editor.setIndex(i, to);
       });
     },
+  },
+
+  // Whole-cel effects. They work on the frame on screen (or frame); allFrames true, tag or from/to apply them to every frame in that stretch.
+
+  'effect.posterize': {
+    summary:
+      'Força a arte numa paleta: cada pixel vira a cor mais próxima (a paleta do editor, palette ou preset) e fica opaco; abaixo de meia transparência some. dither (0 a 1) quebra degradês num xadrez ordenado. scope: all (padrão), layer ou frame. Bom como último passo.',
+    params: 'palette? | preset?, dither?, scope?, layer?, frame?',
+    run: (p) => {
+      const { doc } = useApp.getState();
+      const palette = paletteParam(p);
+      const dither = num(p, 'dither', 0);
+      if (dither < 0 || dither > 1) fail('dither precisa estar entre 0 e 1');
+      const cels = scopeCels(doc, colorScope(p), targetLayer(p).id, targetFrame(p).id).map(({ layer, frame }) => ({
+        layer,
+        frame: frameRef(frame),
+      }));
+      return paintCels({}, cels, (editor, _i, width) => writeAll(editor, posterize(editor.cel, width, palette, dither)));
+    },
+  },
+
+  'effect.shade': {
+    summary:
+      'Luz e sombra pela borda da forma, como um chanfro: pixels a até size px da borda virada para a luz recebem light, e a até darkSize px da borda oposta recebem dark. angle é de onde vem a luz em graus (padrão -135: cima à esquerda; 0 direita, 90 baixo). on limita à forma de uma cor (padrão: tudo que está pintado).',
+    params: 'light?, dark?, angle?, size?, darkSize?, on?, onlyOn?, layer?, frame?, allFrames?, tag?',
+    run: (p) => {
+      if (!has(p, 'light') && !has(p, 'dark')) fail('passe light, dark ou os dois');
+      const light = has(p, 'light') ? colorValue(p.light, 'light') : null;
+      const dark = has(p, 'dark') ? colorValue(p.dark, 'dark') : null;
+      const size = int(p, 'size', 1);
+      const darkSize = int(p, 'darkSize', size);
+      if (size < 0 || darkSize < 0 || size > 64 || darkSize > 64) fail('size e darkSize precisam ser de 0 a 64');
+      const angle = num(p, 'angle', -135);
+      const layer = targetLayer(p);
+      return paintCels(p, effectFrames(p).map((frame) => ({ layer, frame })), (editor, _i, width, height) => {
+        const sides = shadeSides(regionOf(p, editor.cel), width, height, angle, light === null ? 0 : size, dark === null ? 0 : darkSize);
+        for (let i = 0; i < sides.length; i++) {
+          if (sides[i] === 1) editor.setIndex(i, light!);
+          else if (sides[i] === -1) editor.setIndex(i, dark!);
+        }
+      });
+    },
+  },
+
+  'effect.bands': {
+    summary:
+      'Faixas de cor pela distância até a borda da forma (SDF): colors vai da borda para dentro, cada faixa com width px. origin "center" conta do miolo para fora (brilho interno). Pixels além da última faixa ficam como estão. on limita à forma de uma cor.',
+    params: 'colors: string[], width?, origin?: "edge" | "center", on?, onlyOn?, layer?, frame?, allFrames?, tag?',
+    run: (p) => {
+      const colors = colorList(p, 'colors');
+      const band = num(p, 'width', 1);
+      if (band <= 0) fail('width precisa ser maior que zero');
+      const origin = choice(p, 'origin', ['edge', 'center'] as const, 'edge');
+      const layer = targetLayer(p);
+      return paintCels(p, effectFrames(p).map((frame) => ({ layer, frame })), (editor, _i, width, height) => {
+        const dist = edgeDistance(regionOf(p, editor.cel), width, height);
+        let max = 0;
+        for (const d of dist) if (d > max) max = d;
+        for (let i = 0; i < dist.length; i++) {
+          if (dist[i] <= 0) continue;
+          const k = Math.floor(((origin === 'edge' ? dist[i] - 1 : max - dist[i]) + 1e-9) / band);
+          if (k < colors.length) editor.setIndex(i, colors[k]);
+        }
+      });
+    },
+  },
+
+  'effect.blobify': {
+    summary:
+      'Arredonda e funde formas como gosma: borra radius px e corta em threshold (0 a 1, padrão 0.5). Formas próximas se juntam, cantos arredondam, pontas finas somem. Pixels novos pegam a cor do pixel pintado mais perto.',
+    params: 'radius, threshold?, layer?, frame?, allFrames?, tag?',
+    run: (p) => {
+      const radius = int(p, 'radius');
+      if (radius < 1 || radius > 16) fail('radius precisa ser de 1 a 16');
+      const threshold = num(p, 'threshold', 0.5);
+      if (threshold <= 0 || threshold >= 1) fail('threshold precisa estar entre 0 e 1 (sem incluir)');
+      const layer = targetLayer(p);
+      return paintCels({}, effectFrames(p).map((frame) => ({ layer, frame })), (editor, _i, width, height) =>
+        writeAll(editor, blobify(editor.cel, width, height, radius, threshold)),
+      );
+    },
+  },
+
+  'effect.wave': {
+    summary:
+      'Ondula a camada: direction "vertical" sobe e desce cada coluna (barra de fantasma, água), "horizontal" desloca cada linha (bandeira, calor). amp em px, wavelength em px entre cristas, phase de 0 a 1. start é a linha (ou coluna) onde a onda começa, crescendo ao longo de ramp px. animate true usa o quadro base (frame, padrão o atual) como fonte e anima a fase em todos os quadros do trecho (tag, from/to ou todos), cycles voltas por loop; frames cria quadros até esse total antes.',
+    params: 'direction?, amp, wavelength, phase?, start?, ramp?, layer?, frame?, animate?, cycles?, frames?, tag?, from?, to?',
+    run: (p) =>
+      actions.group(() => {
+        const direction = choice<WaveDirection>(p, 'direction', ['vertical', 'horizontal'], 'vertical');
+        const amp = num(p, 'amp');
+        const wavelength = num(p, 'wavelength');
+        if (wavelength <= 0) fail('wavelength precisa ser maior que zero');
+        const opts = { direction, amp, wavelength, phase: num(p, 'phase', 0), start: has(p, 'start') ? num(p, 'start') : undefined, ramp: num(p, 'ramp', 1) };
+        const layer = targetLayer(p);
+        if (!bool(p, 'animate', false)) {
+          return paintCels({}, [{ layer, frame: targetFrame(p) }], (editor, _i, width, height) => writeAll(editor, wave(editor.cel, width, height, opts)));
+        }
+        const base = targetFrame(p);
+        framesParam(p);
+        const { doc } = useApp.getState();
+        const source = celOf(doc, layer, base.id).slice();
+        const span = frameSpan(p);
+        const cycles = num(p, 'cycles', 1);
+        return paintCels({}, span.map((frame) => ({ layer, frame })), (editor, i, width, height) =>
+          writeAll(editor, wave(source, width, height, { ...opts, phase: opts.phase + (cycles * i) / span.length })),
+        );
+      }),
+  },
+
+  'effect.rotate': {
+    summary:
+      'Gira a camada angle graus (positivo = horário) em volta de (cx, cy), padrão o centro da imagem. Cada pixel novo pega a cor da maioria das amostras dele, então as bordas ficam limpas e nenhuma cor nova aparece (como RotSprite). Gire antes de contornar: o contorno fica mais limpo depois.',
+    params: 'angle, cx?, cy?, layer?, frame?, allFrames?, tag?',
+    run: (p) => {
+      const angle = num(p, 'angle');
+      const layer = targetLayer(p);
+      return paintCels({}, effectFrames(p).map((frame) => ({ layer, frame })), (editor, _i, width, height) =>
+        writeAll(editor, rotate(editor.cel, width, height, angle, num(p, 'cx', width / 2), num(p, 'cy', height / 2))),
+      );
+    },
+  },
+
+  'effect.clip': {
+    summary:
+      'Máscara de recorte: apaga da camada os pixels onde a camada by está vazia (invert true: onde by está pintada). Serve para a sombra ou o brilho não passarem da forma de baixo. Usa o mesmo quadro nas duas camadas.',
+    params: 'by, invert?, layer?, frame?, allFrames?, tag?',
+    run: (p) => {
+      if (!has(p, 'by')) fail('o parâmetro "by" é obrigatório: a camada cuja forma recorta');
+      const by = layerRef(p.by);
+      const layer = targetLayer(p);
+      if (by === layer) fail('by precisa ser outra camada');
+      const invert = bool(p, 'invert', false);
+      const { doc } = useApp.getState();
+      const frames = effectFrames(p);
+      return paintCels({}, frames.map((frame) => ({ layer, frame })), (editor, i) => {
+        const shape = celOf(doc, by, frames[i].id);
+        for (let k = 0; k < shape.length; k++) if (!!(shape[k] >>> 24) === invert && editor.cel[k]) editor.setIndex(k, 0);
+      });
+    },
+  },
+
+  // Animation helpers: motion computed per frame so loops close without a jump.
+
+  'anim.oscillate': {
+    summary:
+      'Balança uma camada no loop sem redesenhar: desloca o desenho de cada quadro do trecho (tag, from/to ou todos) amp px numa onda; onde a camada está vazia num quadro, usa o do primeiro quadro do trecho (base fixa um quadro como fonte de todos). axis "y" (padrão) ou "x"; cycles voltas por loop (inteiro fecha o loop); phase de 0 a 1 atrasa a camada em relação às outras (acompanhamento: rosto 0, acessório 0.1); shape sine, bounce (pulo para um lado só) ou square. frames cria quadros até esse total antes.',
+    params: 'amp, axis?, cycles?, phase?, shape?, layer?, base?, frames?, tag?, from?, to?',
+    run: (p) =>
+      actions.group(() => {
+        const amp = num(p, 'amp');
+        const axis = choice(p, 'axis', ['y', 'x'] as const, 'y');
+        const shape = choice<WaveShape>(p, 'shape', ['sine', 'bounce', 'square'], 'sine');
+        const cycles = num(p, 'cycles', 1);
+        const phase = num(p, 'phase', 0);
+        const layer = targetLayer(p);
+        framesParam(p);
+        const span = frameSpan(p);
+        if (span.length < 2) fail('o trecho precisa de pelo menos 2 quadros; passe frames para criar');
+        const { doc } = useApp.getState();
+        const painted = (cel: Uint32Array) => cel.some((c) => c >>> 24);
+        const first = celOf(doc, layer, (has(p, 'base') ? frameRef(p.base) : span[0]).id).slice();
+        if (!painted(first)) fail(`a camada "${layer.name}" está vazia no quadro base`);
+        const sources = span.map((f) => {
+          const cel = celOf(doc, layer, f.id);
+          return has(p, 'base') || !painted(cel) ? first : cel.slice();
+        });
+        const offsets: number[] = [];
+        const result = paintCels({}, span.map((frame) => ({ layer, frame })), (editor, i, width, height) => {
+          const d = loopOffset(i, span.length, amp, cycles, phase, shape);
+          offsets.push(d);
+          writeAll(editor, shiftCel(sources[i], width, height, width, height, axis === 'x' ? d : 0, axis === 'y' ? d : 0));
+        });
+        return { ...result, layer: layer.name, offsets };
+      }),
+  },
+
+  'draw.particles': {
+    summary:
+      'Partículas que flutuam em loop (poeira, brilhos, bolhas, neve) em todos os quadros do trecho: count pontos nascem em momentos sorteados dentro da caixa x, y, w, h (padrão: a imagem toda), andam drift [dx, dy] px durante a vida, balançam wobble px para o lado e vivem life (0 a 1) do loop. colors vai do nascimento ao fim. seed fixa o sorteio. clear true apaga a camada nesses quadros antes. Use numa camada só para elas.',
+    params: 'count, colors? | color?, seed?, x?, y?, w?, h?, drift?: [dx, dy], wobble?, life?, clear?, onlyOn?, layer?, frames?, tag?, from?, to?',
+    run: (p) =>
+      actions.group(() => {
+        const count = int(p, 'count');
+        if (count < 1 || count > 2000) fail('count precisa ser de 1 a 2000');
+        const colors = has(p, 'colors') ? colorList(p, 'colors') : [color(p)];
+        let drift: [number, number] = [0, -4];
+        if (has(p, 'drift')) {
+          if (!Array.isArray(p.drift) || p.drift.length !== 2 || p.drift.some((v) => typeof v !== 'number')) fail('drift precisa ser [dx, dy]');
+          drift = [p.drift[0] as number, p.drift[1] as number];
+        }
+        framesParam(p);
+        const { doc } = useApp.getState();
+        const opts = {
+          count,
+          seed: int(p, 'seed', 1),
+          x: num(p, 'x', 0),
+          y: num(p, 'y', 0),
+          w: num(p, 'w', doc.width),
+          h: num(p, 'h', doc.height),
+          drift,
+          wobble: num(p, 'wobble', 1),
+          life: num(p, 'life', 1),
+          colors: colors.length,
+        };
+        const clear = bool(p, 'clear', false);
+        const span = frameSpan(p);
+        const layer = targetLayer(p);
+        return paintCels(p, span.map((frame) => ({ layer, frame })), (editor, i, width, height) => {
+          if (clear) for (let k = 0; k < width * height; k++) editor.setIndex(k, 0);
+          for (const dot of particlesAt(opts, i, span.length)) editor.set(dot.x, dot.y, colors[dot.color]);
+        });
+      }),
   },
 
   // History and view
@@ -1161,7 +1584,7 @@ export const COMMANDS: Record<string, Command> = {
     readOnly: true,
     run: async () => {
       const s = useApp.getState();
-      return { text: await serializeProject(s.doc, s.palette, s.activeLayerId), fileName: s.fileName };
+      return { text: await serializeProject(s.doc, s.palette, s.activeLayerId, s.recipes), fileName: s.fileName };
     },
   },
 
@@ -1184,6 +1607,7 @@ export const COMMANDS: Record<string, Command> = {
       actions.loadDoc(project.doc, {
         activeLayerId: project.activeLayerId,
         palette: project.palette,
+        recipes: project.recipes,
         fileName: text(p, 'fileName', 'projeto.pontilha'),
         filePath: null,
       });
@@ -1227,6 +1651,119 @@ export const COMMANDS: Record<string, Command> = {
       return inspect();
     },
   },
+
+  // Recipes: record the commands that build a piece, then play them back, for instance in other colours.
+
+  'recipe.start': {
+    summary:
+      'Começa a gravar uma receita: os comandos que mudam a imagem passam a ser guardados em ordem (não entram project.*, image.* e recipe.*). Desfazer tira o último passo gravado. Termine com recipe.stop.',
+    params: 'name',
+    readOnly: true,
+    run: (p) => {
+      const name = text(p, 'name').trim();
+      if (!name) fail('name não pode ser vazio');
+      if (recording) fail(`já há uma receita gravando: "${recording.name}". Use recipe.stop antes.`);
+      recording = { name, steps: [], units: [], undone: [] };
+      return { recording: name };
+    },
+  },
+
+  'recipe.stop': {
+    summary: 'Para de gravar e guarda a receita no projeto (substitui uma de mesmo nome). discard true joga fora.',
+    params: 'discard?',
+    run: (p) => {
+      if (!recording) fail('nenhuma receita está gravando');
+      const { name, steps } = recording;
+      recording = null;
+      if (bool(p, 'discard', false)) return { discarded: name };
+      if (steps.length === 0) fail('a receita não tem passos; nada foi guardado');
+      useApp.setState((s) => ({ recipes: [...s.recipes.filter((r) => r.name !== name), { name, steps }], dirty: true }));
+      return { saved: name, steps: steps.length };
+    },
+  },
+
+  'recipe.list': {
+    summary: 'Receitas guardadas no projeto, com os passos. steps false mostra só nomes e contagem.',
+    params: 'steps?',
+    readOnly: true,
+    run: (p) => {
+      const full = bool(p, 'steps', true);
+      return {
+        recording: recording ? { name: recording.name, steps: recording.steps.length } : null,
+        recipes: useApp.getState().recipes.map((r) => (full ? r : { name: r.name, steps: r.steps.length })),
+      };
+    },
+  },
+
+  'recipe.save': {
+    summary:
+      'Guarda uma receita escrita à mão: steps é uma lista de {method, params}, como num batch ({id, params}, o formato dos arquivos de receita em examples/, também vale).',
+    params: 'name, steps',
+    run: (p) => {
+      const name = text(p, 'name').trim();
+      if (!name) fail('name não pode ser vazio');
+      if (!Array.isArray(p.steps) || p.steps.length === 0) fail('steps precisa ser uma lista de {method, params}');
+      const steps = p.steps.map((st, i) => {
+        const method = (st as Params | null)?.method ?? (st as Params | null)?.id;
+        if (typeof method !== 'string' || !COMMANDS[method]) fail(`steps[${i}]: comando desconhecido ${JSON.stringify(method)}`);
+        if (NOT_RECORDED.some((prefix) => method.startsWith(prefix))) fail(`steps[${i}]: ${method} não pode entrar numa receita`);
+        return { method, params: structuredClone(((st as Params).params ?? {}) as Record<string, unknown>) };
+      });
+      useApp.setState((s) => ({ recipes: [...s.recipes.filter((r) => r.name !== name), { name, steps }], dirty: true }));
+      return { saved: name, steps: steps.length };
+    },
+  },
+
+  'recipe.delete': {
+    summary: 'Apaga uma receita do projeto.',
+    params: 'name',
+    run: (p) => {
+      const name = text(p, 'name');
+      if (!useApp.getState().recipes.some((r) => r.name === name)) fail(`receita não encontrada: ${name}`);
+      useApp.setState((s) => ({ recipes: s.recipes.filter((r) => r.name !== name), dirty: true }));
+      return { deleted: name };
+    },
+  },
+
+  'recipe.run': {
+    summary:
+      'Executa uma receita como um passo de desfazer. colors {"#antiga": "#nova"} troca cores em todos os parâmetros: a mesma peça em outra paleta. Se a receita começa com doc.new, cria a imagem antes (discard vale para ela). Se um passo falhar, nada é aplicado.',
+    params: 'name, colors?: {de: para}, discard?',
+    run: async (p) => {
+      const name = text(p, 'name');
+      const recipe = useApp.getState().recipes.find((r) => r.name === name);
+      if (!recipe) fail(`receita não encontrada: ${name}. Receitas: ${useApp.getState().recipes.map((r) => r.name).join(', ') || 'nenhuma'}`);
+      const swap = new Map<number, string>();
+      if (has(p, 'colors')) {
+        if (typeof p.colors !== 'object' || Array.isArray(p.colors)) fail('colors precisa ser um objeto {"#de": "#para"}');
+        for (const [from, to] of Object.entries(p.colors as Record<string, unknown>)) {
+          swap.set(colorValue(from, 'colors'), toHex(colorValue(to, `colors["${from}"]`)));
+        }
+      }
+      const steps = recipe.steps.map((st) => ({ method: st.method, params: swapColors(st.params, swap) as Params }));
+      replaying = true;
+      try {
+        let first = 0;
+        if (steps[0]?.method === 'doc.new') {
+          await runOne('doc.new', { ...steps[0].params, discard: bool(p, 'discard', false) });
+          first = 1;
+        }
+        if (steps.slice(first).some((st) => st.method === 'doc.new')) fail('doc.new só pode ser o primeiro passo de uma receita');
+        await actions.group(async () => {
+          for (const [i, st] of steps.slice(first).entries()) {
+            try {
+              await runOne(st.method, st.params);
+            } catch (err) {
+              throw new CommandError(`passo ${i + first + 1} (${st.method}): ${message(err)}. Nada da receita foi aplicado.`);
+            }
+          }
+        });
+      } finally {
+        replaying = false;
+      }
+      return { ran: name, steps: steps.length, swapped: swap.size };
+    },
+  },
 };
 
 export type Reply = { ok: true; result: unknown } | { ok: false; error: string };
@@ -1241,7 +1778,9 @@ async function runOne(method: unknown, params: unknown): Promise<unknown> {
     fail('params precisa ser um objeto');
   }
   if (!command.readOnly) actions.notify(`Script: ${method}`);
-  return command.run((params ?? {}) as Params);
+  const result = await command.run((params ?? {}) as Params);
+  if (!command.readOnly) record(method, (params ?? {}) as Params);
+  return result;
 }
 
 /**
@@ -1250,11 +1789,12 @@ async function runOne(method: unknown, params: unknown): Promise<unknown> {
  */
 export async function execute(method: string, params: unknown): Promise<Reply> {
   try {
-    if (method !== 'batch') return { ok: true, result: await runOne(method, params) };
+    if (method !== 'batch') return { ok: true, result: await recordUnit(method, () => runOne(method, params)) };
 
     const list = (params as Params | null)?.commands;
     if (!Array.isArray(list)) fail('batch precisa de commands: [{method, params}, ...]');
-    const results = await actions.group(async () => {
+    const recorded = recording?.steps.length;
+    const results = await recordUnit('batch', () => actions.group(async () => {
       const out: unknown[] = [];
       for (const [i, item] of list.entries()) {
         const m = (item as Params | null)?.method;
@@ -1264,11 +1804,12 @@ export async function execute(method: string, params: unknown): Promise<Reply> {
         try {
           out.push(await runOne(m, (item as Params | null)?.params));
         } catch (err) {
+          if (recording && recorded !== undefined) recording.steps.length = recorded;
           throw new CommandError(`comando ${i + 1} (${String(m)}): ${message(err)}. Nada do lote foi aplicado.`);
         }
       }
       return out;
-    });
+    }));
     return { ok: true, result: results };
   } catch (err) {
     return { ok: false, error: message(err) };

@@ -6,7 +6,7 @@ import { History } from './history';
 import { hueShiftRamp } from './palette';
 import { encodePng, scaleNearest, zlibDeflate, zlibInflate } from './png';
 import { parseProject, serializeProject } from './project';
-import { brushOffsets, floodFill, line, snapToPerfectAngle } from './raster';
+import { brushOffsets, floodFill, line, rectCells, snapToPerfectAngle } from './raster';
 import { DEFAULT_SETTINGS, startSession } from './tools';
 
 const RED = pack(255, 0, 0);
@@ -100,6 +100,34 @@ describe('raster', () => {
     expect(brushOffsets(1, 'round')).toEqual([[0, 0]]);
     expect(brushOffsets(3, 'round')).toHaveLength(5);
     expect(brushOffsets(3, 'square')).toHaveLength(9);
+  });
+
+  it('rounds rectangle corners', () => {
+    const cells = (filled: boolean, radius: number) => {
+      const out = new Set<string>();
+      rectCells(0, 0, 9, 7, filled, 1, (x, y) => out.add(`${x},${y}`), radius);
+      return out;
+    };
+    const square = cells(true, 0);
+    const round = cells(true, 3);
+    expect(square.size).toBe(80);
+    expect(round.has('0,0') || round.has('9,7')).toBe(false);
+    expect(round.has('4,0') && round.has('0,4') && round.has('9,4')).toBe(true);
+    // Symmetric left to right and top to bottom.
+    for (const key of round) {
+      const [x, y] = key.split(',').map(Number);
+      expect(round.has(`${9 - x},${y}`) && round.has(`${x},${7 - y}`)).toBe(true);
+    }
+    // The outline is the edge of the filled shape, with no doubled corner pixels.
+    const ring = cells(false, 3);
+    for (const key of ring) expect(round.has(key)).toBe(true);
+    expect(ring.has('4,3')).toBe(false);
+    for (const key of ring) {
+      const [x, y] = key.split(',').map(Number);
+      const hz = +ring.has(`${x - 1},${y}`) + +ring.has(`${x + 1},${y}`);
+      const vt = +ring.has(`${x},${y - 1}`) + +ring.has(`${x},${y + 1}`);
+      expect(hz + vt).toBeLessThanOrEqual(2);
+    }
   });
 
   it('flood fills only the connected area', () => {

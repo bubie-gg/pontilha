@@ -104,11 +104,35 @@ export function rectCells(
   filled: boolean,
   thickness: number,
   plot: Plot,
+  radius = 0,
 ) {
   const left = Math.min(x0, x1);
   const right = Math.max(x0, x1);
   const top = Math.min(y0, y1);
   const bottom = Math.max(y0, y1);
+  const w = right - left + 1;
+  const h = bottom - top + 1;
+  const r = Math.min(radius, w / 2, h / 2);
+  if (r > 0) {
+    // Rounded corners, decided per pixel centre like the ellipse: a quarter circle of
+    // radius r in each corner, shrunk along with the box for the inner edge of a ring.
+    const inside = (px: number, py: number, inset: number) => {
+      const l = left + inset;
+      const t = top + inset;
+      const rr = right + 1 - inset;
+      const b = bottom + 1 - inset;
+      const cx = px + 0.5;
+      const cy = py + 0.5;
+      if (cx < l || cx > rr || cy < t || cy > b) return false;
+      const rad = r - inset;
+      if (rad <= 0) return true;
+      const qx = Math.min(Math.max(cx, l + rad), rr - rad);
+      const qy = Math.min(Math.max(cy, t + rad), b - rad);
+      return (cx - qx) ** 2 + (cy - qy) ** 2 <= rad * rad;
+    };
+    regionCells(left, top, w, h, filled, thickness, inside, plot);
+    return;
+  }
   for (let y = top; y <= bottom; y++) {
     for (let x = left; x <= right; x++) {
       const edge =
@@ -183,7 +207,23 @@ export function ellipseCells(
     const dy = (py + 0.5 - cy) / ry;
     return dx * dx + dy * dy <= 1;
   };
+  regionCells(x, y, w, h, filled, thickness, inside, plot);
+}
 
+/**
+ * The pixels of a shape given by `inside(px, py, inset)` within the box [x, x+w) × [y, y+h):
+ * all of them when filled, or a ring `thickness` pixels wide along its edge.
+ */
+function regionCells(
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  filled: boolean,
+  thickness: number,
+  inside: (px: number, py: number, inset: number) => boolean,
+  plot: Plot,
+) {
   if (filled) {
     for (let py = y; py < y + h; py++) for (let px = x; px < x + w; px++) if (inside(px, py, 0)) plot(px, py);
     return;

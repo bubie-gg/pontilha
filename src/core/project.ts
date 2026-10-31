@@ -8,13 +8,15 @@ import {
   MAX_SIZE,
   celOf,
   clampDuration,
+  composite,
   createFrame,
   newLayerId,
   newTagId,
   showFrame,
   tagRange,
 } from './doc';
-import { zlibDeflate, zlibInflate } from './png';
+import { thumbnail } from './effects';
+import { encodePng, zlibDeflate, zlibInflate } from './png';
 
 /**
  * On-disk `.pontilha` format: JSON with every cel stored as zlib-compressed raw RGBA.
@@ -43,18 +45,34 @@ interface ProjectFileV2 {
   layers: Array<{ name: string; visible: boolean; opacity: number; cels: string[] }>;
   /** Named stretches of frames by index, both ends included. Optional: older files have none. */
   tags?: Array<{ name: string; from: number; to: number }>;
+  /** Recorded command lists that can be replayed with other colours. Optional. */
+  recipes?: Recipe[];
+  /** PNG (base64) of the first frame, at most 128 px a side, for galleries. Ignored when opening. */
+  thumbnail?: string;
+}
+
+/** A named list of commands, recorded while drawing, that `recipe.run` plays back. */
+export interface Recipe {
+  name: string;
+  steps: Array<{ method: string; params: Record<string, unknown> }>;
 }
 
 export interface LoadedProject {
   doc: Doc;
   palette: number[];
   activeLayerId: string;
+  recipes: Recipe[];
 }
 
 const encodeCel = async (cel: Uint32Array) =>
   toBase64(await zlibDeflate(new Uint8Array(cel.buffer, cel.byteOffset, cel.byteLength)));
 
-export async function serializeProject(doc: Doc, palette: number[], activeLayerId: string): Promise<string> {
+async function thumbnailPng(doc: Doc): Promise<string> {
+  const thumb = thumbnail(composite(doc, doc.frames[0].id), doc.width, doc.height);
+  return toBase64(await encodePng(new Uint8Array(thumb.pixels.buffer), thumb.width, thumb.height));
+}
+
+export async function serializeProject(doc: Doc, palette: number[], activeLayerId: string, recipes: Recipe[] = []): Promise<string> {
   const layers = await Promise.all(
     doc.layers.map(async (layer) => ({
       name: layer.name,
@@ -77,6 +95,8 @@ export async function serializeProject(doc: Doc, palette: number[], activeLayerI
       const range = tagRange(doc, t);
       return range ? [{ name: t.name, from: range[0], to: range[1] }] : [];
     }),
+    ...(recipes.length ? { recipes } : {}),
+    thumbnail: await thumbnailPng(doc),
   };
   return JSON.stringify(file);
 }
@@ -156,5 +176,10 @@ export async function parseProject(text: string): Promise<LoadedProject> {
   showFrame(doc, frames[Math.min(frames.length - 1, Math.max(0, v2.activeFrame | 0))].id);
   const palette = (v2.palette ?? []).map(parseHex).filter((c): c is number => c !== null);
   const active = layers[Math.min(layers.length - 1, Math.max(0, v2.activeLayer | 0))];
-  return { doc, palette, activeLayerId: active.id };
+  const recipes = (Array.isArray(v2.recipes) ? v2.recipes : []).flatMap((r) =>
+    r && typeof r.name === 'string' && Array.isArray(r.steps)
+      ? [{ name: r.name, steps: r.steps.filter((st) => st && typeof st.method === 'string').map((st) => ({ method: st.method, params: st.params ?? {} })) }]
+      : [],
+  );
+  return { doc, palette, activeLayerId: active.id, recipes };
 }

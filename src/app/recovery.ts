@@ -54,7 +54,7 @@ async function autosave() {
   if (!s.dirty || s.version === savedVersion) return;
   const version = s.version;
   try {
-    const project = await serializeProject(s.doc, s.palette, s.activeLayerId);
+    const project = await serializeProject(s.doc, s.palette, s.activeLayerId, s.recipes);
     await write(project, { fileName: s.fileName, filePath: s.filePath, savedAt: new Date().toISOString() });
     savedVersion = version;
   } catch (err) {
@@ -78,6 +78,7 @@ async function offerRecovery() {
       actions.loadDoc(project.doc, {
         activeLayerId: project.activeLayerId,
         palette: project.palette,
+        recipes: project.recipes,
         fileName: found.meta.fileName,
         filePath: found.meta.filePath,
         dirty: true,
