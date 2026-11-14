@@ -1,0 +1,498 @@
+{
+ "name": "Badge Abóbora de Halloween",
+ "description": "Medalha noturna com abóbora iluminada por dentro. 32 × 32 nativo, paleta bubie; exporte com escala 4.",
+ "steps": [
+  {
+   "id": "doc.new",
+   "params": {
+    "width": 32,
+    "height": 32,
+    "name": "badge-abobora-halloween",
+    "discard": true
+   }
+  },
+  {
+   "id": "palette.preset",
+   "params": {
+    "name": "bubie"
+   }
+  },
+  {
+   "id": "layer.setProps",
+   "params": {
+    "name": "medalha"
+   }
+  },
+  {
+   "id": "draw.ellipse",
+   "params": {
+    "x": 1,
+    "y": 1,
+    "w": 30,
+    "h": 30,
+    "color": "#263a7c",
+    "filled": true
+   }
+  },
+  {
+   "id": "draw.ellipse",
+   "params": {
+    "x": 3,
+    "y": 3,
+    "w": 26,
+    "h": 26,
+    "color": "#171538",
+    "filled": true
+   }
+  },
+  {
+   "id": "effect.shade",
+   "params": {
+    "light": "#3d66bd",
+    "dark": "#1a1236",
+    "angle": 135,
+    "size": 1,
+    "on": "#263a7c"
+   }
+  },
+  {
+   "id": "draw.ellipse",
+   "params": {
+    "x": 6,
+    "y": 6,
+    "w": 6,
+    "h": 6,
+    "color": "#f3e7d5",
+    "filled": true
+   }
+  },
+  {
+   "id": "draw.ellipse",
+   "params": {
+    "x": 8,
+    "y": 5,
+    "w": 6,
+    "h": 6,
+    "color": "#171538",
+    "filled": true
+   }
+  },
+  {
+   "id": "draw.pixels",
+   "params": {
+    "pixels": [
+     [
+      24,
+      7,
+      "#b6e4f7"
+     ],
+     [
+      21,
+      5,
+      "#5ea3e0"
+     ],
+     [
+      26,
+      14,
+      "#5ea3e0"
+     ],
+     [
+      25,
+      11,
+      "#b6e4f7"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "effect.outline",
+   "params": {
+    "color": "#16141c"
+   }
+  },
+  {
+   "id": "layer.new",
+   "params": {
+    "name": "abobora"
+   }
+  },
+  {
+   "id": "draw.ellipse",
+   "params": {
+    "x": 5,
+    "y": 12,
+    "w": 12,
+    "h": 15,
+    "color": "#ec6a3a",
+    "filled": true
+   }
+  },
+  {
+   "id": "draw.ellipse",
+   "params": {
+    "x": 15,
+    "y": 12,
+    "w": 12,
+    "h": 15,
+    "color": "#ec6a3a",
+    "filled": true
+   }
+  },
+  {
+   "id": "draw.ellipse",
+   "params": {
+    "x": 10,
+    "y": 11,
+    "w": 12,
+    "h": 17,
+    "color": "#ec6a3a",
+    "filled": true
+   }
+  },
+  {
+   "id": "effect.shade",
+   "params": {
+    "light": "#ffa860",
+    "dark": "#c4363c",
+    "angle": 135,
+    "size": 1,
+    "darkSize": 2
+   }
+  },
+  {
+   "id": "draw.line",
+   "params": {
+    "x0": 10,
+    "y0": 14,
+    "x1": 10,
+    "y1": 24,
+    "color": "#c4363c"
+   }
+  },
+  {
+   "id": "draw.line",
+   "params": {
+    "x0": 21,
+    "y0": 14,
+    "x1": 21,
+    "y1": 24,
+    "color": "#c4363c"
+   }
+  },
+  {
+   "id": "draw.rect",
+   "params": {
+    "x": 15,
+    "y": 7,
+    "w": 2,
+    "h": 5,
+    "color": "#6a9e34",
+    "filled": true
+   }
+  },
+  {
+   "id": "draw.pixels",
+   "params": {
+    "pixels": [
+     [
+      16,
+      7,
+      "#2f6430"
+     ],
+     [
+      16,
+      8,
+      "#2f6430"
+     ],
+     [
+      15,
+      7,
+      "#c2d95c"
+     ],
+     [
+      17,
+      9,
+      "#6a9e34"
+     ],
+     [
+      18,
+      9,
+      "#6a9e34"
+     ],
+     [
+      19,
+      8,
+      "#6a9e34"
+     ],
+     [
+      20,
+      7,
+      "#2f6430"
+     ]
+    ]
+   }
+  },
+  {
+   "id": "effect.outline",
+   "params": {
+    "color": "#16141c"
+   }
+  },
+  {
+   "id": "layer.new",
+   "params": {
+    "name": "rosto"
+   }
+  },
+  {
+   "id": "draw.pixels",
+   "params": {
+    "color": "#ffd95a",
+    "pixels": [
+     [
+      11,
+      15
+     ],
+     [
+      10,
+      16
+     ],
+     [
+      11,
+      16
+     ],
+     [
+      12,
+      16
+     ],
+     [
+      9,
+      17
+     ],
+     [
+      10,
+      17
+     ],
+     [
+      11,
+      17
+     ],
+     [
+      12,
+      17
+     ],
+     [
+      13,
+      17
+     ],
+     [
+      20,
+      15
+     ],
+     [
+      19,
+      16
+     ],
+     [
+      20,
+      16
+     ],
+     [
+      21,
+      16
+     ],
+     [
+      18,
+      17
+     ],
+     [
+      19,
+      17
+     ],
+     [
+      20,
+      17
+     ],
+     [
+      21,
+      17
+     ],
+     [
+      22,
+      17
+     ],
+     [
+      15,
+      19
+     ],
+     [
+      16,
+      19
+     ],
+     [
+      9,
+      21
+     ],
+     [
+      10,
+      21
+     ],
+     [
+      11,
+      21
+     ],
+     [
+      12,
+      21
+     ],
+     [
+      13,
+      21
+     ],
+     [
+      14,
+      21
+     ],
+     [
+      15,
+      21
+     ],
+     [
+      16,
+      21
+     ],
+     [
+      17,
+      21
+     ],
+     [
+      18,
+      21
+     ],
+     [
+      19,
+      21
+     ],
+     [
+      20,
+      21
+     ],
+     [
+      21,
+      21
+     ],
+     [
+      22,
+      21
+     ],
+     [
+      10,
+      22
+     ],
+     [
+      11,
+      22
+     ],
+     [
+      12,
+      22
+     ],
+     [
+      14,
+      22
+     ],
+     [
+      15,
+      22
+     ],
+     [
+      16,
+      22
+     ],
+     [
+      17,
+      22
+     ],
+     [
+      19,
+      22
+     ],
+     [
+      20,
+      22
+     ],
+     [
+      21,
+      22
+     ],
+     [
+      12,
+      23
+     ],
+     [
+      13,
+      23
+     ],
+     [
+      14,
+      23
+     ],
+     [
+      17,
+      23
+     ],
+     [
+      18,
+      23
+     ],
+     [
+      19,
+      23
+     ]
+    ]
+   }
+  },
+  {
+   "id": "draw.pixels",
+   "params": {
+    "color": "#c98f3a",
+    "pixels": [
+     [
+      11,
+      15
+     ],
+     [
+      20,
+      15
+     ],
+     [
+      9,
+      21
+     ],
+     [
+      22,
+      21
+     ],
+     [
+      15,
+      19
+     ],
+     [
+      12,
+      23
+     ],
+     [
+      19,
+      23
+     ]
+    ]
+   }
+  },
+  {
+   "id": "effect.outline",
+   "params": {
+    "color": "#8d4814"
+   }
+  }
+ ]
+}
