@@ -4,6 +4,8 @@ A pixel art editor for Linux. You can draw yourself, with a mouse or a drawing t
 AI agent can send commands to the open window, as with the ArtCraft apps. Either way, every
 step shows up on screen as it happens.
 
+![Pontilha with the animated ghost-lantern example open: tools on the left, layers and colors on the right, frames in the timeline below](docs/screenshot.png)
+
 ## Usage
 
 - Open: `pontilha` (or from the app launcher).
