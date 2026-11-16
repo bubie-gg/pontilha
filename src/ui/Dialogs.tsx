@@ -51,7 +51,7 @@ function NewDialog() {
   const ok = valid(w) && valid(h);
 
   return (
-    <Modal title="Nova imagem" onClose={close}>
+    <Modal title="New image" onClose={close}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -60,7 +60,7 @@ function NewDialog() {
           actions.newDoc(w, h);
         }}
       >
-        <div className="presets" role="group" aria-label="Tamanhos comuns">
+        <div className="presets" role="group" aria-label="Common sizes">
           {PRESETS.map((n) => (
             <button
               key={n}
@@ -78,24 +78,24 @@ function NewDialog() {
         </div>
         <div className="size-fields">
           <label>
-            <span className="option-label">Largura</span>
+            <span className="option-label">Width</span>
             <input inputMode="numeric" value={width} onChange={(e) => setWidth(e.target.value.replace(/\D/g, ''))} />
           </label>
           <span className="size-x">×</span>
           <label>
-            <span className="option-label">Altura</span>
+            <span className="option-label">Height</span>
             <input inputMode="numeric" value={height} onChange={(e) => setHeight(e.target.value.replace(/\D/g, ''))} />
           </label>
           <span className="option-label">px</span>
         </div>
-        {!ok && <p className="field-error">Use de 1 a {MAX_SIZE} pixels em cada lado.</p>}
-        {dirty && <p className="modal-note">A imagem atual tem alterações não salvas. Elas serão perdidas.</p>}
+        {!ok && <p className="field-error">Use 1 to {MAX_SIZE} pixels on each side.</p>}
+        {dirty && <p className="modal-note">The current image has unsaved changes. They will be lost.</p>}
         <div className="modal-actions">
           <button type="button" className="btn px" onClick={close}>
-            Cancelar
+            Cancel
           </button>
           <button type="submit" className="btn btn-primary px" disabled={!ok} data-autofocus>
-            Criar imagem
+            Create image
           </button>
         </div>
       </form>
@@ -132,27 +132,27 @@ function ExportDialog() {
   const chosen = usable.includes(scale) ? scale : (usable.at(-1) ?? 1);
 
   return (
-    <Modal title="Exportar" onClose={close}>
+    <Modal title="Export" onClose={close}>
       <div className="modal-tabs">
         <Segmented
-          label="O que exportar"
+          label="What to export"
           value={kind}
           options={[
-            { value: 'frame', label: 'Quadro atual' },
-            { value: 'sheet', label: 'Folha de sprites' },
-            { value: 'gif', label: 'GIF animado' },
+            { value: 'frame', label: 'Current frame' },
+            { value: 'sheet', label: 'Sprite sheet' },
+            { value: 'gif', label: 'Animated GIF' },
           ]}
           onChange={setKind}
         />
       </div>
-      {kind === 'frame' && <p className="modal-note">PNG do quadro na tela. Cada pixel vira um bloco do tamanho escolhido, sem borrar.</p>}
+      {kind === 'frame' && <p className="modal-note">PNG of the frame on screen. Each pixel becomes a block of the chosen size, with no blurring.</p>}
       {kind !== 'frame' && tags.length > 0 && (
         <div className="export-options">
-          <span className="option-label">Quadros</span>
+          <span className="option-label">Frames</span>
           <Segmented
-            label="Quais quadros"
+            label="Which frames"
             value={tagId}
-            options={[{ value: 'all', label: 'Todos' }, ...tags.map((t) => ({ value: t.id, label: t.name }))]}
+            options={[{ value: 'all', label: 'All' }, ...tags.map((t) => ({ value: t.id, label: t.name }))]}
             onChange={setTagId}
           />
         </div>
@@ -160,15 +160,15 @@ function ExportDialog() {
       {kind === 'sheet' && (
         <>
           <p className="modal-note">
-            PNG com os {frameCount} quadros, da esquerda para a direita{layout === 'grid' ? ' e de cima para baixo' : ''}.
+            PNG with the {frameCount} frames, left to right{layout === 'grid' ? ' and top to bottom' : ''}.
           </p>
           <div className="export-options">
             <Segmented
-              label="Arrumação"
+              label="Layout"
               value={layout}
               options={[
-                { value: 'row', label: 'Em linha' },
-                { value: 'grid', label: 'Em grade' },
+                { value: 'row', label: 'Row' },
+                { value: 'grid', label: 'Grid' },
               ]}
               onChange={setLayout}
             />
@@ -178,14 +178,14 @@ function ExportDialog() {
       {kind === 'gif' && (
         <>
           <p className="modal-note">
-            Repete para sempre, com a duração de cada quadro. GIF guarda até 256 cores, e cada pixel é opaco ou transparente.
+            Loops forever, with each frame’s duration. GIF holds up to 256 colors, and each pixel is either opaque or transparent.
           </p>
           <div className="export-options">
-            <Toggle label="Ida e volta" checked={pingpong} onChange={setPingpong} />
+            <Toggle label="Ping-pong" checked={pingpong} onChange={setPingpong} />
           </div>
         </>
       )}
-      <div className="scales" role="radiogroup" aria-label="Escala">
+      <div className="scales" role="radiogroup" aria-label="Scale">
         {usable.map((s) => (
           <button
             key={s}
@@ -204,7 +204,7 @@ function ExportDialog() {
       </div>
       <div className="modal-actions">
         <button type="button" className="btn px" onClick={close}>
-          Cancelar
+          Cancel
         </button>
         <button
           type="button"
@@ -216,24 +216,24 @@ function ExportDialog() {
             void exportImage(kind, chosen, { layout, pingpong, range, suffix: tag?.name });
           }}
         >
-          {kind === 'gif' ? 'Exportar GIF' : 'Exportar PNG'}
+          {kind === 'gif' ? 'Export GIF' : 'Export PNG'}
         </button>
       </div>
-      {usable.length === 0 && <p className="field-error">Grande demais para exportar assim. Tente a folha em grade.</p>}
+      {usable.length === 0 && <p className="field-error">Too large to export this way. Try the grid sheet.</p>}
     </Modal>
   );
 }
 
 const ANCHOR_NAMES: Record<Anchor, string> = {
-  'top-left': 'no canto de cima à esquerda',
-  top: 'em cima, no meio',
-  'top-right': 'no canto de cima à direita',
-  left: 'à esquerda, no meio',
-  center: 'no centro',
-  right: 'à direita, no meio',
-  'bottom-left': 'no canto de baixo à esquerda',
-  bottom: 'embaixo, no meio',
-  'bottom-right': 'no canto de baixo à direita',
+  'top-left': 'top-left corner',
+  top: 'top center',
+  'top-right': 'top-right corner',
+  left: 'middle left',
+  center: 'center',
+  right: 'middle right',
+  'bottom-left': 'bottom-left corner',
+  bottom: 'bottom center',
+  'bottom-right': 'bottom-right corner',
 };
 
 function CanvasSize({ close }: { close: () => void }) {
@@ -256,23 +256,23 @@ function CanvasSize({ close }: { close: () => void }) {
         actions.resizeCanvas(w, h, anchor);
       }}
     >
-      <p className="modal-note">A arte não estica: o espaço novo fica transparente.</p>
+      <p className="modal-note">The art doesn’t stretch: new space is transparent.</p>
       <div className="canvas-size">
         <div className="size-fields">
           <label>
-            <span className="option-label">Largura</span>
+            <span className="option-label">Width</span>
             <input inputMode="numeric" value={width} onChange={(e) => setWidth(e.target.value.replace(/\D/g, ''))} />
           </label>
           <span className="size-x">×</span>
           <label>
-            <span className="option-label">Altura</span>
+            <span className="option-label">Height</span>
             <input inputMode="numeric" value={height} onChange={(e) => setHeight(e.target.value.replace(/\D/g, ''))} />
           </label>
           <span className="option-label">px</span>
         </div>
         <div className="anchor-field">
-          <span className="option-label">Imagem atual fica</span>
-          <div className="anchors" role="radiogroup" aria-label="Onde a imagem atual fica">
+          <span className="option-label">Current image goes</span>
+          <div className="anchors" role="radiogroup" aria-label="Where the current image goes">
             {ANCHORS.map((a) => (
               <button
                 key={a}
@@ -289,16 +289,16 @@ function CanvasSize({ close }: { close: () => void }) {
         </div>
       </div>
       {!valid(w) || !valid(h) ? (
-        <p className="field-error">Use de 1 a {MAX_SIZE} pixels em cada lado.</p>
+        <p className="field-error">Use 1 to {MAX_SIZE} pixels on each side.</p>
       ) : (
-        cuts && <p className="modal-note">A tela fica menor que a imagem: o que não couber será cortado.</p>
+        cuts && <p className="modal-note">The canvas is smaller than the image: whatever doesn’t fit will be cut off.</p>
       )}
       <div className="modal-actions">
         <button type="button" className="btn px" onClick={close}>
-          Cancelar
+          Cancel
         </button>
         <button type="submit" className="btn btn-primary px" disabled={!ok} data-autofocus>
-          Mudar tela
+          Resize canvas
         </button>
       </div>
     </form>
@@ -315,11 +315,11 @@ function CanvasScale({ close }: { close: () => void }) {
   const chosen = usable.includes(factor) ? factor : usable[0];
   return (
     <>
-      <p className="modal-note">Cada pixel vira um bloco do tamanho escolhido, em todas as camadas e quadros, sem borrar.</p>
+      <p className="modal-note">Each pixel becomes a block of the chosen size, in every layer and frame, with no blurring.</p>
       {usable.length === 0 ? (
-        <p className="field-error">A imagem já é grande demais para ampliar (limite de {MAX_SIZE} px).</p>
+        <p className="field-error">The image is already too large to scale up (limit {MAX_SIZE} px).</p>
       ) : (
-        <div className="scales" role="radiogroup" aria-label="Ampliação">
+        <div className="scales" role="radiogroup" aria-label="Scale factor">
           {usable.map((f) => (
             <button
               key={f}
@@ -339,7 +339,7 @@ function CanvasScale({ close }: { close: () => void }) {
       )}
       <div className="modal-actions">
         <button type="button" className="btn px" onClick={close}>
-          Cancelar
+          Cancel
         </button>
         <button
           type="button"
@@ -351,7 +351,7 @@ function CanvasScale({ close }: { close: () => void }) {
             actions.scaleImage(chosen);
           }}
         >
-          Ampliar
+          Scale up
         </button>
       </div>
     </>
@@ -366,7 +366,7 @@ function CanvasCrop({ close }: { close: () => void }) {
   const trimmable = bounds !== null && (bounds.w !== doc.width || bounds.h !== doc.height);
   return (
     <>
-      <p className="modal-note">Corta a imagem em todas as camadas e quadros. Desfazer (Ctrl+Z) traz tudo de volta.</p>
+      <p className="modal-note">Crops the image in every layer and frame. Undo (Ctrl+Z) brings everything back.</p>
       <div className="crop-choices">
         <button
           type="button"
@@ -377,13 +377,13 @@ function CanvasCrop({ close }: { close: () => void }) {
             actions.trim();
           }}
         >
-          <strong>Cortar bordas vazias</strong>
+          <strong>Trim empty borders</strong>
           <span>
             {bounds === null
-              ? 'A imagem está vazia.'
+              ? 'The image is empty.'
               : trimmable
-                ? `Fica com ${bounds.w} × ${bounds.h} px, só o que está pintado.`
-                : 'Não há borda vazia em volta da arte.'}
+                ? `Becomes ${bounds.w} × ${bounds.h} px, only what is painted.`
+                : 'There is no empty border around the art.'}
           </span>
         </button>
         <button
@@ -395,13 +395,13 @@ function CanvasCrop({ close }: { close: () => void }) {
             actions.cropTo();
           }}
         >
-          <strong>Recortar na seleção</strong>
-          <span>{selection ? `Fica com ${selection.w} × ${selection.h} px.` : 'Selecione uma área com a ferramenta Seleção (M).'}</span>
+          <strong>Crop to selection</strong>
+          <span>{selection ? `Becomes ${selection.w} × ${selection.h} px.` : 'Select an area with the Select tool (M).'}</span>
         </button>
       </div>
       <div className="modal-actions">
         <button type="button" className="btn px" onClick={close} data-autofocus>
-          Cancelar
+          Cancel
         </button>
       </div>
     </>
@@ -412,15 +412,15 @@ function CanvasDialog() {
   const [tab, setTab] = useState<'size' | 'scale' | 'crop'>('size');
   const close = () => actions.openDialog(null);
   return (
-    <Modal title="Tamanho da imagem" onClose={close}>
+    <Modal title="Image size" onClose={close}>
       <div className="modal-tabs">
         <Segmented
-          label="O que mudar"
+          label="What to change"
           value={tab}
           options={[
-            { value: 'size', label: 'Tela' },
-            { value: 'scale', label: 'Ampliar' },
-            { value: 'crop', label: 'Recortar' },
+            { value: 'size', label: 'Canvas' },
+            { value: 'scale', label: 'Scale up' },
+            { value: 'crop', label: 'Crop' },
           ]}
           onChange={setTab}
         />
@@ -447,9 +447,9 @@ function PickSwatch({ color, on, label, onClick }: { color: number; on: boolean;
 }
 
 const SCOPE_NOTES: Record<ColorScope, string> = {
-  all: 'em todas as camadas e quadros',
-  layer: 'na camada ativa, em todos os quadros',
-  frame: 'no quadro na tela, em todas as camadas',
+  all: 'in every layer and frame',
+  layer: 'in the active layer, in every frame',
+  frame: 'in the frame on screen, in every layer',
 };
 
 function RecolorDialog() {
@@ -471,25 +471,25 @@ function RecolorDialog() {
   const close = () => actions.openDialog(null);
 
   return (
-    <Modal title="Trocar cor" onClose={close}>
+    <Modal title="Replace color" onClose={close}>
       <div className="modal-tabs">
         <Segmented
-          label="Onde trocar"
+          label="Where to replace"
           value={scope}
           options={[
-            { value: 'all', label: 'Imagem inteira' },
-            { value: 'layer', label: 'Camada ativa' },
-            { value: 'frame', label: 'Quadro atual' },
+            { value: 'all', label: 'Whole image' },
+            { value: 'layer', label: 'Active layer' },
+            { value: 'frame', label: 'Current frame' },
           ]}
           onChange={setScope}
         />
       </div>
       {used.length === 0 ? (
-        <p className="modal-note">Não há nada pintado aqui ainda.</p>
+        <p className="modal-note">Nothing is painted here yet.</p>
       ) : (
         <>
-          <p className="option-label recolor-label">Trocar esta cor</p>
-          <div className="swatches pick-swatches" role="group" aria-label="Cores usadas na imagem">
+          <p className="option-label recolor-label">Replace this color</p>
+          <div className="swatches pick-swatches" role="group" aria-label="Colors used in the image">
             {used.slice(0, 96).map(({ color, pixels }) => (
               <PickSwatch
                 key={color}
@@ -500,8 +500,8 @@ function RecolorDialog() {
               />
             ))}
           </div>
-          <p className="option-label recolor-label">Por esta</p>
-          <div className="swatches pick-swatches" role="group" aria-label="Nova cor">
+          <p className="option-label recolor-label">With this one</p>
+          <div className="swatches pick-swatches" role="group" aria-label="New color">
             {targets.map((color) => (
               <PickSwatch key={color} color={color} on={color === to} label={toHex(color)} onClick={() => setTo(color)} />
             ))}
@@ -514,13 +514,13 @@ function RecolorDialog() {
             <span>{toHex(to)}</span>
           </div>
           <p className="modal-note">
-            {count} pixels {SCOPE_NOTES[scope]}. Um passo de desfazer.
+            {count} pixels {SCOPE_NOTES[scope]}. One undo step.
           </p>
         </>
       )}
       <div className="modal-actions">
         <button type="button" className="btn px" onClick={close}>
-          Cancelar
+          Cancel
         </button>
         <button
           type="button"
@@ -530,10 +530,10 @@ function RecolorDialog() {
           onClick={() => {
             close();
             const n = actions.replaceColor(from!, to, scope);
-            actions.notify(`${n} pixels trocados de ${toHex(from!)} para ${toHex(to)}.`);
+            actions.notify(`${n} pixels changed from ${toHex(from!)} to ${toHex(to)}.`);
           }}
         >
-          Trocar cor
+          Replace color
         </button>
       </div>
     </Modal>
@@ -547,12 +547,12 @@ function RampDialog() {
   const ramp = hueShiftRamp(primary, steps, shift);
   const close = () => actions.openDialog(null);
   return (
-    <Modal title="Rampa de cores" onClose={close}>
+    <Modal title="Color ramp" onClose={close}>
       <p className="modal-note">
-        A partir da cor principal ({toHex(primary)}): sombras mais escuras e saturadas puxando para o azul, luzes mais claras puxando para o
-        amarelo.
+        From the primary color ({toHex(primary)}): darker, more saturated shadows leaning toward blue, lighter highlights leaning toward
+        yellow.
       </p>
-      <div className="ramp-preview" role="img" aria-label={`Rampa: ${ramp.map(toHex).join(', ')}`}>
+      <div className="ramp-preview" role="img" aria-label={`Ramp: ${ramp.map(toHex).join(', ')}`}>
         {ramp.map((c) => (
           <div key={c} className={`ramp-step${c === primary ? ' is-base' : ''}`}>
             <span className="ramp-chip" style={{ '--swatch': toCss(c) } as React.CSSProperties} />
@@ -561,12 +561,12 @@ function RampDialog() {
         ))}
       </div>
       <div className="export-options">
-        <Stepper label="Cores" value={steps} min={3} max={9} onChange={setSteps} />
-        <Stepper label="Giro de matiz (°)" value={shift} min={0} max={30} onChange={setShift} />
+        <Stepper label="Colors" value={steps} min={3} max={9} onChange={setSteps} />
+        <Stepper label="Hue shift (°)" value={shift} min={0} max={30} onChange={setShift} />
       </div>
       <div className="modal-actions">
         <button type="button" className="btn px" onClick={close}>
-          Cancelar
+          Cancel
         </button>
         <button
           type="button"
@@ -575,10 +575,10 @@ function RampDialog() {
           onClick={() => {
             close();
             const added = actions.addColors(ramp);
-            actions.notify(added ? `${added} cores novas na paleta.` : 'Essas cores já estavam na paleta.');
+            actions.notify(added ? `${added} new colors in the palette.` : 'These colors were already in the palette.');
           }}
         >
-          Adicionar à paleta
+          Add to palette
         </button>
       </div>
     </Modal>
@@ -601,7 +601,7 @@ function SheetDialog() {
   const ok = fits && count <= MAX_FRAMES && Number.isFinite(ms) && ms > 0;
 
   const choose = async () => {
-    const file = await pickFile([{ name: 'Imagem PNG', extensions: ['png'] }]);
+    const file = await pickFile([{ name: 'PNG image', extensions: ['png'] }]);
     if (!file) return;
     try {
       const image = await decodeImage(file.bytes);
@@ -611,16 +611,16 @@ function SheetDialog() {
       setFh(String(guess.h));
       setError(null);
     } catch {
-      setError('Não consegui ler essa imagem.');
+      setError('Could not read this image.');
     }
   };
 
   return (
-    <Modal title="Importar folha de sprites" onClose={close}>
-      <p className="modal-note">Cada célula da folha vira um quadro, da esquerda para a direita e de cima para baixo.</p>
+    <Modal title="Import sprite sheet" onClose={close}>
+      <p className="modal-note">Each cell of the sheet becomes a frame, left to right and top to bottom.</p>
       <div className="modal-actions sheet-pick">
         <button type="button" className="btn px" onClick={() => void choose()} data-autofocus={!sheet || undefined}>
-          {sheet ? 'Escolher outra…' : 'Escolher PNG…'}
+          {sheet ? 'Choose another…' : 'Choose PNG…'}
         </button>
         {sheet && (
           <span className="option-label">
@@ -633,32 +633,32 @@ function SheetDialog() {
         <>
           <div className="size-fields">
             <label>
-              <span className="option-label">Largura do quadro</span>
+              <span className="option-label">Frame width</span>
               <input inputMode="numeric" value={fw} onChange={(e) => setFw(e.target.value.replace(/\D/g, ''))} />
             </label>
             <span className="size-x">×</span>
             <label>
-              <span className="option-label">Altura</span>
+              <span className="option-label">Height</span>
               <input inputMode="numeric" value={fh} onChange={(e) => setFh(e.target.value.replace(/\D/g, ''))} />
             </label>
             <label>
-              <span className="option-label">Duração (ms)</span>
+              <span className="option-label">Duration (ms)</span>
               <input inputMode="numeric" value={duration} onChange={(e) => setDuration(e.target.value.replace(/\D/g, ''))} />
             </label>
           </div>
           <p className={fits && count <= MAX_FRAMES ? 'modal-note' : 'field-error'}>
             {!fits
-              ? 'O quadro precisa caber na folha.'
+              ? 'The frame must fit inside the sheet.'
               : count > MAX_FRAMES
-                ? `Daria ${count} quadros; o máximo é ${MAX_FRAMES}.`
-                : `${Math.floor(sheet.width / w)} × ${Math.floor(sheet.height / h)} células: até ${count} quadros (as vazias do fim ficam de fora).`}
+                ? `That would be ${count} frames; the maximum is ${MAX_FRAMES}.`
+                : `${Math.floor(sheet.width / w)} × ${Math.floor(sheet.height / h)} cells: up to ${count} frames (empty ones at the end are left out).`}
           </p>
-          {dirty && <p className="modal-note">A imagem atual tem alterações não salvas. Elas serão perdidas.</p>}
+          {dirty && <p className="modal-note">The current image has unsaved changes. They will be lost.</p>}
         </>
       )}
       <div className="modal-actions">
         <button type="button" className="btn px" onClick={close}>
-          Cancelar
+          Cancel
         </button>
         <button
           type="button"
@@ -674,10 +674,10 @@ function SheetDialog() {
               filePath: null,
               dirty: true,
             });
-            actions.notify(`${cells.length} quadros importados de ${sheet.name}.`);
+            actions.notify(`${cells.length} frames imported from ${sheet.name}.`);
           }}
         >
-          Importar
+          Import
         </button>
       </div>
     </Modal>
@@ -697,7 +697,7 @@ function TagDialog() {
   const taken = doc.tags.some((t) => t.name === name.trim());
   const ok = name.trim() !== '' && !taken && valid(a) && valid(b);
   return (
-    <Modal title="Marcar trecho" onClose={close}>
+    <Modal title="Add tag" onClose={close}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -706,29 +706,29 @@ function TagDialog() {
           actions.addTag(name, doc.frames[a - 1].id, doc.frames[b - 1].id);
         }}
       >
-        <p className="modal-note">Um nome para um trecho da animação, como “andar” ou “pular”. Dá para tocar e exportar só ele.</p>
+        <p className="modal-note">A name for a stretch of the animation, like “walk” or “jump”. You can play and export just that part.</p>
         <div className="size-fields">
           <label>
-            <span className="option-label">Nome</span>
+            <span className="option-label">Name</span>
             <input className="tag-input" value={name} onChange={(e) => setName(e.target.value)} data-autofocus />
           </label>
           <label>
-            <span className="option-label">Do quadro</span>
+            <span className="option-label">From frame</span>
             <input inputMode="numeric" value={from} onChange={(e) => setFrom(e.target.value.replace(/\D/g, ''))} />
           </label>
           <label>
-            <span className="option-label">Ao quadro</span>
+            <span className="option-label">To frame</span>
             <input inputMode="numeric" value={to} onChange={(e) => setTo(e.target.value.replace(/\D/g, ''))} />
           </label>
         </div>
-        {taken && <p className="field-error">Já existe um trecho com esse nome.</p>}
-        {(!valid(a) || !valid(b)) && <p className="field-error">Use quadros de 1 a {doc.frames.length}.</p>}
+        {taken && <p className="field-error">A tag with this name already exists.</p>}
+        {(!valid(a) || !valid(b)) && <p className="field-error">Use frames 1 to {doc.frames.length}.</p>}
         <div className="modal-actions">
           <button type="button" className="btn px" onClick={close}>
-            Cancelar
+            Cancel
           </button>
           <button type="submit" className="btn btn-primary px" disabled={!ok}>
-            Marcar
+            Add tag
           </button>
         </div>
       </form>
@@ -739,11 +739,11 @@ function TagDialog() {
 function ConfirmDialog() {
   const request = useApp((s) => s.confirm)!;
   return (
-    <Modal title={request.title ?? 'Confirmar'} onClose={() => request.resolve(false)}>
+    <Modal title={request.title ?? 'Confirm'} onClose={() => request.resolve(false)}>
       <p className="modal-text">{request.message}</p>
       <div className="modal-actions">
         <button type="button" className="btn px" data-autofocus={request.tone === 'danger' || undefined} onClick={() => request.resolve(false)}>
-          {request.cancelLabel ?? 'Voltar'}
+          {request.cancelLabel ?? 'Go back'}
         </button>
         <button
           type="button"

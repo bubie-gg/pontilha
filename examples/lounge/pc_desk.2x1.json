@@ -1,6 +1,6 @@
 {
  "name": "pc_desk.2x1",
- "description": "Mesa gamer com monitor, teclado, mouse e torre. Frente para +y; a cadeira vai no ladrilho da frente.",
+ "description": "Gaming desk with monitor, keyboard, mouse and tower. Faces +y; the chair goes on the tile in front.",
  "anchor": {
   "x": 76.0,
   "y": 114
@@ -40,7 +40,7 @@
   {
    "id": "layer.setProps",
    "params": {
-    "name": "sombra"
+    "name": "shadow"
    }
   },
   {
@@ -70,7 +70,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "pes"
+    "name": "legs"
    }
   },
   {
@@ -410,7 +410,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "tampo"
+    "name": "tabletop"
    }
   },
   {
@@ -504,7 +504,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "torre"
+    "name": "tower"
    }
   },
   {
@@ -630,7 +630,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "suporte"
+    "name": "stand"
    }
   },
   {
@@ -818,7 +818,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "tela"
+    "name": "screen"
    }
   },
   {
@@ -878,7 +878,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "teclado"
+    "name": "keyboard"
    }
   },
   {

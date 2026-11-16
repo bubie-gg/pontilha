@@ -1,6 +1,6 @@
 {
  "name": "coffee_table.2x1",
- "description": "Mesa de centro baixa: tampo de madeira, pés de metal, livros e caneca.",
+ "description": "Low coffee table: wooden top, metal legs, books and a mug.",
  "anchor": {
   "x": 74.0,
   "y": 74
@@ -42,7 +42,7 @@
   {
    "id": "layer.setProps",
    "params": {
-    "name": "sombra"
+    "name": "shadow"
    }
   },
   {
@@ -72,7 +72,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "pes"
+    "name": "legs"
    }
   },
   {
@@ -412,7 +412,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "tampo"
+    "name": "tabletop"
    }
   },
   {
@@ -506,7 +506,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "livro_de_baixo"
+    "name": "bottom_book"
    }
   },
   {
@@ -590,7 +590,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "livro_de_cima"
+    "name": "top_book"
    }
   },
   {
@@ -684,7 +684,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "caneca"
+    "name": "mug"
    }
   },
   {

@@ -106,9 +106,9 @@ function FrameThumb({
       <button
         type="button"
         className="frame-btn px"
-        aria-label={`Quadro ${number}, ${frame.duration} ms`}
+        aria-label={`Frame ${number}, ${frame.duration} ms`}
         aria-pressed={active}
-        title="Clique para mostrar. Arraste para reordenar. Shift+setas também move."
+        title="Click to show. Drag to reorder. Shift+arrows also move it."
         onPointerDown={onPointerDown}
         onClick={() => actions.selectFrame(frame.id)}
         onKeyDown={(e) => {
@@ -160,12 +160,12 @@ function TagRow() {
               type="button"
               className="tag-name"
               aria-pressed={on}
-              title={on ? 'Tocando só este trecho. Clique para voltar à animação inteira.' : `Tocar só ${tag.name} (quadros ${start + 1} a ${end + 1})`}
+              title={on ? 'Playing only this tag. Click to go back to the whole animation.' : `Play only ${tag.name} (frames ${start + 1} to ${end + 1})`}
               onClick={() => actions.setPlayTag(on ? null : tag.id)}
             >
               {tag.name}
             </button>
-            <button type="button" className="tag-delete" aria-label={`Apagar o trecho ${tag.name}`} title="Apagar o trecho (os quadros ficam)" onClick={() => actions.deleteTag(tag.id)}>
+            <button type="button" className="tag-delete" aria-label={`Delete the tag ${tag.name}`} title="Delete the tag (the frames stay)" onClick={() => actions.deleteTag(tag.id)}>
               ×
             </button>
           </div>
@@ -186,13 +186,13 @@ function DurationField({ frame }: { frame: Frame }) {
     else setText(String(frame.duration));
   };
   return (
-    <label className="duration-field" title={`De ${MIN_DURATION} a ${MAX_DURATION} ms. 100 ms dá 10 quadros por segundo.`}>
-      <span className="option-label">Duração</span>
+    <label className="duration-field" title={`From ${MIN_DURATION} to ${MAX_DURATION} ms. 100 ms gives 10 frames per second.`}>
+      <span className="option-label">Duration</span>
       <input
         inputMode="numeric"
         value={text}
         className={valid ? '' : 'is-invalid'}
-        aria-label="Duração do quadro em milissegundos"
+        aria-label="Frame duration in milliseconds"
         onChange={(e) => setText(e.target.value.replace(/\D/g, ''))}
         onBlur={commit}
         onKeyDown={(e) => {
@@ -263,51 +263,51 @@ export function Timeline() {
   };
 
   return (
-    <section className="timeline" aria-label="Linha do tempo">
+    <section className="timeline" aria-label="Timeline">
       <div className="timeline-bar">
         <div className="bar-group">
-          <IconButton icon="prev" label="Quadro anterior (,)" disabled={single} onClick={() => actions.stepFrame(-1)} />
-          <IconButton icon={playing ? 'pause' : 'play'} label={playing ? 'Pausar (Enter)' : 'Tocar (Enter)'} active={playing} onClick={actions.togglePlay} />
-          <IconButton icon="next" label="Próximo quadro (.)" disabled={single} onClick={() => actions.stepFrame(1)} />
+          <IconButton icon="prev" label="Previous frame (,)" disabled={single} onClick={() => actions.stepFrame(-1)} />
+          <IconButton icon={playing ? 'pause' : 'play'} label={playing ? 'Pause (Enter)' : 'Play (Enter)'} active={playing} onClick={actions.togglePlay} />
+          <IconButton icon="next" label="Next frame (.)" disabled={single} onClick={() => actions.stepFrame(1)} />
         </div>
         <Segmented
-          label="Repetição"
+          label="Loop mode"
           value={loopMode}
           options={[
-            { value: 'loop', label: 'Repetir' },
-            { value: 'pingpong', label: 'Ida e volta' },
+            { value: 'loop', label: 'Loop' },
+            { value: 'pingpong', label: 'Ping-pong' },
           ]}
           onChange={actions.setLoopMode}
         />
         <IconButton
           icon="onion"
-          label="Papel vegetal: mostra os quadros vizinhos por baixo"
+          label="Onion skin: shows neighboring frames underneath"
           active={onionSkin}
           onClick={actions.toggleOnionSkin}
         />
         {onionSkin && (
           <>
-            <Stepper label="Antes" value={onion.before} min={0} max={3} onChange={(before) => actions.setOnion({ before })} />
-            <Stepper label="Depois" value={onion.after} min={0} max={3} onChange={(after) => actions.setOnion({ after })} />
+            <Stepper label="Before" value={onion.before} min={0} max={3} onChange={(before) => actions.setOnion({ before })} />
+            <Stepper label="After" value={onion.after} min={0} max={3} onChange={(after) => actions.setOnion({ after })} />
             <Toggle
-              label="Colorido"
+              label="Tinted"
               checked={onion.tint}
-              title="Quadros anteriores em vermelho, seguintes em azul"
+              title="Previous frames in red, next ones in blue"
               onChange={(tint) => actions.setOnion({ tint })}
             />
           </>
         )}
         <DurationField frame={frames[index]} />
         <span className="timeline-meta">
-          Quadro {index + 1} de {frames.length}
+          Frame {index + 1} of {frames.length}
         </span>
         <div className="bar-spacer" />
         <div className="bar-group">
-          <IconButton icon="tag" label="Marcar trecho: dar nome a um intervalo de quadros" onClick={() => actions.openDialog('tag')} />
-          <IconButton icon="open" label="Importar folha de sprites como quadros" onClick={() => actions.openDialog('sheet')} />
-          <IconButton icon="plus" label="Novo quadro vazio" onClick={() => actions.addFrame()} />
-          <IconButton icon="duplicate" label="Duplicar quadro" onClick={() => actions.addFrame({ copy: true })} />
-          <IconButton icon="trash" label="Excluir quadro" disabled={single} onClick={() => actions.deleteFrame()} />
+          <IconButton icon="tag" label="Add tag: name a range of frames" onClick={() => actions.openDialog('tag')} />
+          <IconButton icon="open" label="Import a sprite sheet as frames" onClick={() => actions.openDialog('sheet')} />
+          <IconButton icon="plus" label="New empty frame" onClick={() => actions.addFrame()} />
+          <IconButton icon="duplicate" label="Duplicate frame" onClick={() => actions.addFrame({ copy: true })} />
+          <IconButton icon="trash" label="Delete frame" disabled={single} onClick={() => actions.deleteFrame()} />
         </div>
       </div>
       <div className="frames-scroll">
@@ -315,7 +315,7 @@ export function Timeline() {
         <ol
           className="frames"
           ref={stripRef}
-          aria-label="Quadros"
+          aria-label="Frames"
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={() => {

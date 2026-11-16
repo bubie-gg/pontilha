@@ -60,8 +60,8 @@ function Preview() {
   }, []);
 
   return (
-    <Section title="Prévia" actions={<span className="dock-meta">{size} px</span>}>
-      <canvas ref={ref} className="preview" aria-label="Prévia da imagem no tamanho real" />
+    <Section title="Preview" actions={<span className="dock-meta">{size} px</span>}>
+      <canvas ref={ref} className="preview" aria-label="Image preview at actual size" />
     </Section>
   );
 }
@@ -74,16 +74,16 @@ function Palette() {
 
   return (
     <Section
-      title="Cores"
+      title="Colors"
       actions={
         <div className="dock-actions">
-          <IconButton size="sm" icon="ramp" label="Criar uma rampa de cores a partir da principal" onClick={() => actions.openDialog('ramp')} />
-          <IconButton size="sm" icon="swap" label="Trocar uma cor na imagem inteira" onClick={() => actions.openDialog('recolor')} />
-          <IconButton size="sm" icon="plus" label="Adicionar a cor principal à paleta" onClick={() => actions.addToPalette(primary)} />
+          <IconButton size="sm" icon="ramp" label="Create a color ramp from the primary color" onClick={() => actions.openDialog('ramp')} />
+          <IconButton size="sm" icon="swap" label="Replace a color across the image" onClick={() => actions.openDialog('recolor')} />
+          <IconButton size="sm" icon="plus" label="Add the primary color to the palette" onClick={() => actions.addToPalette(primary)} />
           <IconButton
             size="sm"
             icon="trash"
-            label="Remover a cor principal da paleta"
+            label="Remove the primary color from the palette"
             disabled={!inPalette}
             onClick={() => actions.removeFromPalette(primary)}
           />
@@ -91,15 +91,15 @@ function Palette() {
       }
     >
       <ColorPicker />
-      <div className="swatches" role="group" aria-label="Paleta">
+      <div className="swatches" role="group" aria-label="Palette">
         {palette.map((c, i) => (
           <button
             key={`${i}-${c}`}
             type="button"
             className={`swatch${c === primary ? ' is-primary' : ''}${c === secondary ? ' is-secondary' : ''}`}
             style={{ '--swatch': toCss(c) } as React.CSSProperties}
-            title={`${toHex(c)}. Clique: cor principal. Botão direito: secundária.`}
-            aria-label={`Cor ${toHex(c)}`}
+            title={`${toHex(c)}. Click: primary color. Right-click: secondary.`}
+            aria-label={`Color ${toHex(c)}`}
             aria-pressed={c === primary}
             onClick={() => actions.setPrimary(c)}
             onContextMenu={(e) => {
@@ -121,7 +121,7 @@ function LayerName({ id, name }: { id: string; name: string }) {
     return (
       <span
         className="layer-name"
-        title="Clique duas vezes para renomear"
+        title="Double-click to rename"
         onDoubleClick={() => {
           setText(name);
           setEditing(true);
@@ -140,7 +140,7 @@ function LayerName({ id, name }: { id: string; name: string }) {
       className="layer-rename"
       value={text}
       autoFocus
-      aria-label="Nome da camada"
+      aria-label="Layer name"
       onChange={(e) => setText(e.target.value)}
       onFocus={(e) => e.target.select()}
       onBlur={() => done(true)}
@@ -169,8 +169,8 @@ function Layers() {
   };
 
   return (
-    <Section title="Camadas" actions={<span className="dock-meta">{layers.length}</span>}>
-      <ol className="layers" aria-label="Camadas, a de cima primeiro">
+    <Section title="Layers" actions={<span className="dock-meta">{layers.length}</span>}>
+      <ol className="layers" aria-label="Layers, top first">
         {[...layers].reverse().map((layer) => (
           <li
             key={layer.id}
@@ -180,8 +180,8 @@ function Layers() {
             <button
               type="button"
               className="layer-eye"
-              aria-label={layer.visible ? `Ocultar ${layer.name}` : `Mostrar ${layer.name}`}
-              title={layer.visible ? 'Ocultar camada' : 'Mostrar camada'}
+              aria-label={layer.visible ? `Hide ${layer.name}` : `Show ${layer.name}`}
+              title={layer.visible ? 'Hide layer' : 'Show layer'}
               onClick={(e) => {
                 e.stopPropagation();
                 actions.toggleVisibility(layer.id);
@@ -196,7 +196,7 @@ function Layers() {
       </ol>
 
       <label className="opacity-field">
-        <span className="option-label">Opacidade de {active.name}</span>
+        <span className="option-label">{active.name} opacity</span>
         <input
           type="range"
           min={0}
@@ -215,12 +215,12 @@ function Layers() {
       </label>
 
       <div className="layer-actions">
-        <IconButton icon="plus" label="Nova camada" onClick={() => actions.addLayer()} />
-        <IconButton icon="duplicate" label="Duplicar camada" onClick={actions.duplicateLayer} />
-        <IconButton icon="up" label="Subir camada" disabled={index === layers.length - 1} onClick={() => actions.moveLayer(1)} />
-        <IconButton icon="down" label="Descer camada" disabled={index === 0} onClick={() => actions.moveLayer(-1)} />
-        <IconButton icon="merge" label="Mesclar com a camada de baixo" disabled={index === 0} onClick={actions.mergeDown} />
-        <IconButton icon="trash" label="Excluir camada" disabled={layers.length === 1} onClick={actions.deleteLayer} />
+        <IconButton icon="plus" label="New layer" onClick={() => actions.addLayer()} />
+        <IconButton icon="duplicate" label="Duplicate layer" onClick={actions.duplicateLayer} />
+        <IconButton icon="up" label="Move layer up" disabled={index === layers.length - 1} onClick={() => actions.moveLayer(1)} />
+        <IconButton icon="down" label="Move layer down" disabled={index === 0} onClick={() => actions.moveLayer(-1)} />
+        <IconButton icon="merge" label="Merge with the layer below" disabled={index === 0} onClick={actions.mergeDown} />
+        <IconButton icon="trash" label="Delete layer" disabled={layers.length === 1} onClick={actions.deleteLayer} />
       </div>
     </Section>
   );
@@ -228,7 +228,7 @@ function Layers() {
 
 export function Dock() {
   return (
-    <aside className="dock" aria-label="Painéis">
+    <aside className="dock" aria-label="Panels">
       <Preview />
       <Palette />
       <Layers />

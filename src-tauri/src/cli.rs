@@ -38,7 +38,7 @@ fn home() -> PathBuf {
 
 fn http(port: u16, method: &str, path: &str, headers: &[(&str, String)], body: &[u8]) -> Result<Vec<u8>> {
     let mut stream = TcpStream::connect(("127.0.0.1", port))
-        .map_err(|e| format!("não consegui falar com o Pontilha na porta {port} ({e}). O app está aberto?"))?;
+        .map_err(|e| format!("could not reach Pontilha on port {port} ({e}). Is the app open?"))?;
     stream.set_read_timeout(Some(Duration::from_secs(90))).ok();
     let mut head = format!(
         "{method} {path} HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\nContent-Length: {}\r\n",
@@ -57,7 +57,7 @@ fn http(port: u16, method: &str, path: &str, headers: &[(&str, String)], body: &
     let split = raw
         .windows(4)
         .position(|w| w == b"\r\n\r\n")
-        .ok_or("resposta incompleta do Pontilha")?;
+        .ok_or("incomplete response from Pontilha")?;
     let header = String::from_utf8_lossy(&raw[..split]).to_ascii_lowercase();
     let body = raw[split + 4..].to_vec();
     if header.contains("transfer-encoding: chunked") {
@@ -87,10 +87,10 @@ struct Client {
 impl Client {
     fn connect() -> Result<Self> {
         let state = std::fs::read(control::state_file())
-            .map_err(|_| "o Pontilha não está aberto. Abra o app (pontilha open) e tente de novo.".to_string())?;
-        let state: Value = serde_json::from_slice(&state).map_err(|e| format!("control.json inválido: {e}"))?;
-        let port = state["port"].as_u64().ok_or("control.json sem porta")? as u16;
-        let token_file = state["token_file"].as_str().ok_or("control.json sem token_file")?;
+            .map_err(|_| "Pontilha is not open. Open the app (pontilha open) and try again.".to_string())?;
+        let state: Value = serde_json::from_slice(&state).map_err(|e| format!("invalid control.json: {e}"))?;
+        let port = state["port"].as_u64().ok_or("control.json has no port")? as u16;
+        let token_file = state["token_file"].as_str().ok_or("control.json has no token_file")?;
         let token = std::fs::read_to_string(token_file)
             .map_err(|e| format!("{token_file}: {e}"))?
             .trim()
@@ -113,11 +113,11 @@ impl Client {
         ];
         let bytes = http(self.port, "POST", "/rpc", &headers, &body)?;
         let reply: Value =
-            serde_json::from_slice(&bytes).map_err(|e| format!("resposta inválida do Pontilha: {e}"))?;
+            serde_json::from_slice(&bytes).map_err(|e| format!("invalid response from Pontilha: {e}"))?;
         if reply["ok"] == true {
             Ok(reply["result"].clone())
         } else {
-            Err(format!("{method}: {}", reply["error"].as_str().unwrap_or("erro desconhecido")))
+            Err(format!("{method}: {}", reply["error"].as_str().unwrap_or("unknown error")))
         }
     }
 
@@ -130,7 +130,7 @@ impl Client {
         let result = self.call("render.png", params)?;
         base64::engine::general_purpose::STANDARD
             .decode(result["png"].as_str().unwrap_or(""))
-            .map_err(|e| format!("PNG inválido: {e}"))
+            .map_err(|e| format!("invalid PNG: {e}"))
     }
 
     /// Integer scale whose result fits in `max_side` pixels.
@@ -164,7 +164,7 @@ fn open_app() -> Result<Client> {
         .stdout(log.try_clone().map_err(|e| e.to_string())?)
         .stderr(log);
     std::os::unix::process::CommandExt::process_group(&mut command, 0);
-    command.spawn().map_err(|e| format!("não consegui abrir o Pontilha: {e}"))?;
+    command.spawn().map_err(|e| format!("could not open Pontilha: {e}"))?;
 
     let start = Instant::now();
     while start.elapsed() < Duration::from_secs(30) {
@@ -173,7 +173,7 @@ fn open_app() -> Result<Client> {
         }
         std::thread::sleep(Duration::from_millis(300));
     }
-    Err(format!("o Pontilha não ficou pronto em 30 s; veja {}", log_dir.join("app.log").display()))
+    Err(format!("Pontilha was not ready within 30 s; see {}", log_dir.join("app.log").display()))
 }
 
 // Files
@@ -213,16 +213,16 @@ fn resolve(path: &str, root: &Path) -> Result<PathBuf> {
         None => root.join(path),
     };
     if candidate.components().any(|c| matches!(c, Component::ParentDir)) {
-        return Err(format!("use um caminho sem '..': {path}"));
+        return Err(format!("use a path without '..': {path}"));
     }
     let root = root.canonicalize().map_err(|e| format!("{}: {e}", root.display()))?;
     let mut probe = candidate.as_path();
     while !probe.exists() {
-        probe = probe.parent().ok_or_else(|| format!("caminho inválido: {path}"))?;
+        probe = probe.parent().ok_or_else(|| format!("invalid path: {path}"))?;
     }
     let real = probe.canonicalize().map_err(|e| format!("{}: {e}", probe.display()))?;
     if !real.starts_with(&root) {
-        return Err(format!("{} fica fora da pasta permitida ({})", candidate.display(), root.display()));
+        return Err(format!("{} is outside the allowed folder ({})", candidate.display(), root.display()));
     }
     Ok(candidate)
 }
@@ -244,7 +244,7 @@ fn extension(path: &Path) -> String {
 }
 
 fn file_name(path: &Path) -> String {
-    path.file_name().and_then(|n| n.to_str()).unwrap_or("imagem").to_string()
+    path.file_name().and_then(|n| n.to_str()).unwrap_or("image").to_string()
 }
 
 /// How to export, beyond the format the extension picks.
@@ -268,7 +268,7 @@ impl Export {
 fn decode_base64(value: &Value, what: &str) -> Result<Vec<u8>> {
     base64::engine::general_purpose::STANDARD
         .decode(value.as_str().unwrap_or(""))
-        .map_err(|e| format!("{what} inválido: {e}"))
+        .map_err(|e| format!("invalid {what}: {e}"))
 }
 
 /// Saves the project (`.pontilha`) or exports a PNG or GIF, picking by extension.
@@ -314,7 +314,7 @@ fn save_as(client: &Client, path: &Path, export: &Export) -> Result<Value> {
                 "colors": result["colors"], "reduced": result["reduced"], "bytes": gif.len(),
             }))
         }
-        other => Err(format!("formato .{other} não suportado; use .pontilha (projeto), .png ou .gif")),
+        other => Err(format!("unsupported .{other} format; use .pontilha (project), .png or .gif")),
     }
 }
 
@@ -322,7 +322,7 @@ fn open_file(client: &Client, path: &Path, discard: bool) -> Result<Value> {
     let bytes = std::fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
     let name = file_name(path);
     if extension(path) == "pontilha" {
-        let text = String::from_utf8(bytes).map_err(|_| "o arquivo não é um projeto do Pontilha".to_string())?;
+        let text = String::from_utf8(bytes).map_err(|_| "the file is not a Pontilha project".to_string())?;
         client.call("project.load", json!({ "text": text, "fileName": name, "discard": discard }))
     } else {
         let png = base64::engine::general_purpose::STANDARD.encode(bytes);
@@ -334,7 +334,7 @@ fn open_file(client: &Client, path: &Path, discard: bool) -> Result<Value> {
 /// Adds a PNG file as a new layer, e.g. a reference drawn over at half opacity.
 fn place_file(client: &Client, path: &Path, name: Option<Value>, x: i64, y: i64, opacity: f64) -> Result<Value> {
     let bytes = std::fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
-    let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("Referência").to_string();
+    let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("Reference").to_string();
     client.call(
         "layer.import",
         json!({
@@ -476,7 +476,7 @@ fn text(value: Value) -> Vec<Value> {
 }
 
 fn arg_str<'a>(args: &'a Value, key: &str) -> Result<&'a str> {
-    args[key].as_str().ok_or_else(|| format!("o argumento \"{key}\" é obrigatório"))
+    args[key].as_str().ok_or_else(|| format!("the \"{key}\" argument is required"))
 }
 
 fn some(args: &Value, key: &str) -> Option<Value> {
@@ -499,7 +499,7 @@ impl Session {
             "command_list" => Ok(text(client.call("commands.list", json!({ "filter": some(args, "filter") }))?)),
             "command_run" => Ok(text(client.call(arg_str(args, "id")?, some(args, "params").unwrap_or(json!({})))?)),
             "command_batch" => {
-                let steps = args["steps"].as_array().ok_or("steps precisa ser uma lista de {id, params}")?;
+                let steps = args["steps"].as_array().ok_or("steps must be a list of {id, params}")?;
                 let commands: Vec<Value> = steps
                     .iter()
                     .map(|s| json!({ "method": s["id"], "params": some(s, "params").unwrap_or(json!({})) }))
@@ -551,7 +551,7 @@ impl Session {
             "doc_save" => {
                 let path = match args["path"].as_str() {
                     Some(p) => resolve(p, &self.roots.write)?,
-                    None => self.current.clone().ok_or("informe path: esta imagem ainda não foi salva")?,
+                    None => self.current.clone().ok_or("give a path: this image has not been saved yet")?,
                 };
                 let result = save_as(&client, &path, &Export::scale(args["scale"].as_u64().unwrap_or(1)))?;
                 if extension(&path) == "pontilha" {
@@ -562,11 +562,11 @@ impl Session {
             "doc_export" => {
                 let path = resolve(arg_str(args, "path")?, &self.roots.write)?;
                 if !matches!(extension(&path).as_str(), "png" | "gif") {
-                    return Err("doc_export grava PNG ou GIF; use um caminho terminado em .png ou .gif".into());
+                    return Err("doc_export writes PNG or GIF; use a path ending in .png or .gif".into());
                 }
                 let sheet = args["sheet"].as_str().map(str::to_string);
                 if sheet.as_deref().is_some_and(|s| s != "row" && s != "grid") {
-                    return Err("sheet precisa ser \"row\" ou \"grid\"".into());
+                    return Err("sheet must be \"row\" or \"grid\"".into());
                 }
                 let export = Export {
                     scale: args["scale"].as_u64().unwrap_or(1),
@@ -584,7 +584,7 @@ impl Session {
                 let data = base64::engine::general_purpose::STANDARD.encode(png);
                 Ok(vec![json!({ "type": "image", "data": data, "mimeType": "image/png" })])
             }
-            other => Err(format!("ferramenta desconhecida: {other}")),
+            other => Err(format!("unknown tool: {other}")),
         }
     }
 }
@@ -604,7 +604,7 @@ fn serve_mcp(roots: Roots) -> i32 {
         let message: Value = match serde_json::from_str(&line) {
             Ok(v) => v,
             Err(_) => {
-                send(json!({ "jsonrpc": "2.0", "id": null, "error": { "code": -32700, "message": "JSON inválido" } }));
+                send(json!({ "jsonrpc": "2.0", "id": null, "error": { "code": -32700, "message": "invalid JSON" } }));
                 continue;
             }
         };
@@ -625,14 +625,14 @@ fn serve_mcp(roots: Roots) -> i32 {
                 let args = params.get("arguments").cloned().unwrap_or(json!({}));
                 match session.tool(name, &args) {
                     Ok(content) => json!({ "content": content }),
-                    Err(e) => json!({ "content": [{ "type": "text", "text": format!("erro: {e}") }], "isError": true }),
+                    Err(e) => json!({ "content": [{ "type": "text", "text": format!("error: {e}") }], "isError": true }),
                 }
             }
             other => {
                 send(json!({
                     "jsonrpc": "2.0",
                     "id": id,
-                    "error": { "code": -32601, "message": format!("método desconhecido: {other}") }
+                    "error": { "code": -32601, "message": format!("unknown method: {other}") }
                 }));
                 continue;
             }
@@ -644,32 +644,32 @@ fn serve_mcp(roots: Roots) -> i32 {
 
 // Terminal commands
 
-const USAGE: &str = "uso: pontilha [comando]
+const USAGE: &str = "usage: pontilha [command]
 
-Sem comando, abre a janela. Com a janela aberta:
+With no command, opens the window. With the window open:
 
-  open [ARQUIVO]             abre a janela (e um .pontilha ou .png nela)
-  status                     o que está na imagem e se há alterações não salvas
-  commands [filtro]          lista os comandos do motor
-  run ID [JSON]              roda um comando: pontilha run draw.rect '{\"x\":0,\"y\":0,\"w\":4,\"h\":4}'
-  run RECEITA.json [PAUSA]   roda os passos de um arquivo [{\"id\": ..., \"params\": ...}], ao vivo
-  preview [ARQUIVO.png]      salva uma prévia ampliada (cerca de 512 px)
-  export ARQUIVO.png [ESCALA] [row|grid]   quadro atual, ou todos numa folha de sprites
-  export ARQUIVO.gif [ESCALA] [pingpong]   animação inteira, repetindo
-                                           (folha e GIF: tag=NOME exporta só um trecho)
-  save ARQUIVO.pontilha
-  place ARQUIVO.png [OPACIDADE]  põe um PNG como camada nova (referência: 0.5)
-  mcp                        servidor MCP para agentes (stdio)";
+  open [FILE]                opens the window (and a .pontilha or .png in it)
+  status                     what is in the image and whether there are unsaved changes
+  commands [filter]          lists the engine commands
+  run ID [JSON]              runs a command: pontilha run draw.rect '{\"x\":0,\"y\":0,\"w\":4,\"h\":4}'
+  run RECIPE.json [PAUSE]    runs the steps of a file [{\"id\": ..., \"params\": ...}], live
+  preview [FILE.png]         saves an enlarged preview (about 512 px)
+  export FILE.png [SCALE] [row|grid]   current frame, or every frame in a sprite sheet
+  export FILE.gif [SCALE] [pingpong]   the whole animation, looping
+                                       (sheet and GIF: tag=NAME exports only that tag)
+  save FILE.pontilha
+  place FILE.png [OPACITY]   adds a PNG as a new layer (reference: 0.5)
+  mcp                        MCP server for agents (stdio)";
 
 fn run_recipe(client: &Client, path: &Path, pace: Duration) -> Result<()> {
     let text = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
-    let recipe: Value = serde_json::from_str(&text).map_err(|e| format!("{}: JSON inválido: {e}", path.display()))?;
-    let steps = recipe.get("steps").unwrap_or(&recipe).as_array().ok_or("a receita precisa ser [{id, params}] ou {steps: [...]}")?;
+    let recipe: Value = serde_json::from_str(&text).map_err(|e| format!("{}: invalid JSON: {e}", path.display()))?;
+    let steps = recipe.get("steps").unwrap_or(&recipe).as_array().ok_or("the recipe must be [{id, params}] or {steps: [...]}")?;
     for (i, step) in steps.iter().enumerate() {
-        let id = step["id"].as_str().ok_or_else(|| format!("passo {}: falta id", i + 1))?;
+        let id = step["id"].as_str().ok_or_else(|| format!("step {}: missing id", i + 1))?;
         client
             .call(id, some(step, "params").unwrap_or(json!({})))
-            .map_err(|e| format!("passo {}: {e}", i + 1))?;
+            .map_err(|e| format!("step {}: {e}", i + 1))?;
         println!("{:>3}/{} {id}", i + 1, steps.len());
         std::thread::sleep(pace);
     }
@@ -695,9 +695,9 @@ fn terminal(args: &[String]) -> Result<()> {
                     None => std::env::current_dir().unwrap_or_else(|_| home()).join(raw),
                 };
                 let info = open_file(&client, &path, false)?;
-                println!("{} aberto: {} × {} px", path.display(), info["width"], info["height"]);
+                println!("{} opened: {} × {} px", path.display(), info["width"], info["height"]);
             }
-            None => println!("Pontilha aberto e pronto para comandos."),
+            None => println!("Pontilha is open and ready for commands."),
         }
         return Ok(());
     }
@@ -705,7 +705,7 @@ fn terminal(args: &[String]) -> Result<()> {
     let client = Client::connect()?;
     let cwd = std::env::current_dir().unwrap_or_else(|_| home());
     let path_arg = |i: usize| -> Result<PathBuf> {
-        let raw = args.get(i).ok_or_else(|| format!("faltou o arquivo.\n\n{USAGE}"))?;
+        let raw = args.get(i).ok_or_else(|| format!("missing file.\n\n{USAGE}"))?;
         Ok(match raw.strip_prefix("~/") {
             Some(rest) => home().join(rest),
             None => cwd.join(raw),
@@ -720,17 +720,17 @@ fn terminal(args: &[String]) -> Result<()> {
                     l.iter()
                         .map(|x| {
                             let name = x["name"].as_str().unwrap_or("?");
-                            if x["visible"] == true { name.to_string() } else { format!("{name} (oculta)") }
+                            if x["visible"] == true { name.to_string() } else { format!("{name} (hidden)") }
                         })
                         .collect()
                 })
                 .unwrap_or_default();
             println!(
-                "Pontilha aberto na porta {}: {}, {} × {} px",
+                "Pontilha open on port {}: {}, {} × {} px",
                 client.port, info["fileName"].as_str().unwrap_or("?"), info["width"], info["height"]
             );
-            println!("camadas, de cima para baixo: {}", layers.join(", "));
-            println!("{}", if info["dirty"] == true { "alterações não salvas" } else { "tudo salvo" });
+            println!("layers, top to bottom: {}", layers.join(", "));
+            println!("{}", if info["dirty"] == true { "unsaved changes" } else { "all saved" });
         }
         "commands" => {
             let list = client.call("commands.list", json!({ "filter": args.get(1) }))?;
@@ -744,7 +744,7 @@ fn terminal(args: &[String]) -> Result<()> {
             }
         }
         "run" => {
-            let target = args.get(1).ok_or_else(|| format!("faltou o comando.\n\n{USAGE}"))?;
+            let target = args.get(1).ok_or_else(|| format!("missing command.\n\n{USAGE}"))?;
             if target.ends_with(".json") {
                 let pace = args
                     .get(2)
@@ -754,7 +754,7 @@ fn terminal(args: &[String]) -> Result<()> {
                 run_recipe(&client, &path_arg(1)?, pace)?;
             } else {
                 let params = match args.get(2) {
-                    Some(raw) => serde_json::from_str(raw).map_err(|e| format!("JSON inválido: {e}"))?,
+                    Some(raw) => serde_json::from_str(raw).map_err(|e| format!("invalid JSON: {e}"))?,
                     None => json!({}),
                 };
                 println!("{:#}", client.call(target, params)?);
@@ -778,7 +778,7 @@ fn terminal(args: &[String]) -> Result<()> {
                     "row" | "grid" => export.sheet = Some(option.clone()),
                     "pingpong" => export.pingpong = true,
                     t if t.starts_with("tag=") => export.tag = Some(t["tag=".len()..].to_string()),
-                    n => export.scale = n.parse().map_err(|_| format!("opção desconhecida: {n} (use uma escala, row, grid, pingpong ou tag=NOME)"))?,
+                    n => export.scale = n.parse().map_err(|_| format!("unknown option: {n} (use a scale, row, grid, pingpong or tag=NAME)"))?,
                 }
             }
             println!("{:#}", save_as(&client, &path, &export)?);
@@ -792,7 +792,7 @@ fn terminal(args: &[String]) -> Result<()> {
             let path = path_arg(1)?;
             println!("{:#}", save_as(&client, &path.with_extension("pontilha"), &Export::scale(1))?);
         }
-        other => return Err(format!("comando desconhecido: {other}\n\n{USAGE}")),
+        other => return Err(format!("unknown command: {other}\n\n{USAGE}")),
     }
     Ok(())
 }
@@ -806,7 +806,7 @@ pub fn main() -> i32 {
     match terminal(&args) {
         Ok(()) => 0,
         Err(e) => {
-            eprintln!("erro: {e}");
+            eprintln!("error: {e}");
             1
         }
     }

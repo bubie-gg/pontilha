@@ -108,16 +108,16 @@ export async function parseProject(text: string): Promise<LoadedProject> {
   try {
     file = JSON.parse(text);
   } catch {
-    throw new ProjectError('o arquivo não é um projeto do Pontilha');
+    throw new ProjectError('the file is not a Pontilha project');
   }
-  if (file?.app !== 'pontilha') throw new ProjectError('o arquivo não é um projeto do Pontilha');
+  if (file?.app !== 'pontilha') throw new ProjectError('the file is not a Pontilha project');
   if (file.version !== 1 && file.version !== 2) {
-    throw new ProjectError(`versão ${(file as { version?: unknown }).version} do formato não é suportada; atualize o Pontilha`);
+    throw new ProjectError(`format version ${(file as { version?: unknown }).version} is not supported; update Pontilha`);
   }
   const { width, height } = file;
   const validSize = (n: unknown) => Number.isInteger(n) && (n as number) > 0 && (n as number) <= MAX_SIZE;
-  if (!validSize(width) || !validSize(height)) throw new ProjectError('tamanho da imagem inválido');
-  if (!Array.isArray(file.layers) || file.layers.length === 0) throw new ProjectError('o projeto não tem camadas');
+  if (!validSize(width) || !validSize(height)) throw new ProjectError('invalid image size');
+  if (!Array.isArray(file.layers) || file.layers.length === 0) throw new ProjectError('the project has no layers');
 
   // Version 1 is a version 2 file with a single frame.
   const v2: ProjectFileV2 =
@@ -130,14 +130,14 @@ export async function parseProject(text: string): Promise<LoadedProject> {
           frames: [{ duration: DEFAULT_DURATION }],
           layers: file.layers.map(({ rgba, ...rest }) => ({ ...rest, cels: [rgba] })),
         };
-  if (!Array.isArray(v2.frames) || v2.frames.length === 0) throw new ProjectError('o projeto não tem quadros');
-  if (v2.frames.length > MAX_FRAMES) throw new ProjectError(`o projeto tem mais de ${MAX_FRAMES} quadros`);
+  if (!Array.isArray(v2.frames) || v2.frames.length === 0) throw new ProjectError('the project has no frames');
+  if (v2.frames.length > MAX_FRAMES) throw new ProjectError(`the project has more than ${MAX_FRAMES} frames`);
 
   const frames = v2.frames.map((f) => createFrame(clampDuration(Number(f?.duration) || DEFAULT_DURATION)));
   const decode = async (data: unknown, where: string) => {
-    if (typeof data !== 'string') throw new ProjectError(`${where} está corrompido`);
+    if (typeof data !== 'string') throw new ProjectError(`${where} is corrupted`);
     const bytes = await zlibInflate(fromBase64(data));
-    if (bytes.length !== width * height * 4) throw new ProjectError(`${where} está corrompido`);
+    if (bytes.length !== width * height * 4) throw new ProjectError(`${where} is corrupted`);
     const pixels = new Uint32Array(width * height);
     new Uint8Array(pixels.buffer).set(bytes);
     return pixels;
@@ -146,16 +146,16 @@ export async function parseProject(text: string): Promise<LoadedProject> {
   const layers = await Promise.all(
     v2.layers.map(async (entry, index): Promise<Layer> => {
       if (!Array.isArray(entry.cels) || entry.cels.length !== frames.length) {
-        throw new ProjectError(`a camada ${index + 1} não tem uma imagem para cada quadro`);
+        throw new ProjectError(`layer ${index + 1} does not have an image for every frame`);
       }
       const cels = new Map(
         await Promise.all(
-          frames.map(async (f, i) => [f.id, await decode(entry.cels[i], `o quadro ${i + 1} da camada ${index + 1}`)] as const),
+          frames.map(async (f, i) => [f.id, await decode(entry.cels[i], `frame ${i + 1} of layer ${index + 1}`)] as const),
         ),
       );
       return {
         id: newLayerId(),
-        name: String(entry.name || `Camada ${index + 1}`),
+        name: String(entry.name || `Layer ${index + 1}`),
         visible: entry.visible !== false,
         opacity: Math.min(1, Math.max(0, Number(entry.opacity ?? 1))),
         cels,
@@ -170,7 +170,7 @@ export async function parseProject(text: string): Promise<LoadedProject> {
   const tags = (Array.isArray(v2.tags) ? v2.tags : []).flatMap((t) => {
     const from = frameAt(t?.from);
     const to = frameAt(t?.to);
-    return from && to ? [{ id: newTagId(), name: String(t.name || 'Trecho'), from: from.id, to: to.id }] : [];
+    return from && to ? [{ id: newTagId(), name: String(t.name || 'Tag'), from: from.id, to: to.id }] : [];
   });
   const doc: Doc = { width, height, layers, frames, frame: frames[0].id, tags };
   showFrame(doc, frames[Math.min(frames.length - 1, Math.max(0, v2.activeFrame | 0))].id);

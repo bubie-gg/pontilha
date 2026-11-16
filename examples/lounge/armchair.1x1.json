@@ -1,6 +1,6 @@
 {
  "name": "armchair.1x1",
- "description": "Poltrona turquesa do conjunto do sofá. Assento no único ladrilho (0, 0).",
+ "description": "Turquoise armchair from the sofa set. Seat on its single tile (0, 0).",
  "anchor": {
   "x": 34.0,
   "y": 92
@@ -36,7 +36,7 @@
   {
    "id": "layer.setProps",
    "params": {
-    "name": "sombra"
+    "name": "shadow"
    }
   },
   {
@@ -147,7 +147,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "encosto"
+    "name": "backrest"
    }
   },
   {
@@ -273,7 +273,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "braco_esquerdo"
+    "name": "left_arm"
    }
   },
   {
@@ -367,7 +367,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "assento"
+    "name": "seat"
    }
   },
   {
@@ -461,7 +461,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "almofada"
+    "name": "cushion"
    }
   },
   {
@@ -545,7 +545,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "braco_direito"
+    "name": "right_arm"
    }
   },
   {

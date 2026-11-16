@@ -10,7 +10,7 @@ export interface Frame {
   duration: number;
 }
 
-/** A named stretch of the animation, like "andar" or "pular", from one frame to another (both included). */
+/** A named stretch of the animation, like "walk" or "jump", from one frame to another (both included). */
 export interface Tag {
   id: string;
   name: string;
@@ -87,7 +87,7 @@ export function createLayer(doc: Shape, name: string, pixels?: Uint32Array): Lay
 export function createDoc(width: number, height: number, pixels?: Uint32Array): Doc {
   const frame = createFrame();
   const doc: Doc = { width, height, layers: [], frames: [frame], frame: frame.id, tags: [] };
-  doc.layers = [createLayer(doc, 'Camada 1', pixels)];
+  doc.layers = [createLayer(doc, 'Layer 1', pixels)];
   return doc;
 }
 
@@ -186,5 +186,5 @@ export function composite(doc: Doc, frameId = doc.frame): Uint32Array {
 
 export function nextLayerName(doc: Doc): string {
   const used = new Set(doc.layers.map((l) => l.name));
-  for (let n = doc.layers.length + 1; ; n++) if (!used.has(`Camada ${n}`)) return `Camada ${n}`;
+  for (let n = doc.layers.length + 1; ; n++) if (!used.has(`Layer ${n}`)) return `Layer ${n}`;
 }

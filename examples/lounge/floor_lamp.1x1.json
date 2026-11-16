@@ -1,6 +1,6 @@
 {
  "name": "floor_lamp.1x1",
- "description": "Abajur de pé. Quadro 1 desligado, quadro 2 ligado (luz quente no chão).",
+ "description": "Floor lamp. Frame 1 off, frame 2 on (warm light on the floor).",
  "anchor": {
   "x": 38.0,
   "y": 114
@@ -36,13 +36,13 @@
   {
    "id": "layer.setProps",
    "params": {
-    "name": "brilho"
+    "name": "shine"
    }
   },
   {
    "id": "layer.new",
    "params": {
-    "name": "sombra"
+    "name": "shadow"
    }
   },
   {
@@ -59,7 +59,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "pe"
+    "name": "foot"
    }
   },
   {
@@ -93,7 +93,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "haste"
+    "name": "pole"
    }
   },
   {
@@ -135,7 +135,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "cupula"
+    "name": "shade"
    }
   },
   {
@@ -261,7 +261,7 @@
     "filled": true,
     "onlyOn": "transparent",
     "frame": 2,
-    "layer": "sombra"
+    "layer": "shadow"
    }
   },
   {
@@ -274,13 +274,13 @@
     "color": "#fff1d633",
     "filled": true,
     "frame": 2,
-    "layer": "brilho"
+    "layer": "shine"
    }
   },
   {
    "id": "tag.add",
    "params": {
-    "name": "desligado",
+    "name": "off",
     "from": 1,
     "to": 1
    }
@@ -288,7 +288,7 @@
   {
    "id": "tag.add",
    "params": {
-    "name": "ligado",
+    "name": "on",
     "from": 2,
     "to": 2
    }

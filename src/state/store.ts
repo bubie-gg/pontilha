@@ -140,7 +140,7 @@ export interface AppState {
   clipboard: Clip | null;
 }
 
-export const UNTITLED = 'Sem título';
+export const UNTITLED = 'Untitled';
 
 export const history = new History();
 
@@ -248,7 +248,7 @@ function reshape(width: number, height: number, make: (cel: Uint32Array, w: numb
 
 function checkSize(width: number, height: number): boolean {
   const ok = Number.isInteger(width) && Number.isInteger(height) && width >= 1 && height >= 1 && width <= MAX_SIZE && height <= MAX_SIZE;
-  if (!ok) actions.notify(`O tamanho precisa ficar entre 1 e ${MAX_SIZE} px de cada lado.`, 'error');
+  if (!ok) actions.notify(`The size must be between 1 and ${MAX_SIZE} px on each side.`, 'error');
   return ok;
 }
 
@@ -400,7 +400,7 @@ export const actions = {
 
   addToPalette(color: number) {
     if (get().palette.includes(color)) {
-      actions.notify('Essa cor já está na paleta.');
+      actions.notify('This color is already in the palette.');
       return;
     }
     set((s) => ({ palette: [...s.palette, color], dirty: true }));
@@ -495,7 +495,7 @@ export const actions = {
     changeLayers((doc, active) => {
       const index = doc.layers.findIndex((l) => l.id === active);
       const source = doc.layers[index];
-      const copy = createLayer(doc, `${source.name} cópia`);
+      const copy = createLayer(doc, `${source.name} copy`);
       for (const f of doc.frames) copy.cels.set(f.id, celOf(doc, source, f.id).slice());
       copy.pixels = copy.cels.get(doc.frame)!;
       copy.opacity = source.opacity;
@@ -508,7 +508,7 @@ export const actions = {
   deleteLayer() {
     const { doc } = get();
     if (doc.layers.length === 1) {
-      actions.notify('A imagem precisa de pelo menos uma camada.');
+      actions.notify('The image needs at least one layer.');
       return;
     }
     changeLayers((d, active) => {
@@ -534,13 +534,13 @@ export const actions = {
     const { doc, activeLayerId } = get();
     const index = doc.layers.findIndex((l) => l.id === activeLayerId);
     if (index <= 0) {
-      actions.notify('Não há camada abaixo para mesclar.');
+      actions.notify('There is no layer below to merge with.');
       return;
     }
     const upper = doc.layers[index];
     const lower = doc.layers[index - 1];
     if (!upper.visible) {
-      actions.notify('Mostre a camada antes de mesclar.');
+      actions.notify('Show the layer before merging.');
       return;
     }
     // Every frame merges, so the animation keeps looking the same.
@@ -644,7 +644,7 @@ export const actions = {
   rotateSelection(turn: Turn, target = defaultTarget()): boolean {
     const { doc, selection } = get();
     if (!selection && doc.width !== doc.height) {
-      actions.notify('Para girar uma imagem que não é quadrada, selecione a área a girar.', 'error');
+      actions.notify('To rotate an image that is not square, select the area to rotate.', 'error');
       return false;
     }
     transformRegion(target, (pixels, r) => ({ pixels: rotateRegion(pixels, r.w, r.h, turn), to: turnedRect(r) }));
@@ -682,7 +682,7 @@ export const actions = {
   paste(at: { x?: number; y?: number } = {}, target = defaultTarget()): Selection | null {
     const { doc, selection, clipboard } = get();
     if (!clipboard) {
-      actions.notify('Nada copiado ainda. Selecione uma área e use Ctrl+C.');
+      actions.notify('Nothing copied yet. Select an area and use Ctrl+C.');
       return null;
     }
     const to = { ...clipboard.rect, x: at.x ?? clipboard.rect.x, y: at.y ?? clipboard.rect.y };
@@ -717,7 +717,7 @@ export const actions = {
     const { doc } = get();
     const r = rect && clipRect(rect, doc.width, doc.height);
     if (!r) {
-      actions.notify('Selecione a área que deve ficar.');
+      actions.notify('Select the area to keep.');
       return false;
     }
     if (r.w === doc.width && r.h === doc.height) return false;
@@ -729,7 +729,7 @@ export const actions = {
   trim(): Rect | null {
     const bounds = contentBounds(get().doc);
     if (!bounds) {
-      actions.notify('A imagem está vazia: não há o que recortar.');
+      actions.notify('The image is empty: there is nothing to crop.');
       return null;
     }
     actions.cropTo(bounds);
@@ -758,7 +758,7 @@ export const actions = {
   togglePlay() {
     const { playing, doc } = get();
     if (!playing && doc.frames.length < 2) {
-      actions.notify('Crie mais um quadro para tocar a animação.');
+      actions.notify('Add another frame to play the animation.');
       return;
     }
     set({ playing: !playing });
@@ -770,7 +770,7 @@ export const actions = {
 
   /** Names a stretch of frames (both ends included) as one undo step. */
   addTag(name: string, from: string, to: string): Tag {
-    const tag: Tag = { id: newTagId(), name: name.trim() || 'Trecho', from, to };
+    const tag: Tag = { id: newTagId(), name: name.trim() || 'Tag', from, to };
     changeLayers((d) => {
       d.tags = [...d.tags, tag];
     });
@@ -810,7 +810,7 @@ export const actions = {
   addFrame(opts: { copy?: boolean; duration?: number } = {}): Frame | null {
     const { doc } = get();
     if (doc.frames.length >= MAX_FRAMES) {
-      actions.notify(`A animação já tem o máximo de ${MAX_FRAMES} quadros.`, 'error');
+      actions.notify(`The animation already has the maximum of ${MAX_FRAMES} frames.`, 'error');
       return null;
     }
     const source = frameById();
@@ -828,7 +828,7 @@ export const actions = {
   deleteFrame(id?: string) {
     const { doc } = get();
     if (doc.frames.length === 1) {
-      actions.notify('A animação precisa de pelo menos um quadro.');
+      actions.notify('The animation needs at least one frame.');
       return;
     }
     const frame = frameById(id);

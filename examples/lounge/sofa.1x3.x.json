@@ -1,6 +1,6 @@
 {
  "name": "sofa.1x3.x",
- "description": "Sofá de 3 lugares com a frente para +x (direita da tela), no estilo do sofá 3 × 1 do Lounge. Assentos nos ladrilhos (0, 0), (0, 1) e (0, 2).",
+ "description": "3-seat sofa facing +x (screen right), in the style of the Lounge’s 3 × 1 sofa. Seats on tiles (0, 0), (0, 1) and (0, 2).",
  "anchor": {
   "x": 116.0,
   "y": 130
@@ -36,7 +36,7 @@
   {
    "id": "layer.setProps",
    "params": {
-    "name": "sombra"
+    "name": "shadow"
    }
   },
   {
@@ -160,7 +160,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "encosto"
+    "name": "backrest"
    }
   },
   {
@@ -254,7 +254,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "braco_de_tras"
+    "name": "back_arm"
    }
   },
   {
@@ -348,7 +348,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "costas_1"
+    "name": "back_1"
    }
   },
   {
@@ -458,7 +458,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "assento_1"
+    "name": "seat_1"
    }
   },
   {
@@ -552,7 +552,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "costas_2"
+    "name": "back_2"
    }
   },
   {
@@ -662,7 +662,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "assento_2"
+    "name": "seat_2"
    }
   },
   {
@@ -756,7 +756,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "costas_3"
+    "name": "back_3"
    }
   },
   {
@@ -866,7 +866,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "assento_3"
+    "name": "seat_3"
    }
   },
   {
@@ -960,7 +960,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "almofada"
+    "name": "cushion"
    }
   },
   {
@@ -1044,7 +1044,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "braco_da_frente"
+    "name": "front_arm"
    }
   },
   {

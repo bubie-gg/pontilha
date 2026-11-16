@@ -5,15 +5,15 @@ import type { ToolId } from '../core/tools';
 import { useApp } from '../state/store';
 
 const HINTS: Record<ToolId, string> = {
-  pencil: 'Botão direito pinta com a cor secundária. Segure Alt para pegar uma cor.',
-  eraser: 'Apaga para transparente.',
-  line: 'Shift liga ou desliga o ângulo perfeito enquanto arrasta.',
-  rect: 'Shift desenha um quadrado.',
-  ellipse: 'Shift desenha um círculo.',
-  fill: 'Botão direito preenche com a cor secundária.',
-  eyedropper: 'Botão direito define a cor secundária.',
-  select: 'Arraste para selecionar; arraste dentro para mover. Shift soma à seleção. Setas movem 1 px, Shift+setas 8 px.',
-  wand: 'Clique numa cor para selecionar; Shift+clique soma. Arraste dentro da seleção para mover.',
+  pencil: 'Right-click paints with the secondary color. Hold Alt to pick a color.',
+  eraser: 'Erases to transparent.',
+  line: 'Shift toggles perfect angles while dragging.',
+  rect: 'Shift draws a square.',
+  ellipse: 'Shift draws a circle.',
+  fill: 'Right-click fills with the secondary color.',
+  eyedropper: 'Right-click sets the secondary color.',
+  select: 'Drag to select; drag inside to move. Shift adds to the selection. Arrows move 1 px, Shift+arrows 8 px.',
+  wand: 'Click a color to select it; Shift+click adds. Drag inside the selection to move.',
 };
 
 export function StatusBar() {
@@ -49,15 +49,15 @@ export function StatusBar() {
             {toHex(under)}
           </>
         ) : inside ? (
-          'transparente'
+          'transparent'
         ) : null}
       </span>
       <span className={`status-message${notice?.tone === 'error' ? ' is-error' : ''}`} role="status" aria-live="polite">
-        {notice ? notice.text : `${HINTS[tool]} Espaço e arrastar move a tela.`}
+        {notice ? notice.text : `${HINTS[tool]} Space and drag pans the canvas.`}
       </span>
       {controlPort !== null && (
-        <span className="status-control" title={`Scripts e agentes controlam esta janela pela porta ${controlPort}`}>
-          scripts na porta {controlPort}
+        <span className="status-control" title={`Scripts and agents control this window through port ${controlPort}`}>
+          scripts on port {controlPort}
         </span>
       )}
       <span className="status-size">

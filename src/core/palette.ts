@@ -22,10 +22,10 @@ export const DEFAULT_PALETTE: number[] = HEX.map((h) => parseHex(h)!);
 /** Known palettes by name, for `palette.preset` and for forcing art into one with `effect.posterize`. */
 export const PRESETS: Record<string, { label: string; colors: number[] }> = Object.fromEntries(
   Object.entries({
-    pontilha: { label: 'Pontilha (padrão)', hex: HEX },
+    pontilha: { label: 'Pontilha (default)', hex: HEX },
     // Bubie master palette (art-src/palette/bubie-paleta-mestre.hex in the Bubie repo): every badge colour comes from here.
     bubie: {
-      label: 'Bubie (paleta mestre)',
+      label: 'Bubie (master palette)',
       hex: [
         '#16141c', '#262838', '#3a3d50', '#565b72', '#8187a0', '#c8ccd8',
         '#2b1b12', '#49372e', '#74502d', '#9c7a58', '#bfa586', '#ddcbb2',
@@ -40,7 +40,7 @@ export const PRESETS: Record<string, { label: string; colors: number[] }> = Obje
     // SLSO8 by Luis Miguel Maldonado: warm lights over deep blue nights.
     slso8: { label: 'SLSO8', hex: ['#0d2b45', '#203c56', '#544e68', '#8d697a', '#d08159', '#ffaa5e', '#ffd4a3', '#ffecd6'] },
     // SLSO8 with the extra night blue the Boo showcase adds for its darkest background.
-    boo: { label: 'Boo (SLSO8 + noite)', hex: ['#061a2c', '#0d2b45', '#203c56', '#544e68', '#8d697a', '#d08159', '#ffaa5e', '#ffd4a3', '#ffecd6'] },
+    boo: { label: 'Boo (SLSO8 + night)', hex: ['#061a2c', '#0d2b45', '#203c56', '#544e68', '#8d697a', '#d08159', '#ffaa5e', '#ffd4a3', '#ffecd6'] },
     pico8: {
       label: 'PICO-8',
       hex: ['#000000', '#1d2b53', '#7e2553', '#008751', '#ab5236', '#5f574f', '#c2c3c7', '#fff1e8', '#ff004d', '#ffa300', '#ffec27', '#00e436', '#29adff', '#83769c', '#ff77a8', '#ffccaa'],

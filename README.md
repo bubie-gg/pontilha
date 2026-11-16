@@ -1,135 +1,135 @@
 # Pontilha
 
-Editor de pixel art para Linux. Quem desenha pode ser você, com mouse ou mesa
-digitalizadora, ou um agente de IA mandando comandos para a janela aberta, como nos
-apps do ArtCraft. Nos dois casos, cada passo aparece na tela na hora.
+A pixel art editor for Linux. You can draw yourself, with a mouse or a drawing tablet, or an
+AI agent can send commands to the open window, as with the ArtCraft apps. Either way, every
+step shows up on screen as it happens.
 
-## Usar
+## Usage
 
-- Abrir: `pontilha` (ou pelo lançador de apps).
-- Atalhos: M seleção, W varinha mágica, B lápis, E borracha, L linha, U retângulo, O elipse, G balde, I conta-gotas, X troca as
-  cores, `[` e `]` mudam o pincel, Alt segurado pega uma cor, Espaço e arrastar move a
-  tela, Ctrl+Z/Ctrl+Shift+Z desfazem e refazem, Ctrl+S salva, Ctrl+E exporta (PNG, folha de sprites ou GIF).
-- Formato próprio: `.pontilha` (camadas, quadros e paleta). PNG exportado sem borrar, em
-  qualquer escala inteira.
+- Open: `pontilha` (or from the app launcher).
+- Shortcuts: M select, W magic wand, B pencil, E eraser, L line, U rectangle, O ellipse, G fill, I eyedropper, X swaps the
+  colors, `[` and `]` change the brush size, holding Alt picks a color, Space and drag pans the
+  canvas, Ctrl+Z/Ctrl+Shift+Z undo and redo, Ctrl+S saves, Ctrl+E exports (PNG, sprite sheet or GIF).
+- Native format: `.pontilha` (layers, frames and palette). PNG export never blurs, at any
+  whole-number scale.
 
-## Tiles e isométrico
+## Tiles and isometric
 
-Na barra de cima, o modo tile mostra a imagem repetida em volta, mais apagada, para conferir
-se as bordas de um ladrilho emendam. A grade isométrica desenha linhas 2:1 com ladrilhos de
-16, 32 ou 64 px de largura, guia para mobis. As duas aparecem só na tela.
+In the top bar, tile mode shows the image repeated around itself, dimmed, so you can check
+that a tile's edges meet. The isometric grid draws 2:1 lines with tiles 16, 32 or 64 px wide,
+as a guide for mobis. Both are shown on screen only.
 
-## Simetria
+## Symmetry
 
-Lápis, borracha, linha, retângulo, elipse e balde têm Simetria na barra de opções: ↔ Lados
-repete o que você pinta do outro lado da linha vertical do centro, ↕ Cima e baixo da linha
-horizontal, e Os quatro das duas. As linhas do centro aparecem na tela enquanto está ligada.
+Pencil, eraser, line, rectangle, ellipse and fill have Symmetry in the options bar: ↔ Sides
+repeats what you paint across the vertical center line, ↕ Top and bottom across the
+horizontal one, and All four across both. The center lines are shown on screen while it is on.
 
-## Cores
+## Colors
 
-No painel Cores:
+In the Colors panel:
 
-- Rampa (ícone de degraus): cria de 3 a 9 cores em volta da cor principal, com sombras mais
-  escuras e saturadas puxando para o azul e luzes mais claras puxando para o amarelo; o giro
-  de matiz por passo é ajustável. Vai para a paleta sem repetir cores.
-- Trocar cor (ícone de setas): troca uma cor usada por outra na imagem inteira, só na
-  camada ativa ou só no quadro atual, num passo de desfazer. Bom para recolorir uma
-  animação inteira ou fazer variantes de um badge.
+- Ramp (stairs icon): creates 3 to 9 colors around the primary color, with darker, more
+  saturated shadows leaning toward blue and lighter highlights leaning toward yellow; the hue
+  shift per step is adjustable. The colors go into the palette without duplicates.
+- Replace color (arrows icon): replaces a used color with another across the whole image, only
+  in the active layer or only in the current frame, as one undo step. Good for recoloring a
+  whole animation or making variants of a badge.
 
-## Tamanho da imagem
+## Image size
 
-O botão de recorte na barra de cima abre Tamanho da imagem. Tudo vale para todas as camadas e
-quadros, e Ctrl+Z desfaz:
+The crop button in the top bar opens Image size. Everything applies to every layer and frame,
+and Ctrl+Z undoes it:
 
-- Tela: nova largura e altura sem esticar a arte; os 9 quadradinhos escolhem onde a imagem
-  atual fica. Encolher corta o que não couber.
-- Ampliar: cada pixel vira um bloco 2×, 3×, 4× ou 8×.
-- Recortar: cortar as bordas vazias em volta da arte, ou recortar na seleção (também na
-  barra da ferramenta Seleção).
+- Canvas: new width and height without stretching the art; the 9 small squares choose where
+  the current image goes. Shrinking cuts off whatever doesn't fit.
+- Scale up: each pixel becomes a 2×, 3×, 4× or 8× block.
+- Crop: trim the empty borders around the art, or crop to the selection (also in the Select
+  tool's bar).
 
-## Salvamento automático
+## Autosave
 
-Enquanto há alterações não salvas, o Pontilha guarda uma cópia por minuto em
-`~/.config/pontilha/recovery.pontilha`. Salvar, ou fechar escolhendo não salvar, apaga a
-cópia. Se o app fechar de outro jeito (travou, foi encerrado), na próxima abertura ele
-oferece recuperar o trabalho.
+While there are unsaved changes, Pontilha keeps a copy every minute in
+`~/.config/pontilha/recovery.pontilha`. Saving, or closing and choosing not to save, deletes
+the copy. If the app closes any other way (it crashed, it was killed), it offers to recover
+the work the next time it opens.
 
-## Seleção
+## Selection
 
-Com a ferramenta de seleção (M), arraste para selecionar um retângulo e arraste dentro
-dele para mover os pixels. A varinha mágica (W) seleciona pela cor: só a área conectada ao
-clique, ou a mesma cor na camada toda; a seleção segue a forma, e mover, espelhar, girar,
-copiar e apagar valem só para os pixels dela. Shift soma à seleção nas duas ferramentas. A barra de opções e os atalhos agem na seleção, ou na camada
-inteira quando nada está selecionado:
+With the Select tool (M), drag to select a rectangle and drag inside it to move the pixels.
+The magic wand (W) selects by color: only the area connected to the click, or the same color
+across the whole layer; the selection follows the shape, and move, flip, rotate, copy and erase
+apply only to its pixels. Shift adds to the selection with both tools. The options bar and the
+shortcuts act on the selection, or on the whole layer when nothing is selected:
 
-- Com algo selecionado, setas movem 1 px (Shift+setas, 8 px). Shift+H e Shift+V espelham; Shift+R gira 90°.
-- Ctrl+C copia, Ctrl+X recorta, Ctrl+V cola no mesmo lugar de onde copiou (bom para levar
-  uma parte para outro quadro). Delete apaga; Ctrl+A seleciona tudo; Ctrl+D ou Esc desmarca.
-- Desfazer devolve os pixels e a seleção juntos.
+- With something selected, the arrows move it 1 px (Shift+arrows, 8 px). Shift+H and Shift+V flip; Shift+R rotates 90°.
+- Ctrl+C copies, Ctrl+X cuts, Ctrl+V pastes in the same place it was copied from (handy for
+  carrying a part to another frame). Delete erases; Ctrl+A selects all; Ctrl+D or Esc deselects.
+- Undo restores the pixels and the selection together.
 
-## Animar
+## Animation
 
-A linha do tempo fica embaixo da tela. Cada quadro tem uma imagem por camada e a própria
-duração em milissegundos.
+The timeline sits below the canvas. Each frame has one image per layer and its own duration
+in milliseconds.
 
-- `+` cria um quadro vazio, o botão de duplicar copia o atual, a lixeira exclui.
-- Arraste uma miniatura para reordenar (ou Shift+setas com ela selecionada).
-- `,` e `.` passam de quadro; Enter toca e pausa, em Repetir ou Ida e volta.
-- Papel vegetal mostra quadros vizinhos por baixo, bem claros: de 0 a 3 antes e depois, e
-  Colorido pinta os anteriores de vermelho e os seguintes de azul.
-- Marcar trecho (ícone de etiqueta) dá nome a um intervalo, como "andar" ou "pular". O nome
-  aparece sobre as miniaturas; clicar nele faz a reprodução repetir só esse trecho, e a
-  exportação de folha e GIF pode sair só dele.
-- Importar folha de sprites (ícone de pasta na linha do tempo) recorta um PNG em quadros, da
-  esquerda para a direita e de cima para baixo, sem as células vazias do fim.
-- Projetos da versão 1 (sem quadros) continuam abrindo; ao salvar viram versão 2.
-- Exportar (Ctrl+E): o quadro atual em PNG, todos os quadros numa folha de sprites (em
-  linha ou em grade) ou um GIF animado que repete para sempre, com ida e volta opcional.
-  GIF guarda até 256 cores e cada pixel é opaco ou transparente.
+- `+` creates an empty frame, the duplicate button copies the current one, the trash can deletes it.
+- Drag a thumbnail to reorder (or Shift+arrows with it selected).
+- `,` and `.` step through frames; Enter plays and pauses, in Loop or Ping-pong.
+- Onion skin shows neighboring frames underneath, very faint: 0 to 3 before and after, and
+  Tinted colors the previous ones red and the next ones blue.
+- Add tag (label icon) names a range of frames, like "walk" or "jump". The name appears above
+  the thumbnails; clicking it makes playback loop over just that range, and sprite sheet and
+  GIF export can output just that range.
+- Import sprite sheet (folder icon in the timeline) slices a PNG into frames, left to right and
+  top to bottom, leaving out empty cells at the end.
+- Version 1 projects (without frames) still open; saving turns them into version 2.
+- Export (Ctrl+E): the current frame as PNG, every frame in a sprite sheet (in a row or a grid)
+  or an animated GIF that loops forever, with optional ping-pong. GIF holds up to 256 colors
+  and each pixel is either opaque or transparent.
 
-## Efeitos, loops calculados e receitas
+## Effects, computed loops and recipes
 
-Ideias tiradas dos grafos de nós do Pixel Composer (o projeto Boo), como comandos para agentes
-e scripts. Todos valem como um passo de desfazer, mesmo quando mexem em vários quadros.
+Ideas taken from Pixel Composer's node graphs (the Boo project), as commands for agents and
+scripts. Each one is a single undo step, even when it changes several frames.
 
-- Paleta: `palette.preset` (bubie, slso8, boo, pico8, sweetie16); `effect.posterize` força
-  cada pixel para a cor mais próxima da paleta, com pontilhado ordenado opcional;
-  `color.check` lista o que está fora dela.
-- Volume pela borda: `effect.shade` pinta o lado da luz e o da sombra a partir da direção da
-  luz; `effect.bands` faz faixas pela distância até a borda (aros e brilhos);
-  `effect.blobify` funde formas próximas numa gosma arredondada.
-- Movimento em loop sem redesenhar: `anim.oscillate` balança uma camada (com `phase` para um
-  acessório vir atrasado), `effect.wave {animate: true}` ondula uma barra ou capa, e
-  `draw.particles` solta poeira ou brilhos que renascem a cada volta.
-- Receitas: `recipe.start` … `recipe.stop` grava os comandos que montam a peça e os guarda no
-  `.pontilha`; `recipe.run {colors: {"#de": "#para"}}` refaz a peça em outras cores. O arquivo
-  também guarda uma miniatura PNG (`thumbnail`) para galerias.
+- Palette: `palette.preset` (bubie, slso8, boo, pico8, sweetie16); `effect.posterize` forces
+  every pixel to the nearest palette color, with optional ordered dithering; `color.check`
+  lists what falls outside it.
+- Volume from the edge: `effect.shade` paints the lit side and the shadow side from the light
+  direction; `effect.bands` makes bands by distance to the edge (rims and highlights);
+  `effect.blobify` melts nearby shapes into a rounded blob.
+- Looping motion without redrawing: `anim.oscillate` bobs a layer (with `phase` so an accessory
+  follows a little late), `effect.wave {animate: true}` ripples a hem or a cape, and
+  `draw.particles` releases dust or sparkles that respawn on every loop.
+- Recipes: `recipe.start` … `recipe.stop` records the commands that build a piece and stores
+  them in the `.pontilha`; `recipe.run {colors: {"#from": "#to"}}` rebuilds the piece in other
+  colors. The file also stores a PNG thumbnail (`thumbnail`) for galleries.
 
-Exemplo completo em `examples/fantasma-lanterna/`.
+Full example in `examples/ghost-lantern/`.
 
-## Controlar por agentes e terminal
+## Control from agents and the terminal
 
-Com a janela aberta, ela escuta em `127.0.0.1:7990` (porta e token publicados em
-`~/.config/pontilha/`; desligue com `--no-control`).
+While the window is open, it listens on `127.0.0.1:7990` (port and token published in
+`~/.config/pontilha/`; turn it off with `--no-control`).
 
-- MCP: `pontilha mcp`, já registrado no Claude Code como `pontilha`. Ferramentas no padrão
-  do ArtCraft: `command_list`, `command_run`, `command_batch`, `doc_new`, `doc_open`,
+- MCP: `pontilha mcp`, already registered in Claude Code as `pontilha`. Tools follow the
+  ArtCraft convention: `command_list`, `command_run`, `command_batch`, `doc_new`, `doc_open`,
   `doc_place`, `doc_save`, `doc_export`, `doc_inspect`, `render_preview`, `app_open`.
 - Terminal: `pontilha status`, `pontilha commands`, `pontilha run draw.rect '{"x":0,"y":0,"w":4,"h":4}'`,
-  `pontilha run examples/badge-estrela.json`, `pontilha preview`, `pontilha export saida.png 4`,
-  `pontilha export folha.png 4 grid`, `pontilha export anim.gif 4 pingpong`.
+  `pontilha run examples/badge-star.json`, `pontilha preview`, `pontilha export out.png 4`,
+  `pontilha export sheet.png 4 grid`, `pontilha export anim.gif 4 pingpong`.
 - Skill: `~/.claude/skills/pontilha/SKILL.md`.
 
-## Desenvolver
+## Development
 
 ```sh
 bun install
-bunx tauri dev                 # janela com recarga automática
-bun run test                   # motor de desenho e comandos
-bunx tauri build --no-bundle   # binário final em src-tauri/target/release/pontilha
+bunx tauri dev                 # window with live reload
+bun run test                   # drawing engine and commands
+bunx tauri build --no-bundle   # final binary in src-tauri/target/release/pontilha
 ```
 
-- `src/core/`: motor (pixels, rasterização, histórico, PNG, formato do projeto), sem DOM.
-- `src/automation/commands.ts`: os comandos que agentes e scripts usam.
-- `src/canvas/`, `src/ui/`: tela de desenho e painéis (React).
-- `src-tauri/src/control.rs`: porta de controle; `cli.rs`: linha de comando e servidor MCP.
+- `src/core/`: the engine (pixels, rasterization, history, PNG, project format), no DOM.
+- `src/automation/commands.ts`: the commands agents and scripts use.
+- `src/canvas/`, `src/ui/`: drawing canvas and panels (React).
+- `src-tauri/src/control.rs`: control port; `cli.rs`: command line and MCP server.

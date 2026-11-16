@@ -135,7 +135,7 @@ class Writer {
 
 /** Encodes frames of the same size as a looping GIF. */
 export function encodeGif(frames: GifFrame[], width: number, height: number): GifResult {
-  if (frames.length === 0) throw new Error('o GIF precisa de pelo menos um quadro');
+  if (frames.length === 0) throw new Error('the GIF needs at least one frame');
   const { colors, transparent, bits } = buildPalette(frames);
   const used = colors.size + (transparent ? 1 : 0);
   let depth = 1;

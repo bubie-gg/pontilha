@@ -99,8 +99,8 @@ export function ColorPicker() {
         style={{ '--hue': `hsl(${hsv.h} 100% 50%)` } as React.CSSProperties}
         role="slider"
         tabIndex={0}
-        aria-label="Saturação e brilho"
-        aria-valuetext={`saturação ${Math.round(hsv.s * 100)}%, brilho ${Math.round(hsv.v * 100)}%`}
+        aria-label="Saturation and brightness"
+        aria-valuetext={`saturation ${Math.round(hsv.s * 100)}%, brightness ${Math.round(hsv.v * 100)}%`}
         {...sv}
         onKeyDown={(e) => {
           const d = arrowDelta(e);
@@ -136,7 +136,7 @@ export function ColorPicker() {
         style={{ '--solid': solid } as React.CSSProperties}
         role="slider"
         tabIndex={0}
-        aria-label="Opacidade da cor"
+        aria-label="Color opacity"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round((alpha / 255) * 100)}
@@ -172,7 +172,7 @@ export function ColorPicker() {
         </label>
         <span className="alpha-readout">{Math.round((alpha / 255) * 100)}%</span>
       </div>
-      {hexError && <p className="field-error">Use o formato #rrggbb, por exemplo #c93c4a.</p>}
+      {hexError && <p className="field-error">Use the #rrggbb format, for example #c93c4a.</p>}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 {
  "name": "wall_screen.3x1",
- "description": "Telão de parede para vídeos, 3 ladrilhos de largura. Fica colado na parede do fundo (borda v = 0 do losango 3 × 1), com a base da tela a 38 px do chão. A âncora é o vértice da frente desse losango 3 × 1, como nas outras peças.",
+ "description": "Wall screen for videos, 3 tiles wide. It sits flush against the back wall (edge v = 0 of the 3 × 1 diamond), with the bottom of the screen 38 px above the floor. The anchor is the front vertex of that 3 × 1 diamond, as in the other pieces.",
  "anchor": {
   "x": 80.0,
   "y": 178
@@ -34,7 +34,7 @@
   {
    "id": "layer.setProps",
    "params": {
-    "name": "moldura"
+    "name": "bezel"
    }
   },
   {
@@ -128,7 +128,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "tela"
+    "name": "screen"
    }
   },
   {

@@ -4,15 +4,15 @@ import { actions, useApp } from '../state/store';
 import { Icon, type IconName } from './icons';
 
 const TOOLS: Array<{ id: ToolId; icon: IconName; label: string; key: string }> = [
-  { id: 'select', icon: 'select', label: 'Seleção', key: 'M' },
-  { id: 'wand', icon: 'wand', label: 'Varinha mágica', key: 'W' },
-  { id: 'pencil', icon: 'pencil', label: 'Lápis', key: 'B' },
-  { id: 'eraser', icon: 'eraser', label: 'Borracha', key: 'E' },
-  { id: 'line', icon: 'line', label: 'Linha', key: 'L' },
-  { id: 'rect', icon: 'rect', label: 'Retângulo', key: 'U' },
-  { id: 'ellipse', icon: 'ellipse', label: 'Elipse', key: 'O' },
-  { id: 'fill', icon: 'fill', label: 'Balde', key: 'G' },
-  { id: 'eyedropper', icon: 'eyedropper', label: 'Conta-gotas', key: 'I' },
+  { id: 'select', icon: 'select', label: 'Select', key: 'M' },
+  { id: 'wand', icon: 'wand', label: 'Magic wand', key: 'W' },
+  { id: 'pencil', icon: 'pencil', label: 'Pencil', key: 'B' },
+  { id: 'eraser', icon: 'eraser', label: 'Eraser', key: 'E' },
+  { id: 'line', icon: 'line', label: 'Line', key: 'L' },
+  { id: 'rect', icon: 'rect', label: 'Rectangle', key: 'U' },
+  { id: 'ellipse', icon: 'ellipse', label: 'Ellipse', key: 'O' },
+  { id: 'fill', icon: 'fill', label: 'Fill', key: 'G' },
+  { id: 'eyedropper', icon: 'eyedropper', label: 'Eyedropper', key: 'I' },
 ];
 
 function ColorWell() {
@@ -24,18 +24,18 @@ function ColorWell() {
         type="button"
         className="well-swatch well-secondary px"
         style={{ '--swatch': toCss(secondary) } as React.CSSProperties}
-        title={`Cor secundária ${toHex(secondary)}. Clique para trocar (X).`}
-        aria-label={`Cor secundária ${toHex(secondary)}, trocar com a principal`}
+        title={`Secondary color ${toHex(secondary)}. Click to swap (X).`}
+        aria-label={`Secondary color ${toHex(secondary)}, swap with the primary`}
         onClick={actions.swapColors}
       />
       <div
         className="well-swatch well-primary px"
         style={{ '--swatch': toCss(primary) } as React.CSSProperties}
-        title={`Cor principal ${toHex(primary)}`}
+        title={`Primary color ${toHex(primary)}`}
         role="img"
-        aria-label={`Cor principal ${toHex(primary)}`}
+        aria-label={`Primary color ${toHex(primary)}`}
       />
-      <button type="button" className="well-swap" title="Trocar cores (X)" aria-label="Trocar cores" onClick={actions.swapColors}>
+      <button type="button" className="well-swap" title="Swap colors (X)" aria-label="Swap colors" onClick={actions.swapColors}>
         <Icon name="swap" size={12} />
       </button>
     </div>

@@ -77,7 +77,7 @@ export function sliceSheet(pixels: Uint32Array, width: number, height: number, f
 export function docFromFrames(images: Uint32Array[], width: number, height: number, duration = DEFAULT_DURATION): Doc {
   const frames = images.map(() => createFrame(duration));
   const doc: Doc = { width, height, layers: [], frames, frame: frames[0].id, tags: [] };
-  const layer = createLayer(doc, 'Camada 1');
+  const layer = createLayer(doc, 'Layer 1');
   images.forEach((cell, i) => layer.cels.set(frames[i].id, cell));
   layer.pixels = layer.cels.get(frames[0].id)!;
   doc.layers = [layer];
