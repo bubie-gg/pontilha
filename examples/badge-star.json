@@ -1,0 +1,18 @@
+{
+  "name": "Star Badge",
+  "description": "Gold medal with a faceted star. 32 × 32 native; export at scale 4 for Bubie’s 128 × 128 PNG.",
+  "steps": [
+    { "id": "doc.new", "params": { "width": 32, "height": 32, "name": "badge-star" } },
+    { "id": "palette.set", "params": { "colors": ["#16141c", "#db7b2a", "#f6b847", "#ffe6a0", "#8a2340", "#c93c4a", "#f0715e", "#ffb08f"] } },
+    { "id": "layer.setProps", "params": { "name": "medal" } },
+    { "id": "draw.ellipse", "params": { "x": 2, "y": 2, "w": 28, "h": 28, "color": "#db7b2a", "filled": true } },
+    { "id": "draw.ellipse", "params": { "x": 1, "y": 1, "w": 28, "h": 28, "color": "#ffe6a0", "filled": true, "onlyOn": "#db7b2a" } },
+    { "id": "draw.ellipse", "params": { "x": 3, "y": 3, "w": 28, "h": 28, "color": "#f6b847", "filled": true, "onlyOn": "#ffe6a0" } },
+    { "id": "draw.ellipse", "params": { "x": 5, "y": 5, "w": 22, "h": 22, "color": "#db7b2a" } },
+    { "id": "effect.outline", "params": { "color": "#16141c" } },
+    { "id": "layer.new", "params": { "name": "star" } },
+    { "id": "draw.star", "params": { "cx": 15.5, "cy": 16.3, "outer": 8.9, "inner": 3.7, "color": "#c93c4a", "light": "#f0715e", "dark": "#8a2340" } },
+    { "id": "effect.outline", "params": { "color": "#16141c" } },
+    { "id": "draw.pixels", "params": { "pixels": [[15, 9], [8, 14], [9, 14]], "color": "#ffb08f" } }
+  ]
+}

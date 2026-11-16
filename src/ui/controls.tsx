@@ -98,11 +98,11 @@ export function Stepper({
   return (
     <div className="stepper">
       <span className="option-label">{label}</span>
-      <button type="button" className="px" aria-label={`Diminuir ${label.toLowerCase()}`} disabled={value <= min} onClick={() => onChange(value - 1)}>
+      <button type="button" className="px" aria-label={`Decrease ${label.toLowerCase()}`} disabled={value <= min} onClick={() => onChange(value - 1)}>
         <Icon name="minus" size={12} />
       </button>
       <output className="stepper-value">{value}</output>
-      <button type="button" className="px" aria-label={`Aumentar ${label.toLowerCase()}`} disabled={value >= max} onClick={() => onChange(value + 1)}>
+      <button type="button" className="px" aria-label={`Increase ${label.toLowerCase()}`} disabled={value >= max} onClick={() => onChange(value + 1)}>
         <Icon name="plus" size={12} />
       </button>
     </div>

@@ -82,11 +82,11 @@ function has(p: Params, key: string) {
 
 function num(p: Params, key: string, fallback?: number): number {
   if (!has(p, key)) {
-    if (fallback === undefined) fail(`o parâmetro "${key}" é obrigatório`);
+    if (fallback === undefined) fail(`the "${key}" parameter is required`);
     return fallback;
   }
   const v = p[key];
-  if (typeof v !== 'number' || !Number.isFinite(v)) fail(`"${key}" precisa ser um número, recebi ${JSON.stringify(v)}`);
+  if (typeof v !== 'number' || !Number.isFinite(v)) fail(`"${key}" must be a number, got ${JSON.stringify(v)}`);
   return v;
 }
 
@@ -94,29 +94,29 @@ const int = (p: Params, key: string, fallback?: number) => Math.round(num(p, key
 
 function bool(p: Params, key: string, fallback: boolean): boolean {
   if (!has(p, key)) return fallback;
-  if (typeof p[key] !== 'boolean') fail(`"${key}" precisa ser true ou false`);
+  if (typeof p[key] !== 'boolean') fail(`"${key}" must be true or false`);
   return p[key] as boolean;
 }
 
 function text(p: Params, key: string, fallback?: string): string {
   if (!has(p, key)) {
-    if (fallback === undefined) fail(`o parâmetro "${key}" é obrigatório`);
+    if (fallback === undefined) fail(`the "${key}" parameter is required`);
     return fallback;
   }
-  if (typeof p[key] !== 'string') fail(`"${key}" precisa ser texto`);
+  if (typeof p[key] !== 'string') fail(`"${key}" must be text`);
   return p[key] as string;
 }
 
 function colorValue(value: unknown, key: string): number {
   if (value === null || value === 'transparent') return 0;
-  if (typeof value !== 'string') fail(`"${key}" precisa ser uma cor como "#c93c4a" ou "transparent"`);
+  if (typeof value !== 'string') fail(`"${key}" must be a color like "#c93c4a" or "transparent"`);
   const c = parseHex(value);
-  if (c === null) fail(`cor inválida em "${key}": ${value}. Use #rrggbb, #rrggbbaa ou "transparent".`);
+  if (c === null) fail(`invalid color in "${key}": ${value}. Use #rrggbb, #rrggbbaa or "transparent".`);
   return c;
 }
 
 function requiredColor(p: Params, key: string): number {
-  if (p[key] === undefined) fail(`o parâmetro "${key}" é obrigatório`);
+  if (p[key] === undefined) fail(`the "${key}" parameter is required`);
   return colorValue(p[key], key);
 }
 
@@ -128,7 +128,7 @@ function color(p: Params, key = 'color'): number {
 function layerRef(ref: unknown): Layer {
   const { doc } = useApp.getState();
   const layer = doc.layers.find((l) => l.id === ref) ?? doc.layers.find((l) => l.name === ref);
-  if (!layer) fail(`camada não encontrada: ${JSON.stringify(ref)}. Camadas: ${doc.layers.map((l) => l.name).join(', ')}`);
+  if (!layer) fail(`layer not found: ${JSON.stringify(ref)}. Layers: ${doc.layers.map((l) => l.name).join(', ')}`);
   return layer;
 }
 
@@ -136,7 +136,7 @@ function frameRef(ref: unknown): Frame {
   const { doc } = useApp.getState();
   const frame =
     typeof ref === 'number' && Number.isInteger(ref) ? doc.frames[ref - 1] : doc.frames.find((f) => f.id === ref);
-  if (!frame) fail(`quadro não encontrado: ${JSON.stringify(ref)}. Use o número (1 a ${doc.frames.length}) ou o id.`);
+  if (!frame) fail(`frame not found: ${JSON.stringify(ref)}. Use its number (1 to ${doc.frames.length}) or its id.`);
   return frame;
 }
 
@@ -163,14 +163,14 @@ const currentSelection = () => selectionInfo(useApp.getState().selection);
 function tagRef(ref: unknown): Tag {
   const { doc } = useApp.getState();
   const tag = doc.tags.find((t) => t.id === ref) ?? doc.tags.find((t) => t.name === ref);
-  if (!tag) fail(`trecho não encontrado: ${JSON.stringify(ref)}. Trechos: ${doc.tags.map((t) => t.name).join(', ') || 'nenhum'}`);
+  if (!tag) fail(`tag not found: ${JSON.stringify(ref)}. Tags: ${doc.tags.map((t) => t.name).join(', ') || 'none'}`);
   return tag;
 }
 
 /** `tag` param as the frames to export, or every frame without it. */
 function exportRange(p: Params): FrameRange | undefined {
   if (!has(p, 'tag')) return undefined;
-  return tagRange(useApp.getState().doc, tagRef(p.tag)) ?? fail('esse trecho perdeu um dos quadros das pontas');
+  return tagRange(useApp.getState().doc, tagRef(p.tag)) ?? fail('this tag lost one of its end frames');
 }
 
 function tagInfo(tag: Tag) {
@@ -184,7 +184,7 @@ function frameInfo(frame: Frame, index: number) {
 
 function colorScope(p: Params): ColorScope {
   const scope = text(p, 'scope', 'all');
-  if (scope !== 'all' && scope !== 'layer' && scope !== 'frame') fail('scope precisa ser "all", "layer" ou "frame"');
+  if (scope !== 'all' && scope !== 'layer' && scope !== 'frame') fail('scope must be "all", "layer" or "frame"');
   return scope;
 }
 
@@ -288,7 +288,7 @@ function frameSpan(p: Params): Frame[] {
   if (has(p, 'from') || has(p, 'to')) {
     const a = has(p, 'from') ? frameIndex(doc, frameRef(p.from).id) : 0;
     const b = has(p, 'to') ? frameIndex(doc, frameRef(p.to).id) : doc.frames.length - 1;
-    if (b < a) fail('to precisa vir depois de from');
+    if (b < a) fail('to must come after from');
     return doc.frames.slice(a, b + 1);
   }
   return doc.frames;
@@ -301,11 +301,11 @@ function effectFrames(p: Params): Frame[] {
 
 /** Adds copies of the last frame until the animation has `count` frames. */
 function ensureFrames(count: number) {
-  if (count > MAX_FRAMES) fail(`o máximo é ${MAX_FRAMES} quadros`);
+  if (count > MAX_FRAMES) fail(`the maximum is ${MAX_FRAMES} frames`);
   while (useApp.getState().doc.frames.length < count) {
     const { doc } = useApp.getState();
     actions.selectFrame(doc.frames[doc.frames.length - 1].id);
-    if (!actions.addFrame({ copy: true })) fail('não foi possível criar os quadros');
+    if (!actions.addFrame({ copy: true })) fail('could not create the frames');
   }
 }
 
@@ -313,7 +313,7 @@ function ensureFrames(count: number) {
 function framesParam(p: Params) {
   if (!has(p, 'frames')) return;
   const n = int(p, 'frames');
-  if (n < 1) fail('frames precisa ser pelo menos 1');
+  if (n < 1) fail('frames must be at least 1');
   ensureFrames(n);
 }
 
@@ -321,17 +321,17 @@ function framesParam(p: Params) {
 function paletteParam(p: Params): number[] {
   if (has(p, 'preset')) return presetRef(p.preset).colors;
   if (has(p, 'palette')) {
-    if (!Array.isArray(p.palette) || p.palette.length === 0) fail('palette precisa ser uma lista de cores');
+    if (!Array.isArray(p.palette) || p.palette.length === 0) fail('palette must be a list of colors');
     return p.palette.map((c, i) => colorValue(c, `palette[${i}]`)).filter((c) => c >>> 24);
   }
   const { palette } = useApp.getState();
-  if (palette.length === 0) fail('a paleta está vazia; passe palette ou preset');
+  if (palette.length === 0) fail('the palette is empty; pass palette or preset');
   return palette;
 }
 
 function presetRef(name: unknown) {
   const preset = typeof name === 'string' ? PRESETS[name.toLowerCase()] : undefined;
-  if (!preset) fail(`paleta desconhecida: ${JSON.stringify(name)}. Conhecidas: ${Object.keys(PRESETS).join(', ')}`);
+  if (!preset) fail(`unknown palette: ${JSON.stringify(name)}. Known: ${Object.keys(PRESETS).join(', ')}`);
   return preset;
 }
 
@@ -346,13 +346,13 @@ function regionOf(p: Params, cel: Uint32Array): Uint8Array {
 
 function colorList(p: Params, key: string): number[] {
   const list = p[key];
-  if (!Array.isArray(list) || list.length === 0) fail(`${key} precisa ser uma lista de cores`);
+  if (!Array.isArray(list) || list.length === 0) fail(`${key} must be a list of colors`);
   return list.map((c, i) => colorValue(c, `${key}[${i}]`));
 }
 
 function choice<T extends string>(p: Params, key: string, options: readonly T[], fallback: T): T {
   const v = text(p, key, fallback);
-  if (!options.includes(v as T)) fail(`${key} precisa ser um de: ${options.join(', ')}`);
+  if (!options.includes(v as T)) fail(`${key} must be one of: ${options.join(', ')}`);
   return v as T;
 }
 
@@ -408,13 +408,13 @@ function swapColors(value: unknown, swap: Map<number, string>): unknown {
 
 function guardUnsaved(p: Params) {
   if (useApp.getState().dirty && !bool(p, 'discard', false)) {
-    fail('a imagem aberta tem alterações não salvas. Salve antes ou passe discard: true para descartá-las.');
+    fail('the open image has unsaved changes. Save first or pass discard: true to discard them.');
   }
 }
 
 function checkSize(width: number, height: number) {
   if (width < 1 || height < 1 || width > MAX_SIZE || height > MAX_SIZE) {
-    fail(`tamanho ${width} × ${height} fora do limite de 1 a ${MAX_SIZE} px`);
+    fail(`size ${width} × ${height} is outside the 1 to ${MAX_SIZE} px limit`);
   }
 }
 
@@ -422,14 +422,14 @@ const ASCII_KEYS = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567
 
 export const COMMANDS: Record<string, Command> = {
   'app.info': {
-    summary: 'Versão do app e nomes dos comandos.',
+    summary: 'App version and command names.',
     params: '',
     readOnly: true,
     run: () => ({ app: 'pontilha', version: VERSION, commands: Object.keys(COMMANDS).concat('batch') }),
   },
 
   'commands.list': {
-    summary: 'Lista os comandos com parâmetros. filter procura no nome e na descrição.',
+    summary: 'Lists the commands with their parameters. filter searches the name and the description.',
     params: 'filter?',
     readOnly: true,
     run: (p) => {
@@ -439,7 +439,7 @@ export const COMMANDS: Record<string, Command> = {
         .map(([id, c]) => ({ id, params: c.params, summary: c.summary }))
         .concat(
           !filter || 'batch'.includes(filter)
-            ? [{ id: 'batch', params: 'commands: [{method, params}], label?', summary: 'Executa vários comandos como um único passo de desfazer. Se um falhar, nada é aplicado.' }]
+            ? [{ id: 'batch', params: 'commands: [{method, params}], label?', summary: 'Runs several commands as a single undo step. If one fails, nothing is applied.' }]
             : [],
         );
     },
@@ -448,14 +448,14 @@ export const COMMANDS: Record<string, Command> = {
   // Document
 
   'doc.inspect': {
-    summary: 'Tamanho, camadas (a de cima primeiro), cores, paleta e estado do histórico.',
+    summary: 'Size, layers (top first), colors, palette and history state.',
     params: '',
     readOnly: true,
     run: inspect,
   },
 
   'doc.new': {
-    summary: 'Cria uma imagem vazia. Recusa se houver alterações não salvas, a menos que discard seja true.',
+    summary: 'Creates an empty image. Refuses if there are unsaved changes, unless discard is true.',
     params: 'width, height, name?, discard?',
     run: (p) => {
       const width = int(p, 'width');
@@ -469,7 +469,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'doc.ascii': {
-    summary: 'Desenha a imagem (ou uma camada) como texto: uma letra por cor, ponto para transparente.',
+    summary: 'Draws the image (or one layer) as text: one letter per color, a dot for transparent.',
     params: 'layer?, frame?, x?, y?, w?, h?',
     readOnly: true,
     run: (p) => {
@@ -478,7 +478,7 @@ export const COMMANDS: Record<string, Command> = {
       const y0 = int(p, 'y', 0);
       const w = Math.min(int(p, 'w', doc.width - x0), doc.width - x0);
       const h = Math.min(int(p, 'h', doc.height - y0), doc.height - y0);
-      if (w * h > 128 * 128) fail('região grande demais para texto; peça no máximo 128 × 128 com x, y, w, h');
+      if (w * h > 128 * 128) fail('region too large for text; ask for at most 128 × 128 with x, y, w, h');
       const frame = targetFrame(p).id;
       const pixels = has(p, 'layer') ? celOf(doc, layerRef(p.layer), frame) : composite(doc, frame);
       const keys = new Map<number, string>();
@@ -503,7 +503,7 @@ export const COMMANDS: Record<string, Command> = {
   // Layers
 
   'layer.new': {
-    summary: 'Cria uma camada acima da ativa e a torna ativa.',
+    summary: 'Creates a layer above the active one and makes it active.',
     params: 'name?, opacity?, visible?',
     run: (p) => {
       const layer = actions.addLayer({
@@ -516,7 +516,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'layer.import': {
-    summary: 'Cria uma camada com uma imagem PNG (base64), posicionada em x, y. Útil para referências a 50%.',
+    summary: 'Creates a layer from a PNG image (base64), placed at x, y. Useful for references at 50%.',
     params: 'png, name?, x?, y?, opacity?, visible?',
     run: async (p) => {
       const { doc } = useApp.getState();
@@ -532,7 +532,7 @@ export const COMMANDS: Record<string, Command> = {
         }
       }
       const layer = actions.addLayer({
-        name: has(p, 'name') ? text(p, 'name') : 'Referência',
+        name: has(p, 'name') ? text(p, 'name') : 'Reference',
         opacity: num(p, 'opacity', 1),
         visible: bool(p, 'visible', true),
         pixels,
@@ -542,10 +542,10 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'layer.select': {
-    summary: 'Torna ativa a camada indicada por nome ou id.',
+    summary: 'Makes the layer given by name or id active.',
     params: 'layer',
     run: (p) => {
-      if (!has(p, 'layer')) fail('o parâmetro "layer" é obrigatório');
+      if (!has(p, 'layer')) fail('the "layer" parameter is required');
       const layer = layerRef(p.layer);
       actions.setActiveLayer(layer.id);
       return { active: layer.name };
@@ -553,7 +553,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'layer.setProps': {
-    summary: 'Muda nome, opacidade (0 a 1) ou visibilidade de uma camada.',
+    summary: 'Changes the name, opacity (0 to 1) or visibility of a layer.',
     params: 'layer?, name?, opacity?, visible?',
     run: (p) => {
       const layer = targetLayer(p);
@@ -567,11 +567,11 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'layer.delete': {
-    summary: 'Exclui uma camada (a imagem mantém pelo menos uma).',
+    summary: 'Deletes a layer (the image keeps at least one).',
     params: 'layer?',
     run: (p) => {
       const layer = targetLayer(p);
-      if (useApp.getState().doc.layers.length === 1) fail('a imagem precisa de pelo menos uma camada');
+      if (useApp.getState().doc.layers.length === 1) fail('the image needs at least one layer');
       actions.setActiveLayer(layer.id);
       actions.deleteLayer();
       return { deleted: layer.name, active: activeLayer().name };
@@ -579,7 +579,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'layer.duplicate': {
-    summary: 'Duplica uma camada logo acima dela.',
+    summary: 'Duplicates a layer right above it.',
     params: 'layer?',
     run: (p) => {
       actions.setActiveLayer(targetLayer(p).id);
@@ -590,11 +590,11 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'layer.move': {
-    summary: 'Sobe ou desce uma camada uma posição.',
+    summary: 'Moves a layer up or down one position.',
     params: 'layer?, direction: "up" | "down"',
     run: (p) => {
       const direction = text(p, 'direction');
-      if (direction !== 'up' && direction !== 'down') fail('direction precisa ser "up" ou "down"');
+      if (direction !== 'up' && direction !== 'down') fail('direction must be "up" or "down"');
       const layer = targetLayer(p);
       actions.setActiveLayer(layer.id);
       actions.moveLayer(direction === 'up' ? 1 : -1);
@@ -603,13 +603,13 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'layer.mergeDown': {
-    summary: 'Mescla uma camada visível com a de baixo.',
+    summary: 'Merges a visible layer with the one below.',
     params: 'layer?',
     run: (p) => {
       const layer = targetLayer(p);
       const { doc } = useApp.getState();
-      if (doc.layers.indexOf(layer) === 0) fail('não há camada abaixo para mesclar');
-      if (!layer.visible) fail('mostre a camada antes de mesclar');
+      if (doc.layers.indexOf(layer) === 0) fail('there is no layer below to merge with');
+      if (!layer.visible) fail('show the layer before merging');
       actions.setActiveLayer(layer.id);
       actions.mergeDown();
       return { active: activeLayer().name };
@@ -617,7 +617,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'layer.clear': {
-    summary: 'Apaga todos os pixels de uma camada no quadro atual (ou em frame).',
+    summary: 'Erases every pixel of a layer in the current frame (or in frame).',
     params: 'layer?, frame?',
     run: (p) =>
       paint(p, (editor, width, height) => {
@@ -628,21 +628,21 @@ export const COMMANDS: Record<string, Command> = {
   // Frames. Every layer has an image in every frame; draw commands paint on the frame on screen unless given frame.
 
   'frame.new': {
-    summary: 'Cria um quadro logo depois do atual e passa a mostrá-lo. copy true copia o quadro atual; sem copy ele começa vazio.',
+    summary: 'Creates a frame right after the current one and shows it. copy true copies the current frame; without copy it starts empty.',
     params: 'copy?, duration?',
     run: (p) => {
       const frame = actions.addFrame({ copy: bool(p, 'copy', false), duration: has(p, 'duration') ? num(p, 'duration') : undefined });
-      if (!frame) fail('a animação já tem o máximo de quadros');
+      if (!frame) fail('the animation already has the maximum number of frames');
       const { doc } = useApp.getState();
       return frameInfo(frame, frameIndex(doc, frame.id));
     },
   },
 
   'frame.select': {
-    summary: 'Mostra outro quadro: os desenhos seguintes vão para ele.',
+    summary: 'Shows another frame: the following drawing goes to it.',
     params: 'frame',
     run: (p) => {
-      if (!has(p, 'frame')) fail('o parâmetro "frame" é obrigatório');
+      if (!has(p, 'frame')) fail('the "frame" parameter is required');
       const frame = frameRef(p.frame);
       actions.selectFrame(frame.id);
       return frameInfo(frame, frameIndex(useApp.getState().doc, frame.id));
@@ -650,11 +650,11 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'frame.delete': {
-    summary: 'Exclui um quadro, o atual se frame não for dado (a animação mantém pelo menos um).',
+    summary: 'Deletes a frame, the current one if frame is not given (the animation keeps at least one).',
     params: 'frame?',
     run: (p) => {
       const frame = targetFrame(p);
-      if (useApp.getState().doc.frames.length === 1) fail('a animação precisa de pelo menos um quadro');
+      if (useApp.getState().doc.frames.length === 1) fail('the animation needs at least one frame');
       actions.deleteFrame(frame.id);
       const { doc } = useApp.getState();
       return { deleted: frame.id, frame: frameIndex(doc) + 1, frames: doc.frames.length };
@@ -662,7 +662,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'frame.move': {
-    summary: 'Leva um quadro para a posição to (1 = primeiro).',
+    summary: 'Moves a frame to position to (1 = first).',
     params: 'frame?, to',
     run: (p) => {
       const frame = targetFrame(p);
@@ -672,7 +672,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'frame.setDuration': {
-    summary: 'Quanto tempo um quadro fica na tela, em milissegundos (10 a 60000). all true muda todos os quadros.',
+    summary: 'How long a frame stays on screen, in milliseconds (10 to 60000). all true changes every frame.',
     params: 'duration, frame?, all?',
     run: (p) => {
       const duration = num(p, 'duration');
@@ -685,32 +685,32 @@ export const COMMANDS: Record<string, Command> = {
 
   'canvas.resize': {
     summary:
-      'Muda o tamanho da tela sem esticar a arte. anchor diz onde a imagem atual fica: center (padrão), top-left, top, top-right, left, right, bottom-left, bottom ou bottom-right. Encolher corta o que não cabe.',
+      'Changes the canvas size without stretching the art. anchor says where the current image goes: center (default), top-left, top, top-right, left, right, bottom-left, bottom or bottom-right. Shrinking cuts off what does not fit.',
     params: 'width, height, anchor?',
     run: (p) => {
       const width = int(p, 'width');
       const height = int(p, 'height');
       checkSize(width, height);
       const anchor = text(p, 'anchor', 'center') as Anchor;
-      if (!ANCHORS.includes(anchor)) fail(`anchor precisa ser um de: ${ANCHORS.join(', ')}`);
+      if (!ANCHORS.includes(anchor)) fail(`anchor must be one of: ${ANCHORS.join(', ')}`);
       actions.resizeCanvas(width, height, anchor);
       return inspect();
     },
   },
 
   'canvas.crop': {
-    summary: 'Recorta a imagem no retângulo x, y, w, h (sem eles, na seleção).',
+    summary: 'Crops the image to the rectangle x, y, w, h (without them, to the selection).',
     params: 'x?, y?, w?, h?',
     run: (p) => {
       const rect =
         has(p, 'w') || has(p, 'h')
           ? { x: int(p, 'x', 0), y: int(p, 'y', 0), w: int(p, 'w'), h: int(p, 'h') }
           : useApp.getState().selection;
-      if (!rect) fail('passe x, y, w, h ou selecione a área antes');
-      if (rect.w < 1 || rect.h < 1) fail('w e h precisam ser pelo menos 1');
+      if (!rect) fail('pass x, y, w, h or select the area first');
+      if (rect.w < 1 || rect.h < 1) fail('w and h must be at least 1');
       const { doc } = useApp.getState();
       if (rect.x >= doc.width || rect.y >= doc.height || rect.x + rect.w <= 0 || rect.y + rect.h <= 0) {
-        fail('o retângulo fica fora da imagem');
+        fail('the rectangle is outside the image');
       }
       actions.cropTo(rect);
       return inspect();
@@ -718,22 +718,22 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'canvas.trim': {
-    summary: 'Corta as bordas vazias, deixando só o que está pintado em alguma camada ou quadro.',
+    summary: 'Trims the empty borders, keeping only what is painted in some layer or frame.',
     params: '',
     run: () => {
       const bounds = contentBounds(useApp.getState().doc);
-      if (!bounds) fail('a imagem está vazia');
+      if (!bounds) fail('the image is empty');
       actions.cropTo(bounds);
       return { ...inspect(), kept: bounds };
     },
   },
 
   'canvas.scale': {
-    summary: 'Amplia a arte: cada pixel vira um bloco factor × factor (2 a 16), sem borrar.',
+    summary: 'Scales the art up: each pixel becomes a factor × factor block (2 to 16), with no blurring.',
     params: 'factor',
     run: (p) => {
       const factor = int(p, 'factor');
-      if (factor < 2 || factor > 16) fail('factor precisa ser de 2 a 16');
+      if (factor < 2 || factor > 16) fail('factor must be 2 to 16');
       const { doc } = useApp.getState();
       checkSize(doc.width * factor, doc.height * factor);
       actions.scaleImage(factor);
@@ -744,36 +744,36 @@ export const COMMANDS: Record<string, Command> = {
   // Selection. Without a selection, move, flip, rotate, copy and cut act on the whole layer.
 
   'select.rect': {
-    summary: 'Seleciona um retângulo (cortado nas bordas da imagem). add true soma à seleção atual.',
+    summary: 'Selects a rectangle (clipped to the image edges). add true adds to the current selection.',
     params: 'x, y, w, h, add?',
     run: (p) => {
       const w = int(p, 'w');
       const h = int(p, 'h');
-      if (w < 1 || h < 1) fail('w e h precisam ser pelo menos 1');
+      if (w < 1 || h < 1) fail('w and h must be at least 1');
       const before = useApp.getState().selection;
       actions.select({ x: int(p, 'x'), y: int(p, 'y'), w, h }, bool(p, 'add', false));
       const { selection } = useApp.getState();
-      if (!selection || selection === before) fail('o retângulo fica fora da imagem');
+      if (!selection || selection === before) fail('the rectangle is outside the image');
       return { selection: selectionInfo(selection) };
     },
   },
 
   'select.color': {
     summary:
-      'Varinha mágica: seleciona os pixels da cor em (x, y), só a área conectada a ele (padrão) ou com contiguous false a mesma cor na camada toda. add true soma à seleção atual. Lê a camada e o quadro indicados.',
+      'Magic wand: selects the pixels of the color at (x, y), only the area connected to it (default) or, with contiguous false, the same color across the layer. add true adds to the current selection. Reads the given layer and frame.',
     params: 'x, y, contiguous?, add?, layer?, frame?',
     run: (p) => {
       const { doc } = useApp.getState();
       const x = int(p, 'x');
       const y = int(p, 'y');
-      if (x < 0 || y < 0 || x >= doc.width || y >= doc.height) fail(`(${x}, ${y}) fica fora da imagem`);
+      if (x < 0 || y < 0 || x >= doc.width || y >= doc.height) fail(`(${x}, ${y}) is outside the image`);
       const selection = actions.selectColor(x, y, { contiguous: bool(p, 'contiguous', true), add: bool(p, 'add', false) }, selectionTarget(p));
       return { selection: selectionInfo(selection) };
     },
   },
 
   'select.all': {
-    summary: 'Seleciona a imagem inteira.',
+    summary: 'Selects the whole image.',
     params: '',
     run: () => {
       actions.selectAll();
@@ -782,7 +782,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'select.none': {
-    summary: 'Desfaz a seleção.',
+    summary: 'Clears the selection.',
     params: '',
     run: () => {
       actions.select(null);
@@ -791,7 +791,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'selection.move': {
-    summary: 'Move os pixels selecionados (e a seleção) dx, dy pixels. O que sair da imagem se perde.',
+    summary: 'Moves the selected pixels (and the selection) by dx, dy pixels. Whatever leaves the image is lost.',
     params: 'dx, dy, layer?, frame?',
     run: (p) => {
       actions.moveSelection(int(p, 'dx', 0), int(p, 'dy', 0), selectionTarget(p));
@@ -800,56 +800,56 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'selection.flip': {
-    summary: 'Espelha os pixels selecionados.',
+    summary: 'Flips the selected pixels.',
     params: 'axis: "horizontal" | "vertical", layer?, frame?',
     run: (p) => {
       const axis = text(p, 'axis');
-      if (axis !== 'horizontal' && axis !== 'vertical') fail('axis precisa ser "horizontal" ou "vertical"');
+      if (axis !== 'horizontal' && axis !== 'vertical') fail('axis must be "horizontal" or "vertical"');
       actions.flipSelection(axis, selectionTarget(p));
       return { selection: currentSelection() };
     },
   },
 
   'selection.rotate': {
-    summary: 'Gira os pixels selecionados 90° em torno do centro da seleção. Sem seleção, só em imagens quadradas.',
+    summary: 'Rotates the selected pixels 90° around the selection center. Without a selection, only on square images.',
     params: 'direction: "cw" | "ccw", layer?, frame?',
     run: (p) => {
       const direction = text(p, 'direction');
-      if (direction !== 'cw' && direction !== 'ccw') fail('direction precisa ser "cw" (horário) ou "ccw" (anti-horário)');
-      if (!actions.rotateSelection(direction, selectionTarget(p))) fail('a imagem não é quadrada; selecione a área a girar');
+      if (direction !== 'cw' && direction !== 'ccw') fail('direction must be "cw" (clockwise) or "ccw" (counterclockwise)');
+      if (!actions.rotateSelection(direction, selectionTarget(p))) fail('the image is not square; select the area to rotate');
       return { selection: currentSelection() };
     },
   },
 
   'selection.clear': {
-    summary: 'Apaga os pixels selecionados.',
+    summary: 'Erases the selected pixels.',
     params: 'layer?, frame?',
     run: (p) => {
-      if (!useApp.getState().selection) fail('nada selecionado; use select.rect antes, ou layer.clear para a camada toda');
+      if (!useApp.getState().selection) fail('nothing selected; use select.rect first, or layer.clear for the whole layer');
       actions.clearSelection(selectionTarget(p));
       return { selection: currentSelection() };
     },
   },
 
   'clipboard.copy': {
-    summary: 'Copia os pixels selecionados de uma camada e quadro.',
+    summary: 'Copies the selected pixels of a layer and frame.',
     params: 'layer?, frame?',
     readOnly: true,
     run: (p) => ({ copied: selectionInfo(actions.copy(selectionTarget(p)).rect) }),
   },
 
   'clipboard.cut': {
-    summary: 'Copia e apaga os pixels selecionados.',
+    summary: 'Copies and erases the selected pixels.',
     params: 'layer?, frame?',
     run: (p) => ({ copied: selectionInfo(actions.cut(selectionTarget(p)).rect) }),
   },
 
   'clipboard.paste': {
     summary:
-      'Cola o que foi copiado no mesmo lugar de onde saiu (ou com o canto em x, y) e seleciona. Pixels transparentes não cobrem o que está embaixo. Útil para levar uma parte para outro quadro.',
+      'Pastes what was copied in the same place it came from (or with its corner at x, y) and selects it. Transparent pixels do not cover what is underneath. Useful for carrying a part to another frame.',
     params: 'x?, y?, layer?, frame?',
     run: (p) => {
-      if (!useApp.getState().clipboard) fail('nada copiado ainda; use clipboard.copy antes');
+      if (!useApp.getState().clipboard) fail('nothing copied yet; use clipboard.copy first');
       const at = { x: has(p, 'x') ? int(p, 'x') : undefined, y: has(p, 'y') ? int(p, 'y') : undefined };
       return { selection: selectionInfo(actions.paste(at, selectionTarget(p))) };
     },
@@ -858,22 +858,22 @@ export const COMMANDS: Record<string, Command> = {
   // Tags: named stretches of frames, for playback and export.
 
   'tag.add': {
-    summary: 'Dá nome a um trecho da animação, do quadro from ao to (números a partir de 1, ou ids; os dois entram).',
+    summary: 'Names a stretch of the animation (a tag), from frame from to frame to (numbers from 1, or ids; both are included).',
     params: 'name, from, to',
     run: (p) => {
       const name = text(p, 'name').trim();
-      if (!name) fail('name não pode ser vazio');
-      if (useApp.getState().doc.tags.some((t) => t.name === name)) fail(`já existe um trecho chamado "${name}"`);
-      if (!has(p, 'from') || !has(p, 'to')) fail('from e to são obrigatórios');
+      if (!name) fail('name cannot be empty');
+      if (useApp.getState().doc.tags.some((t) => t.name === name)) fail(`a tag named "${name}" already exists`);
+      if (!has(p, 'from') || !has(p, 'to')) fail('from and to are required');
       return tagInfo(actions.addTag(name, frameRef(p.from).id, frameRef(p.to).id));
     },
   },
 
   'tag.delete': {
-    summary: 'Apaga um trecho (por nome ou id). Os quadros continuam.',
+    summary: 'Deletes a tag (by name or id). The frames stay.',
     params: 'tag',
     run: (p) => {
-      if (!has(p, 'tag')) fail('o parâmetro "tag" é obrigatório');
+      if (!has(p, 'tag')) fail('the "tag" parameter is required');
       const tag = tagRef(p.tag);
       actions.deleteTag(tag.id);
       return { deleted: tag.name, tags: useApp.getState().doc.tags.map(tagInfo) };
@@ -883,7 +883,7 @@ export const COMMANDS: Record<string, Command> = {
   // Colours
 
   'color.set': {
-    summary: 'Define a cor principal e/ou secundária, usadas quando um desenho não informa color.',
+    summary: 'Sets the primary and/or secondary color, used when a drawing command gives no color.',
     params: 'primary?, secondary?',
     run: (p) => {
       if (has(p, 'primary')) actions.setPrimary(colorValue(p.primary, 'primary'));
@@ -894,10 +894,10 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'palette.set': {
-    summary: 'Troca a paleta inteira.',
+    summary: 'Replaces the whole palette.',
     params: 'colors: string[]',
     run: (p) => {
-      if (!Array.isArray(p.colors) || p.colors.length === 0) fail('colors precisa ser uma lista de cores');
+      if (!Array.isArray(p.colors) || p.colors.length === 0) fail('colors must be a list of colors');
       const colors = [...new Set(p.colors.map((c, i) => colorValue(c, `colors[${i}]`)))].filter((c) => c >>> 24);
       useApp.setState({ palette: colors, dirty: true });
       return { palette: colors.map(toHex) };
@@ -905,7 +905,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'palette.add': {
-    summary: 'Acrescenta uma cor à paleta.',
+    summary: 'Adds a color to the palette.',
     params: 'color',
     run: (p) => {
       const c = requiredColor(p, 'color');
@@ -916,13 +916,13 @@ export const COMMANDS: Record<string, Command> = {
 
   'palette.ramp': {
     summary:
-      'Rampa de cores em volta de color (padrão: a principal), da mais escura à mais clara: sombras mais escuras, saturadas e puxando para o azul; luzes mais claras, menos saturadas e puxando para o amarelo. shift é o giro de matiz por passo, em graus. add false só calcula.',
+      'Color ramp around color (default: the primary), darkest to lightest: darker, more saturated shadows leaning toward blue; lighter, less saturated highlights leaning toward yellow. shift is the hue shift per step, in degrees. add false only computes it.',
     params: 'color?, steps?, shift?, add?',
     run: (p) => {
       const steps = int(p, 'steps', 5);
-      if (steps < 2 || steps > 12) fail('steps precisa ser de 2 a 12');
+      if (steps < 2 || steps > 12) fail('steps must be 2 to 12');
       const shift = num(p, 'shift', 12);
-      if (shift < 0 || shift > 45) fail('shift precisa ser de 0 a 45 graus');
+      if (shift < 0 || shift > 45) fail('shift must be 0 to 45 degrees');
       const ramp = hueShiftRamp(color(p), steps, shift);
       const added = bool(p, 'add', true) ? actions.addColors(ramp) : 0;
       return { ramp: ramp.map(toHex), added };
@@ -930,7 +930,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'palette.preset': {
-    summary: `Troca a paleta por uma conhecida: ${Object.keys(PRESETS).join(', ')}. add true acrescenta em vez de trocar.`,
+    summary: `Replaces the palette with a known one: ${Object.keys(PRESETS).join(', ')}. add true appends instead of replacing.`,
     params: 'name, add?',
     run: (p) => {
       const preset = presetRef(text(p, 'name'));
@@ -942,7 +942,7 @@ export const COMMANDS: Record<string, Command> = {
 
   'color.check': {
     summary:
-      'Confere se a arte usa só cores da paleta (a do editor, palette ou preset). Lista as cores de fora e quantos pixels usam cada uma; semitransparentes também contam como fora.',
+      'Checks that the art only uses palette colors (the editor’s, palette or preset). Lists the colors outside it and how many pixels use each; semi-transparent ones also count as outside.',
     params: 'palette? | preset?, scope?, layer?, frame?',
     readOnly: true,
     run: (p) => {
@@ -956,7 +956,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'color.used': {
-    summary: 'Cores pintadas e quantos pixels usam cada uma, da mais usada para a menos. scope: all (padrão), layer (a camada em todos os quadros) ou frame (o quadro em todas as camadas).',
+    summary: 'Painted colors and how many pixels use each, most used first. scope: all (default), layer (the layer in every frame) or frame (the frame in every layer).',
     params: 'scope?, layer?, frame?',
     readOnly: true,
     run: (p) => {
@@ -968,7 +968,7 @@ export const COMMANDS: Record<string, Command> = {
 
   'color.replaceAll': {
     summary:
-      'Troca uma cor por outra em todas as camadas e quadros, num passo de desfazer. scope layer limita à camada (todos os quadros); frame, ao quadro (todas as camadas). Bom para recolorir uma animação inteira.',
+      'Replaces one color with another in every layer and frame, as one undo step. scope layer limits it to the layer (every frame); frame, to the frame (every layer). Good for recoloring a whole animation.',
     params: 'from, to, scope?, layer?, frame?',
     run: (p) => {
       const from = requiredColor(p, 'from');
@@ -981,15 +981,15 @@ export const COMMANDS: Record<string, Command> = {
   // Drawing. Coordinates are image pixels, (0, 0) at the top-left.
 
   'draw.pixels': {
-    summary: 'Pinta pixels soltos. Cada item é [x, y] ou [x, y, cor]; "transparent" apaga.',
+    summary: 'Paints individual pixels. Each item is [x, y] or [x, y, color]; "transparent" erases.',
     params: 'pixels: [[x, y, color?], ...], color?, onlyOn?, layer?, frame?',
     run: (p) => {
-      if (!Array.isArray(p.pixels)) fail('pixels precisa ser uma lista de [x, y] ou [x, y, cor]');
+      if (!Array.isArray(p.pixels)) fail('pixels must be a list of [x, y] or [x, y, color]');
       const fallback = color(p);
       const list = p.pixels.map((item, i) => {
-        if (!Array.isArray(item) || item.length < 2) fail(`pixels[${i}] precisa ser [x, y] ou [x, y, cor]`);
+        if (!Array.isArray(item) || item.length < 2) fail(`pixels[${i}] must be [x, y] or [x, y, color]`);
         const [x, y, c] = item;
-        if (typeof x !== 'number' || typeof y !== 'number') fail(`pixels[${i}] precisa ter x e y numéricos`);
+        if (typeof x !== 'number' || typeof y !== 'number') fail(`pixels[${i}] must have numeric x and y`);
         return [Math.round(x), Math.round(y), c === undefined ? fallback : colorValue(c, `pixels[${i}][2]`)] as const;
       });
       return paint(p, (editor) => {
@@ -999,7 +999,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'draw.line': {
-    summary: 'Linha de (x0, y0) a (x1, y1), incluindo as pontas. perfectAngle trava em 0°, 45°, 90° e 2:1.',
+    summary: 'Line from (x0, y0) to (x1, y1), including both ends. perfectAngle snaps to 0°, 45°, 90° and 2:1.',
     params: 'x0, y0, x1, y1, color?, size?, perfectAngle?, onlyOn?, layer?, frame?',
     run: (p) => {
       const c = color(p);
@@ -1019,7 +1019,7 @@ export const COMMANDS: Record<string, Command> = {
 
   'draw.rect': {
     summary:
-      'Retângulo com canto em (x, y), largura w e altura h. Contorno por padrão; filled preenche. radius arredonda os cantos (frações valem).',
+      'Rectangle with its corner at (x, y), width w and height h. Outline by default; filled fills it. radius rounds the corners (fractions allowed).',
     params: 'x, y, w, h, color?, filled?, thickness?, radius?, onlyOn?, layer?, frame?',
     run: (p) => {
       const c = color(p);
@@ -1027,9 +1027,9 @@ export const COMMANDS: Record<string, Command> = {
       const y = int(p, 'y');
       const w = int(p, 'w');
       const h = int(p, 'h');
-      if (w < 1 || h < 1) fail('w e h precisam ser pelo menos 1');
+      if (w < 1 || h < 1) fail('w and h must be at least 1');
       const radius = num(p, 'radius', 0);
-      if (radius < 0) fail('radius não pode ser negativo');
+      if (radius < 0) fail('radius cannot be negative');
       return paint(p, (editor) =>
         rectCells(
           x,
@@ -1046,13 +1046,13 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'draw.ellipse': {
-    summary: 'Elipse ou círculo dentro da caixa (x, y, w, h). Contorno limpo de 1 px por padrão; filled preenche.',
+    summary: 'Ellipse or circle inside the box (x, y, w, h). Clean 1 px outline by default; filled fills it.',
     params: 'x, y, w, h, color?, filled?, thickness?, onlyOn?, layer?, frame?',
     run: (p) => {
       const c = color(p);
       const w = int(p, 'w');
       const h = int(p, 'h');
-      if (w < 1 || h < 1) fail('w e h precisam ser pelo menos 1');
+      if (w < 1 || h < 1) fail('w and h must be at least 1');
       return paint(p, (editor) =>
         ellipseCells(int(p, 'x'), int(p, 'y'), w, h, bool(p, 'filled', false), Math.max(1, int(p, 'thickness', 1)), (px, py) =>
           editor.set(px, py, c),
@@ -1062,7 +1062,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'draw.fill': {
-    summary: 'Balde de tinta a partir de (x, y). contiguous false troca a mesma cor na camada toda.',
+    summary: 'Paint bucket from (x, y). contiguous false replaces the same color across the layer.',
     params: 'x, y, color?, contiguous?, layer?, frame?',
     run: (p) => {
       const c = color(p);
@@ -1076,15 +1076,15 @@ export const COMMANDS: Record<string, Command> = {
 
   'draw.pattern': {
     summary:
-      'Carimba um desenho em texto com o canto em (x, y). Cada caractere de rows vira a cor do legend; "." e espaço são pulados.',
-    params: 'x, y, rows: string[], legend: {caractere: cor}, onlyOn?, layer?, frame?',
+      'Stamps a text drawing with its corner at (x, y). Each character in rows becomes its legend color; "." and space are skipped.',
+    params: 'x, y, rows: string[], legend: {character: color}, onlyOn?, layer?, frame?',
     run: (p) => {
-      if (!Array.isArray(p.rows) || p.rows.some((r) => typeof r !== 'string')) fail('rows precisa ser uma lista de textos');
+      if (!Array.isArray(p.rows) || p.rows.some((r) => typeof r !== 'string')) fail('rows must be a list of strings');
       const legend = p.legend;
-      if (!legend || typeof legend !== 'object' || Array.isArray(legend)) fail('legend precisa ser um objeto {caractere: cor}');
+      if (!legend || typeof legend !== 'object' || Array.isArray(legend)) fail('legend must be an object {character: color}');
       const colors = new Map<string, number>();
       for (const [k, v] of Object.entries(legend as Record<string, unknown>)) {
-        if ([...k].length !== 1) fail(`as chaves do legend precisam ter um caractere, recebi "${k}"`);
+        if ([...k].length !== 1) fail(`legend keys must be one character, got "${k}"`);
         colors.set(k, colorValue(v, `legend["${k}"]`));
       }
       const x0 = int(p, 'x', 0);
@@ -1092,7 +1092,7 @@ export const COMMANDS: Record<string, Command> = {
       const rows = p.rows as string[];
       for (const row of rows) {
         for (const ch of row) {
-          if (ch !== '.' && ch !== ' ' && !colors.has(ch)) fail(`o caractere "${ch}" aparece em rows mas não está no legend`);
+          if (ch !== '.' && ch !== ' ' && !colors.has(ch)) fail(`the character "${ch}" appears in rows but is not in the legend`);
         }
       }
       return paint(p, (editor) =>
@@ -1108,20 +1108,20 @@ export const COMMANDS: Record<string, Command> = {
 
   'draw.polygon': {
     summary:
-      'Polígono pelos pontos [[x, y], ...] (frações valem) ou regular com cx, cy, radius, sides e rotation em graus (padrão -90: vértice em cima). Preenchido por padrão.',
+      'Polygon through the points [[x, y], ...] (fractions allowed), or regular with cx, cy, radius, sides and rotation in degrees (default -90: vertex on top). Filled by default.',
     params: 'points? | cx, cy, radius, sides, rotation?; color?, filled?, onlyOn?, layer?, frame?',
     run: (p) => {
       const c = color(p);
       let points: Point[];
       if (has(p, 'points')) {
-        if (!Array.isArray(p.points) || p.points.length < 2) fail('points precisa ter pelo menos 2 pontos [x, y]');
+        if (!Array.isArray(p.points) || p.points.length < 2) fail('points must have at least 2 points [x, y]');
         points = p.points.map((pt, i) => {
-          if (!Array.isArray(pt) || typeof pt[0] !== 'number' || typeof pt[1] !== 'number') fail(`points[${i}] precisa ser [x, y]`);
+          if (!Array.isArray(pt) || typeof pt[0] !== 'number' || typeof pt[1] !== 'number') fail(`points[${i}] must be [x, y]`);
           return [pt[0], pt[1]] as const;
         });
       } else {
         const sides = int(p, 'sides');
-        if (sides < 3 || sides > 64) fail('sides precisa estar entre 3 e 64');
+        if (sides < 3 || sides > 64) fail('sides must be between 3 and 64');
         points = regularPolygonPoints(num(p, 'cx'), num(p, 'cy'), num(p, 'radius'), sides, num(p, 'rotation', -90));
       }
       return paint(p, (editor) => polygonCells(points, bool(p, 'filled', true), (x, y) => editor.set(x, y, c)));
@@ -1130,14 +1130,14 @@ export const COMMANDS: Record<string, Command> = {
 
   'draw.star': {
     summary:
-      'Estrela centrada em (cx, cy); use meio pixel (15.5) para centralizar numa imagem de lado par. Com light e dark, cada faceta recebe um tom pela direção da luz (lightAngle em graus, padrão -135: de cima à esquerda), como um chanfro.',
+      'Star centered at (cx, cy); use a half pixel (15.5) to center it on an even-sized image. With light and dark, each facet gets a tone from the light direction (lightAngle in degrees, default -135: from the top left), like a bevel.',
     params: 'cx, cy, outer, inner?, points?, rotation?, color?, light?, dark?, lightAngle?, onlyOn?, layer?, frame?',
     run: (p) => {
       const base = color(p);
       const tips = int(p, 'points', 5);
-      if (tips < 3 || tips > 24) fail('points precisa estar entre 3 e 24');
+      if (tips < 3 || tips > 24) fail('points must be between 3 and 24');
       const outer = num(p, 'outer');
-      if (outer <= 0) fail('outer precisa ser maior que zero');
+      if (outer <= 0) fail('outer must be greater than zero');
       const inner = num(p, 'inner', outer * 0.42);
       const rotation = num(p, 'rotation', -90);
       const light = has(p, 'light') ? colorValue(p.light, 'light') : base;
@@ -1155,28 +1155,28 @@ export const COMMANDS: Record<string, Command> = {
 
   'draw.burst': {
     summary:
-      'Estouro de fogos: raios retos de inner a outer a partir de (cx, cy). colors vai do centro à ponta (gradiente). dash [aceso, apagado] em pixels tracejam os raios; alternate (0 a 1) encurta os raios ímpares.',
+      'Firework burst: straight rays from inner to outer around (cx, cy). colors goes from the center to the tip (gradient). dash [on, off] in pixels dashes the rays; alternate (0 to 1) shortens the odd rays.',
     params: 'cx, cy, outer, inner?, rays?, rotation?, colors?: string[], color?, dash?: [on, off], alternate?, onlyOn?, layer?, frame?',
     run: (p) => {
       const outer = num(p, 'outer');
       const inner = num(p, 'inner', 0);
-      if (outer <= inner) fail('outer precisa ser maior que inner');
+      if (outer <= inner) fail('outer must be greater than inner');
       const rays = int(p, 'rays', 12);
-      if (rays < 2 || rays > 96) fail('rays precisa estar entre 2 e 96');
+      if (rays < 2 || rays > 96) fail('rays must be between 2 and 96');
       const colors = has(p, 'colors')
-        ? (Array.isArray(p.colors) && p.colors.length > 0 ? p.colors : fail('colors precisa ser uma lista de cores')).map((c, i) =>
+        ? (Array.isArray(p.colors) && p.colors.length > 0 ? p.colors : fail('colors must be a list of colors')).map((c, i) =>
             colorValue(c, `colors[${i}]`),
           )
         : [color(p)];
       let dash: [number, number] | null = null;
       if (has(p, 'dash')) {
         if (!Array.isArray(p.dash) || p.dash.length !== 2 || typeof p.dash[0] !== 'number' || typeof p.dash[1] !== 'number' || p.dash[0] <= 0) {
-          fail('dash precisa ser [aceso, apagado] em pixels, com aceso > 0');
+          fail('dash must be [on, off] in pixels, with on > 0');
         }
         dash = [p.dash[0], p.dash[1]];
       }
       const alternate = num(p, 'alternate', 1);
-      if (alternate < 0 || alternate > 1) fail('alternate precisa estar entre 0 e 1');
+      if (alternate < 0 || alternate > 1) fail('alternate must be between 0 and 1');
       return paint(p, (editor) =>
         burstCells(num(p, 'cx'), num(p, 'cy'), inner, outer, rays, num(p, 'rotation', -90), dash, alternate, (x, y, t) =>
           editor.set(x, y, colors[Math.min(colors.length - 1, Math.floor(t * colors.length))]),
@@ -1186,7 +1186,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'effect.outline': {
-    summary: 'Contorna o que está desenhado na camada com uma cor. corners true inclui as diagonais. allFrames true (ou tag, from/to) contorna cada quadro.',
+    summary: 'Outlines what is drawn on the layer with a color. corners true includes the diagonals. allFrames true (or tag, from/to) outlines every frame.',
     params: 'color, corners?, layer?, frame?, allFrames?, tag?, from?, to?',
     run: (p) => {
       const c = requiredColor(p, 'color');
@@ -1198,7 +1198,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'effect.replaceColor': {
-    summary: 'Troca uma cor por outra em toda a camada.',
+    summary: 'Replaces one color with another across the layer.',
     params: 'from, to, layer?, frame?',
     run: (p) => {
       const from = requiredColor(p, 'from');
@@ -1214,13 +1214,13 @@ export const COMMANDS: Record<string, Command> = {
 
   'effect.posterize': {
     summary:
-      'Força a arte numa paleta: cada pixel vira a cor mais próxima (a paleta do editor, palette ou preset) e fica opaco; abaixo de meia transparência some. dither (0 a 1) quebra degradês num xadrez ordenado. scope: all (padrão), layer ou frame. Bom como último passo.',
+      'Forces the art into a palette: each pixel becomes the nearest color (the editor’s palette, palette or preset) and turns opaque; below half opacity it disappears. dither (0 to 1) breaks gradients into an ordered checker. scope: all (default), layer or frame. Good as a last step.',
     params: 'palette? | preset?, dither?, scope?, layer?, frame?',
     run: (p) => {
       const { doc } = useApp.getState();
       const palette = paletteParam(p);
       const dither = num(p, 'dither', 0);
-      if (dither < 0 || dither > 1) fail('dither precisa estar entre 0 e 1');
+      if (dither < 0 || dither > 1) fail('dither must be between 0 and 1');
       const cels = scopeCels(doc, colorScope(p), targetLayer(p).id, targetFrame(p).id).map(({ layer, frame }) => ({
         layer,
         frame: frameRef(frame),
@@ -1231,15 +1231,15 @@ export const COMMANDS: Record<string, Command> = {
 
   'effect.shade': {
     summary:
-      'Luz e sombra pela borda da forma, como um chanfro: pixels a até size px da borda virada para a luz recebem light, e a até darkSize px da borda oposta recebem dark. angle é de onde vem a luz em graus (padrão -135: cima à esquerda; 0 direita, 90 baixo). on limita à forma de uma cor (padrão: tudo que está pintado).',
+      'Light and shadow along the shape’s edge, like a bevel: pixels within size px of the edge facing the light get light, and those within darkSize px of the opposite edge get dark. angle is where the light comes from, in degrees (default -135: top left; 0 right, 90 down). on limits it to the shape of one color (default: everything painted).',
     params: 'light?, dark?, angle?, size?, darkSize?, on?, onlyOn?, layer?, frame?, allFrames?, tag?',
     run: (p) => {
-      if (!has(p, 'light') && !has(p, 'dark')) fail('passe light, dark ou os dois');
+      if (!has(p, 'light') && !has(p, 'dark')) fail('pass light, dark or both');
       const light = has(p, 'light') ? colorValue(p.light, 'light') : null;
       const dark = has(p, 'dark') ? colorValue(p.dark, 'dark') : null;
       const size = int(p, 'size', 1);
       const darkSize = int(p, 'darkSize', size);
-      if (size < 0 || darkSize < 0 || size > 64 || darkSize > 64) fail('size e darkSize precisam ser de 0 a 64');
+      if (size < 0 || darkSize < 0 || size > 64 || darkSize > 64) fail('size and darkSize must be 0 to 64');
       const angle = num(p, 'angle', -135);
       const layer = targetLayer(p);
       return paintCels(p, effectFrames(p).map((frame) => ({ layer, frame })), (editor, _i, width, height) => {
@@ -1254,12 +1254,12 @@ export const COMMANDS: Record<string, Command> = {
 
   'effect.bands': {
     summary:
-      'Faixas de cor pela distância até a borda da forma (SDF): colors vai da borda para dentro, cada faixa com width px. origin "center" conta do miolo para fora (brilho interno). Pixels além da última faixa ficam como estão. on limita à forma de uma cor.',
+      'Color bands by distance to the shape’s edge (SDF): colors go from the edge inward, each band width px wide. origin "center" counts from the core outward (inner glow). Pixels beyond the last band stay as they are. on limits it to the shape of one color.',
     params: 'colors: string[], width?, origin?: "edge" | "center", on?, onlyOn?, layer?, frame?, allFrames?, tag?',
     run: (p) => {
       const colors = colorList(p, 'colors');
       const band = num(p, 'width', 1);
-      if (band <= 0) fail('width precisa ser maior que zero');
+      if (band <= 0) fail('width must be greater than zero');
       const origin = choice(p, 'origin', ['edge', 'center'] as const, 'edge');
       const layer = targetLayer(p);
       return paintCels(p, effectFrames(p).map((frame) => ({ layer, frame })), (editor, _i, width, height) => {
@@ -1277,13 +1277,13 @@ export const COMMANDS: Record<string, Command> = {
 
   'effect.blobify': {
     summary:
-      'Arredonda e funde formas como gosma: borra radius px e corta em threshold (0 a 1, padrão 0.5). Formas próximas se juntam, cantos arredondam, pontas finas somem. Pixels novos pegam a cor do pixel pintado mais perto.',
+      'Rounds and melts shapes together like goo: blurs radius px and cuts at threshold (0 to 1, default 0.5). Nearby shapes merge, corners round off, thin tips disappear. New pixels take the color of the nearest painted pixel.',
     params: 'radius, threshold?, layer?, frame?, allFrames?, tag?',
     run: (p) => {
       const radius = int(p, 'radius');
-      if (radius < 1 || radius > 16) fail('radius precisa ser de 1 a 16');
+      if (radius < 1 || radius > 16) fail('radius must be 1 to 16');
       const threshold = num(p, 'threshold', 0.5);
-      if (threshold <= 0 || threshold >= 1) fail('threshold precisa estar entre 0 e 1 (sem incluir)');
+      if (threshold <= 0 || threshold >= 1) fail('threshold must be between 0 and 1 (exclusive)');
       const layer = targetLayer(p);
       return paintCels({}, effectFrames(p).map((frame) => ({ layer, frame })), (editor, _i, width, height) =>
         writeAll(editor, blobify(editor.cel, width, height, radius, threshold)),
@@ -1293,14 +1293,14 @@ export const COMMANDS: Record<string, Command> = {
 
   'effect.wave': {
     summary:
-      'Ondula a camada: direction "vertical" sobe e desce cada coluna (barra de fantasma, água), "horizontal" desloca cada linha (bandeira, calor). amp em px, wavelength em px entre cristas, phase de 0 a 1. start é a linha (ou coluna) onde a onda começa, crescendo ao longo de ramp px. animate true usa o quadro base (frame, padrão o atual) como fonte e anima a fase em todos os quadros do trecho (tag, from/to ou todos), cycles voltas por loop; frames cria quadros até esse total antes.',
+      'Ripples the layer: direction "vertical" moves each column up and down (ghost hem, water), "horizontal" shifts each row (flag, heat haze). amp in px, wavelength in px between crests, phase from 0 to 1. start is the row (or column) where the wave begins, growing over ramp px. animate true uses the base frame (frame, default the current one) as the source and animates the phase over every frame in the span (tag, from/to or all), cycles turns per loop; frames first creates frames up to that total.',
     params: 'direction?, amp, wavelength, phase?, start?, ramp?, layer?, frame?, animate?, cycles?, frames?, tag?, from?, to?',
     run: (p) =>
       actions.group(() => {
         const direction = choice<WaveDirection>(p, 'direction', ['vertical', 'horizontal'], 'vertical');
         const amp = num(p, 'amp');
         const wavelength = num(p, 'wavelength');
-        if (wavelength <= 0) fail('wavelength precisa ser maior que zero');
+        if (wavelength <= 0) fail('wavelength must be greater than zero');
         const opts = { direction, amp, wavelength, phase: num(p, 'phase', 0), start: has(p, 'start') ? num(p, 'start') : undefined, ramp: num(p, 'ramp', 1) };
         const layer = targetLayer(p);
         if (!bool(p, 'animate', false)) {
@@ -1320,7 +1320,7 @@ export const COMMANDS: Record<string, Command> = {
 
   'effect.rotate': {
     summary:
-      'Gira a camada angle graus (positivo = horário) em volta de (cx, cy), padrão o centro da imagem. Cada pixel novo pega a cor da maioria das amostras dele, então as bordas ficam limpas e nenhuma cor nova aparece (como RotSprite). Gire antes de contornar: o contorno fica mais limpo depois.',
+      'Rotates the layer by angle degrees (positive = clockwise) around (cx, cy), default the image center. Each new pixel takes the majority color of its samples, so edges stay clean and no new colors appear (like RotSprite). Rotate before outlining: the outline comes out cleaner afterwards.',
     params: 'angle, cx?, cy?, layer?, frame?, allFrames?, tag?',
     run: (p) => {
       const angle = num(p, 'angle');
@@ -1333,13 +1333,13 @@ export const COMMANDS: Record<string, Command> = {
 
   'effect.clip': {
     summary:
-      'Máscara de recorte: apaga da camada os pixels onde a camada by está vazia (invert true: onde by está pintada). Serve para a sombra ou o brilho não passarem da forma de baixo. Usa o mesmo quadro nas duas camadas.',
+      'Clipping mask: erases the layer’s pixels where layer by is empty (invert true: where by is painted). Keeps shading or highlights from spilling past the shape below. Uses the same frame on both layers.',
     params: 'by, invert?, layer?, frame?, allFrames?, tag?',
     run: (p) => {
-      if (!has(p, 'by')) fail('o parâmetro "by" é obrigatório: a camada cuja forma recorta');
+      if (!has(p, 'by')) fail('the "by" parameter is required: the layer whose shape clips');
       const by = layerRef(p.by);
       const layer = targetLayer(p);
-      if (by === layer) fail('by precisa ser outra camada');
+      if (by === layer) fail('by must be another layer');
       const invert = bool(p, 'invert', false);
       const { doc } = useApp.getState();
       const frames = effectFrames(p);
@@ -1354,7 +1354,7 @@ export const COMMANDS: Record<string, Command> = {
 
   'anim.oscillate': {
     summary:
-      'Balança uma camada no loop sem redesenhar: desloca o desenho de cada quadro do trecho (tag, from/to ou todos) amp px numa onda; onde a camada está vazia num quadro, usa o do primeiro quadro do trecho (base fixa um quadro como fonte de todos). axis "y" (padrão) ou "x"; cycles voltas por loop (inteiro fecha o loop); phase de 0 a 1 atrasa a camada em relação às outras (acompanhamento: rosto 0, acessório 0.1); shape sine, bounce (pulo para um lado só) ou square. frames cria quadros até esse total antes.',
+      'Bobs a layer through the loop without redrawing: offsets the drawing in each frame of the span (tag, from/to or all) by amp px along a wave; where the layer is empty in a frame, it uses the span’s first frame (base fixes one frame as the source for all). axis "y" (default) or "x"; cycles turns per loop (a whole number closes the loop); phase from 0 to 1 delays the layer relative to the others (follow-through: face 0, accessory 0.1); shape sine, bounce (a one-sided hop) or square. frames first creates frames up to that total.',
     params: 'amp, axis?, cycles?, phase?, shape?, layer?, base?, frames?, tag?, from?, to?',
     run: (p) =>
       actions.group(() => {
@@ -1366,11 +1366,11 @@ export const COMMANDS: Record<string, Command> = {
         const layer = targetLayer(p);
         framesParam(p);
         const span = frameSpan(p);
-        if (span.length < 2) fail('o trecho precisa de pelo menos 2 quadros; passe frames para criar');
+        if (span.length < 2) fail('the span needs at least 2 frames; pass frames to create them');
         const { doc } = useApp.getState();
         const painted = (cel: Uint32Array) => cel.some((c) => c >>> 24);
         const first = celOf(doc, layer, (has(p, 'base') ? frameRef(p.base) : span[0]).id).slice();
-        if (!painted(first)) fail(`a camada "${layer.name}" está vazia no quadro base`);
+        if (!painted(first)) fail(`layer "${layer.name}" is empty in the base frame`);
         const sources = span.map((f) => {
           const cel = celOf(doc, layer, f.id);
           return has(p, 'base') || !painted(cel) ? first : cel.slice();
@@ -1387,16 +1387,16 @@ export const COMMANDS: Record<string, Command> = {
 
   'draw.particles': {
     summary:
-      'Partículas que flutuam em loop (poeira, brilhos, bolhas, neve) em todos os quadros do trecho: count pontos nascem em momentos sorteados dentro da caixa x, y, w, h (padrão: a imagem toda), andam drift [dx, dy] px durante a vida, balançam wobble px para o lado e vivem life (0 a 1) do loop. colors vai do nascimento ao fim. seed fixa o sorteio. clear true apaga a camada nesses quadros antes. Use numa camada só para elas.',
+      'Particles floating in a loop (dust, sparkles, bubbles, snow) across every frame of the span: count dots are born at random moments inside the box x, y, w, h (default: the whole image), travel drift [dx, dy] px over their life, sway wobble px sideways and live for life (0 to 1) of the loop. colors go from birth to end. seed fixes the randomness. clear true erases the layer in those frames first. Use a layer just for them.',
     params: 'count, colors? | color?, seed?, x?, y?, w?, h?, drift?: [dx, dy], wobble?, life?, clear?, onlyOn?, layer?, frames?, tag?, from?, to?',
     run: (p) =>
       actions.group(() => {
         const count = int(p, 'count');
-        if (count < 1 || count > 2000) fail('count precisa ser de 1 a 2000');
+        if (count < 1 || count > 2000) fail('count must be 1 to 2000');
         const colors = has(p, 'colors') ? colorList(p, 'colors') : [color(p)];
         let drift: [number, number] = [0, -4];
         if (has(p, 'drift')) {
-          if (!Array.isArray(p.drift) || p.drift.length !== 2 || p.drift.some((v) => typeof v !== 'number')) fail('drift precisa ser [dx, dy]');
+          if (!Array.isArray(p.drift) || p.drift.length !== 2 || p.drift.some((v) => typeof v !== 'number')) fail('drift must be [dx, dy]');
           drift = [p.drift[0] as number, p.drift[1] as number];
         }
         framesParam(p);
@@ -1426,7 +1426,7 @@ export const COMMANDS: Record<string, Command> = {
   // History and view
 
   'history.undo': {
-    summary: 'Desfaz o último passo.',
+    summary: 'Undoes the last step.',
     params: '',
     run: () => {
       actions.undo();
@@ -1435,7 +1435,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'history.redo': {
-    summary: 'Refaz o último passo desfeito.',
+    summary: 'Redoes the last undone step.',
     params: '',
     run: () => {
       actions.redo();
@@ -1444,18 +1444,18 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'tool.set': {
-    summary: 'Escolhe a ferramenta ativa na interface.',
+    summary: 'Chooses the active tool in the interface.',
     params: 'tool: pencil | eraser | line | rect | fill | eyedropper',
     run: (p) => {
       const tool = text(p, 'tool') as ToolId;
-      if (!['pencil', 'eraser', 'line', 'rect', 'fill', 'eyedropper'].includes(tool)) fail(`ferramenta desconhecida: ${tool}`);
+      if (!['pencil', 'eraser', 'line', 'rect', 'fill', 'eyedropper'].includes(tool)) fail(`unknown tool: ${tool}`);
       actions.setTool(tool);
       return { tool };
     },
   },
 
   'view.fit': {
-    summary: 'Ajusta o zoom para a imagem caber na janela.',
+    summary: 'Sets the zoom so the image fits the window.',
     params: '',
     readOnly: true,
     run: () => {
@@ -1465,7 +1465,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'view.zoom': {
-    summary: 'Zoom em porcentagem, por exemplo 800.',
+    summary: 'Zoom as a percentage, for example 800.',
     params: 'percent',
     readOnly: true,
     run: (p) => {
@@ -1477,7 +1477,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'view.grid': {
-    summary: 'Mostra ou esconde a grade de pixels.',
+    summary: 'Shows or hides the pixel grid.',
     params: 'on',
     readOnly: true,
     run: (p) => {
@@ -1487,7 +1487,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'view.tile': {
-    summary: 'Modo tile: mostra a imagem repetida em volta (só na tela), para conferir se as bordas emendam.',
+    summary: 'Tile mode: shows the image repeated around itself (on screen only), to check that the edges meet.',
     params: 'on',
     readOnly: true,
     run: (p) => {
@@ -1497,12 +1497,12 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'view.isoGrid': {
-    summary: 'Grade isométrica 2:1 (só na tela) com ladrilhos de size pixels de largura e metade de altura; size 0 esconde.',
+    summary: '2:1 isometric grid (on screen only) with tiles size pixels wide and half as tall; size 0 hides it.',
     params: 'size',
     readOnly: true,
     run: (p) => {
       const size = int(p, 'size');
-      if (size < 0 || size > 512 || size % 2 !== 0) fail('size precisa ser par, de 0 a 512 (0 esconde)');
+      if (size < 0 || size > 512 || size % 2 !== 0) fail('size must be even, 0 to 512 (0 hides it)');
       actions.setIsoGrid(size);
       return { isoGrid: useApp.getState().isoGrid };
     },
@@ -1511,13 +1511,13 @@ export const COMMANDS: Record<string, Command> = {
   // Output. Files are written by the caller, so the app never needs file system access for scripts.
 
   'render.png': {
-    summary: 'PNG em base64 da imagem visível (ou de uma camada), ampliado por scale sem borrar.',
+    summary: 'Base64 PNG of the visible image (or of one layer), scaled up by scale with no blurring.',
     params: 'scale?, layer?, frame?',
     readOnly: true,
     run: async (p) => {
       const { doc } = useApp.getState();
       const scale = int(p, 'scale', 1);
-      if (scale < 1 || doc.width * scale > 8192 || doc.height * scale > 8192) fail('scale fora do limite (até 8192 px por lado)');
+      if (scale < 1 || doc.width * scale > 8192 || doc.height * scale > 8192) fail('scale out of range (up to 8192 px per side)');
       const frame = targetFrame(p).id;
       const source = has(p, 'layer') ? celOf(doc, layerRef(p.layer), frame) : composite(doc, frame);
       const pixels = scaleNearest(source, doc.width, doc.height, scale);
@@ -1528,18 +1528,18 @@ export const COMMANDS: Record<string, Command> = {
 
   'render.sheet': {
     summary:
-      'Folha de sprites em PNG (base64): os quadros lado a lado (layout "row") ou numa grade quase quadrada ("grid"). tag limita a um trecho.',
+      'Sprite sheet as PNG (base64): the frames side by side (layout "row") or in a nearly square grid ("grid"). tag limits it to one tag.',
     params: 'scale?, layout?: "row" | "grid", tag?',
     readOnly: true,
     run: async (p) => {
       const { doc } = useApp.getState();
       const scale = int(p, 'scale', 1);
       const layout = text(p, 'layout', 'row');
-      if (layout !== 'row' && layout !== 'grid') fail('layout precisa ser "row" ou "grid"');
+      if (layout !== 'row' && layout !== 'grid') fail('layout must be "row" or "grid"');
       const range = exportRange(p);
       const { cols, rows } = sheetGrid(range ? range[1] - range[0] + 1 : doc.frames.length, layout);
       if (scale < 1 || cols * doc.width * scale > 16384 || rows * doc.height * scale > 16384) {
-        fail('folha grande demais (até 16384 px por lado); use scale menor ou layout "grid"');
+        fail('sheet too large (up to 16384 px per side); use a smaller scale or layout "grid"');
       }
       const sheet = renderSheet(doc, layout, scale, range);
       const png = await encodePng(new Uint8Array(sheet.pixels.buffer), sheet.width, sheet.height);
@@ -1558,13 +1558,13 @@ export const COMMANDS: Record<string, Command> = {
 
   'render.gif': {
     summary:
-      'GIF animado (base64) com os quadros e suas durações, repetindo para sempre. pingpong true vai e volta; tag limita a um trecho. GIF guarda até 256 cores e transparência total ou nenhuma.',
+      'Animated GIF (base64) with the frames and their durations, looping forever. pingpong true plays back and forth; tag limits it to one tag. GIF holds up to 256 colors and either full transparency or none.',
     params: 'scale?, pingpong?, tag?',
     readOnly: true,
     run: (p) => {
       const { doc } = useApp.getState();
       const scale = int(p, 'scale', 1);
-      if (scale < 1 || doc.width * scale > 4096 || doc.height * scale > 4096) fail('scale fora do limite (até 4096 px por lado)');
+      if (scale < 1 || doc.width * scale > 4096 || doc.height * scale > 4096) fail('scale out of range (up to 4096 px per side)');
       const range = exportRange(p);
       const gif = renderGif(doc, { scale, pingpong: bool(p, 'pingpong', false), range });
       return {
@@ -1579,7 +1579,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'project.serialize': {
-    summary: 'Conteúdo do arquivo .pontilha (camadas, paleta) para quem chamou salvar.',
+    summary: 'Contents of the .pontilha file (layers, palette) for the caller to save.',
     params: '',
     readOnly: true,
     run: async () => {
@@ -1589,7 +1589,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'project.markSaved': {
-    summary: 'Informa que o projeto foi salvo pelo script, com o nome do arquivo.',
+    summary: 'Reports that the script saved the project, with the file name.',
     params: 'fileName',
     readOnly: true,
     run: (p) => {
@@ -1599,7 +1599,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'project.load': {
-    summary: 'Abre o conteúdo de um arquivo .pontilha. Recusa se houver alterações não salvas, a menos que discard seja true.',
+    summary: 'Opens the contents of a .pontilha file. Refuses if there are unsaved changes, unless discard is true.',
     params: 'text, fileName?, discard?',
     run: async (p) => {
       guardUnsaved(p);
@@ -1608,7 +1608,7 @@ export const COMMANDS: Record<string, Command> = {
         activeLayerId: project.activeLayerId,
         palette: project.palette,
         recipes: project.recipes,
-        fileName: text(p, 'fileName', 'projeto.pontilha'),
+        fileName: text(p, 'fileName', 'project.pontilha'),
         filePath: null,
       });
       return inspect();
@@ -1617,7 +1617,7 @@ export const COMMANDS: Record<string, Command> = {
 
   'image.loadSheet': {
     summary:
-      'Abre uma folha de sprites PNG (base64) como animação nova: recorta em quadros de frameWidth × frameHeight, da esquerda para a direita e de cima para baixo, sem as células vazias do fim. Mesma regra de discard do doc.new.',
+      'Opens a PNG sprite sheet (base64) as a new animation: slices it into frameWidth × frameHeight frames, left to right and top to bottom, leaving out empty cells at the end. Same discard rule as doc.new.',
     params: 'png, frameWidth, frameHeight, duration?, fileName?, discard?',
     run: async (p) => {
       guardUnsaved(p);
@@ -1625,11 +1625,11 @@ export const COMMANDS: Record<string, Command> = {
       const fw = int(p, 'frameWidth');
       const fh = int(p, 'frameHeight');
       checkSize(fw, fh);
-      if (fw > image.width || fh > image.height) fail(`o quadro ${fw} × ${fh} é maior que a folha ${image.width} × ${image.height}`);
+      if (fw > image.width || fh > image.height) fail(`the ${fw} × ${fh} frame is larger than the ${image.width} × ${image.height} sheet`);
       const cells = sliceSheet(image.pixels, image.width, image.height, fw, fh);
-      if (cells.length > MAX_FRAMES) fail(`a folha daria ${cells.length} quadros; o máximo é ${MAX_FRAMES}`);
+      if (cells.length > MAX_FRAMES) fail(`the sheet would give ${cells.length} frames; the maximum is ${MAX_FRAMES}`);
       actions.loadDoc(docFromFrames(cells, fw, fh, clampDuration(num(p, 'duration', 100))), {
-        fileName: text(p, 'fileName', 'folha.pontilha'),
+        fileName: text(p, 'fileName', 'sheet.pontilha'),
         filePath: null,
         dirty: true,
       });
@@ -1638,7 +1638,7 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'image.load': {
-    summary: 'Abre um PNG (base64) como imagem nova de uma camada. Mesma regra de discard do doc.new.',
+    summary: 'Opens a PNG (base64) as a new single-layer image. Same discard rule as doc.new.',
     params: 'png, fileName?, discard?',
     run: async (p) => {
       guardUnsaved(p);
@@ -1646,7 +1646,7 @@ export const COMMANDS: Record<string, Command> = {
       checkSize(image.width, image.height);
       actions.loadDoc(
         createDoc(image.width, image.height, image.pixels),
-        { fileName: text(p, 'fileName', 'imagem.pontilha'), filePath: null },
+        { fileName: text(p, 'fileName', 'image.pontilha'), filePath: null },
       );
       return inspect();
     },
@@ -1656,34 +1656,34 @@ export const COMMANDS: Record<string, Command> = {
 
   'recipe.start': {
     summary:
-      'Começa a gravar uma receita: os comandos que mudam a imagem passam a ser guardados em ordem (não entram project.*, image.* e recipe.*). Desfazer tira o último passo gravado. Termine com recipe.stop.',
+      'Starts recording a recipe: commands that change the image are kept in order (project.*, image.* and recipe.* are left out). Undo removes the last recorded step. Finish with recipe.stop.',
     params: 'name',
     readOnly: true,
     run: (p) => {
       const name = text(p, 'name').trim();
-      if (!name) fail('name não pode ser vazio');
-      if (recording) fail(`já há uma receita gravando: "${recording.name}". Use recipe.stop antes.`);
+      if (!name) fail('name cannot be empty');
+      if (recording) fail(`a recipe is already recording: "${recording.name}". Use recipe.stop first.`);
       recording = { name, steps: [], units: [], undone: [] };
       return { recording: name };
     },
   },
 
   'recipe.stop': {
-    summary: 'Para de gravar e guarda a receita no projeto (substitui uma de mesmo nome). discard true joga fora.',
+    summary: 'Stops recording and stores the recipe in the project (replacing one with the same name). discard true throws it away.',
     params: 'discard?',
     run: (p) => {
-      if (!recording) fail('nenhuma receita está gravando');
+      if (!recording) fail('no recipe is recording');
       const { name, steps } = recording;
       recording = null;
       if (bool(p, 'discard', false)) return { discarded: name };
-      if (steps.length === 0) fail('a receita não tem passos; nada foi guardado');
+      if (steps.length === 0) fail('the recipe has no steps; nothing was stored');
       useApp.setState((s) => ({ recipes: [...s.recipes.filter((r) => r.name !== name), { name, steps }], dirty: true }));
       return { saved: name, steps: steps.length };
     },
   },
 
   'recipe.list': {
-    summary: 'Receitas guardadas no projeto, com os passos. steps false mostra só nomes e contagem.',
+    summary: 'Recipes stored in the project, with their steps. steps false shows only names and counts.',
     params: 'steps?',
     readOnly: true,
     run: (p) => {
@@ -1697,16 +1697,16 @@ export const COMMANDS: Record<string, Command> = {
 
   'recipe.save': {
     summary:
-      'Guarda uma receita escrita à mão: steps é uma lista de {method, params}, como num batch ({id, params}, o formato dos arquivos de receita em examples/, também vale).',
+      'Stores a hand-written recipe: steps is a list of {method, params}, as in a batch ({id, params}, the format of the recipe files in examples/, also works).',
     params: 'name, steps',
     run: (p) => {
       const name = text(p, 'name').trim();
-      if (!name) fail('name não pode ser vazio');
-      if (!Array.isArray(p.steps) || p.steps.length === 0) fail('steps precisa ser uma lista de {method, params}');
+      if (!name) fail('name cannot be empty');
+      if (!Array.isArray(p.steps) || p.steps.length === 0) fail('steps must be a list of {method, params}');
       const steps = p.steps.map((st, i) => {
         const method = (st as Params | null)?.method ?? (st as Params | null)?.id;
-        if (typeof method !== 'string' || !COMMANDS[method]) fail(`steps[${i}]: comando desconhecido ${JSON.stringify(method)}`);
-        if (NOT_RECORDED.some((prefix) => method.startsWith(prefix))) fail(`steps[${i}]: ${method} não pode entrar numa receita`);
+        if (typeof method !== 'string' || !COMMANDS[method]) fail(`steps[${i}]: unknown command ${JSON.stringify(method)}`);
+        if (NOT_RECORDED.some((prefix) => method.startsWith(prefix))) fail(`steps[${i}]: ${method} cannot be part of a recipe`);
         return { method, params: structuredClone(((st as Params).params ?? {}) as Record<string, unknown>) };
       });
       useApp.setState((s) => ({ recipes: [...s.recipes.filter((r) => r.name !== name), { name, steps }], dirty: true }));
@@ -1715,11 +1715,11 @@ export const COMMANDS: Record<string, Command> = {
   },
 
   'recipe.delete': {
-    summary: 'Apaga uma receita do projeto.',
+    summary: 'Deletes a recipe from the project.',
     params: 'name',
     run: (p) => {
       const name = text(p, 'name');
-      if (!useApp.getState().recipes.some((r) => r.name === name)) fail(`receita não encontrada: ${name}`);
+      if (!useApp.getState().recipes.some((r) => r.name === name)) fail(`recipe not found: ${name}`);
       useApp.setState((s) => ({ recipes: s.recipes.filter((r) => r.name !== name), dirty: true }));
       return { deleted: name };
     },
@@ -1727,15 +1727,15 @@ export const COMMANDS: Record<string, Command> = {
 
   'recipe.run': {
     summary:
-      'Executa uma receita como um passo de desfazer. colors {"#antiga": "#nova"} troca cores em todos os parâmetros: a mesma peça em outra paleta. Se a receita começa com doc.new, cria a imagem antes (discard vale para ela). Se um passo falhar, nada é aplicado.',
-    params: 'name, colors?: {de: para}, discard?',
+      'Runs a recipe as one undo step. colors {"#old": "#new"} swaps colors in every parameter: the same piece in another palette. If the recipe starts with doc.new, it creates the image first (discard applies to it). If a step fails, nothing is applied.',
+    params: 'name, colors?: {from: to}, discard?',
     run: async (p) => {
       const name = text(p, 'name');
       const recipe = useApp.getState().recipes.find((r) => r.name === name);
-      if (!recipe) fail(`receita não encontrada: ${name}. Receitas: ${useApp.getState().recipes.map((r) => r.name).join(', ') || 'nenhuma'}`);
+      if (!recipe) fail(`recipe not found: ${name}. Recipes: ${useApp.getState().recipes.map((r) => r.name).join(', ') || 'none'}`);
       const swap = new Map<number, string>();
       if (has(p, 'colors')) {
-        if (typeof p.colors !== 'object' || Array.isArray(p.colors)) fail('colors precisa ser um objeto {"#de": "#para"}');
+        if (typeof p.colors !== 'object' || Array.isArray(p.colors)) fail('colors must be an object {"#from": "#to"}');
         for (const [from, to] of Object.entries(p.colors as Record<string, unknown>)) {
           swap.set(colorValue(from, 'colors'), toHex(colorValue(to, `colors["${from}"]`)));
         }
@@ -1748,13 +1748,13 @@ export const COMMANDS: Record<string, Command> = {
           await runOne('doc.new', { ...steps[0].params, discard: bool(p, 'discard', false) });
           first = 1;
         }
-        if (steps.slice(first).some((st) => st.method === 'doc.new')) fail('doc.new só pode ser o primeiro passo de uma receita');
+        if (steps.slice(first).some((st) => st.method === 'doc.new')) fail('doc.new can only be the first step of a recipe');
         await actions.group(async () => {
           for (const [i, st] of steps.slice(first).entries()) {
             try {
               await runOne(st.method, st.params);
             } catch (err) {
-              throw new CommandError(`passo ${i + first + 1} (${st.method}): ${message(err)}. Nada da receita foi aplicado.`);
+              throw new CommandError(`step ${i + first + 1} (${st.method}): ${message(err)}. Nothing from the recipe was applied.`);
             }
           }
         });
@@ -1771,11 +1771,11 @@ export type Reply = { ok: true; result: unknown } | { ok: false; error: string }
 const message = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
 async function runOne(method: unknown, params: unknown): Promise<unknown> {
-  if (typeof method !== 'string') fail('method precisa ser o nome de um comando');
+  if (typeof method !== 'string') fail('method must be the name of a command');
   const command = COMMANDS[method];
-  if (!command) fail(`comando desconhecido: ${method}. Use commands.list para ver os disponíveis.`);
+  if (!command) fail(`unknown command: ${method}. Use commands.list to see the available ones.`);
   if (params !== undefined && params !== null && (typeof params !== 'object' || Array.isArray(params))) {
-    fail('params precisa ser um objeto');
+    fail('params must be an object');
   }
   if (!command.readOnly) actions.notify(`Script: ${method}`);
   const result = await command.run((params ?? {}) as Params);
@@ -1792,20 +1792,20 @@ export async function execute(method: string, params: unknown): Promise<Reply> {
     if (method !== 'batch') return { ok: true, result: await recordUnit(method, () => runOne(method, params)) };
 
     const list = (params as Params | null)?.commands;
-    if (!Array.isArray(list)) fail('batch precisa de commands: [{method, params}, ...]');
+    if (!Array.isArray(list)) fail('batch needs commands: [{method, params}, ...]');
     const recorded = recording?.steps.length;
     const results = await recordUnit('batch', () => actions.group(async () => {
       const out: unknown[] = [];
       for (const [i, item] of list.entries()) {
         const m = (item as Params | null)?.method;
         if (m === 'batch' || (typeof m === 'string' && m.startsWith('history.'))) {
-          fail(`comando ${i + 1}: ${String(m)} não pode ser usado dentro de batch`);
+          fail(`command ${i + 1}: ${String(m)} cannot be used inside batch`);
         }
         try {
           out.push(await runOne(m, (item as Params | null)?.params));
         } catch (err) {
           if (recording && recorded !== undefined) recording.steps.length = recorded;
-          throw new CommandError(`comando ${i + 1} (${String(m)}): ${message(err)}. Nada do lote foi aplicado.`);
+          throw new CommandError(`command ${i + 1} (${String(m)}): ${message(err)}. Nothing from the batch was applied.`);
         }
       }
       return out;

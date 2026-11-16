@@ -1,6 +1,6 @@
 {
  "name": "entrance_pad.2x2",
- "description": "Plataforma de entrada (spawn) com seta para a frente. 3 quadros: o anel pulsa (tag \"pulso\", ida e volta).",
+ "description": "Entrance (spawn) platform with an arrow pointing forward. 3 frames: the ring pulses (tag \"pulse\", ping-pong).",
  "anchor": {
   "x": 70.0,
   "y": 80
@@ -37,7 +37,7 @@
   {
    "id": "layer.setProps",
    "params": {
-    "name": "sombra"
+    "name": "shadow"
    }
   },
   {
@@ -54,7 +54,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "plataforma"
+    "name": "platform"
    }
   },
   {
@@ -148,7 +148,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "desenho"
+    "name": "markings"
    }
   },
   {
@@ -335,7 +335,7 @@
   {
    "id": "tag.add",
    "params": {
-    "name": "pulso",
+    "name": "pulse",
     "from": 1,
     "to": 3
    }

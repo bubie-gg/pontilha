@@ -1,10 +1,10 @@
 {
-  "name": "Badge Rastafári",
-  "description": "Gorro tam listrado em verde, dourado e vermelho, com faixa preta e dreads. 32 × 32; exporte com escala 4.",
+  "name": "Rastafari Badge",
+  "description": "Tam hat striped in green, gold and red, with a black band and dreads. 32 × 32; export at scale 4.",
   "steps": [
     { "id": "doc.new", "params": { "width": 32, "height": 32, "name": "badge-rastafari" } },
     { "id": "palette.set", "params": { "colors": ["#16141c", "#1f5e45", "#3a9150", "#7dc25b", "#db7b2a", "#f6b847", "#ffe6a0", "#8a2340", "#c93c4a", "#f0715e", "#2e2a38", "#4d4759", "#5a2a1e", "#9c4a22"] } },
-    { "id": "layer.setProps", "params": { "name": "gorro" } },
+    { "id": "layer.setProps", "params": { "name": "hat" } },
 
     { "id": "draw.ellipse", "params": { "x": 2, "y": 2, "w": 28, "h": 22, "color": "#1f5e45", "filled": true } },
     { "id": "draw.ellipse", "params": { "x": 0, "y": 0, "w": 28, "h": 22, "color": "#7dc25b", "filled": true, "onlyOn": "#1f5e45" } },

@@ -71,7 +71,7 @@ export class PixelEditor {
     }
     if (indices.length === 0) return null;
     const frame = [...this.layer.cels].find(([, cel]) => cel === this.cel)?.[0];
-    if (frame === undefined) throw new Error('o cel editado não pertence à camada');
+    if (frame === undefined) throw new Error('the edited cel does not belong to the layer');
     return {
       kind: 'pixels',
       layer: this.layer,

@@ -14,7 +14,7 @@ fn header_path(request: &Request<'_>) -> Result<PathBuf, String> {
     let raw = request
         .headers()
         .get("x-path")
-        .ok_or("caminho do arquivo ausente")?
+        .ok_or("missing file path")?
         .to_str()
         .map_err(|e| e.to_string())?;
     let decoded = percent_encoding::percent_decode_str(raw)
@@ -36,7 +36,7 @@ fn write_atomic(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
 fn write_file(request: Request<'_>) -> Result<(), String> {
     let path = header_path(&request)?;
     let InvokeBody::Raw(bytes) = request.body() else {
-        return Err("conteúdo do arquivo inválido".into());
+        return Err("invalid file contents".into());
     };
     write_atomic(&path, bytes).map_err(|e| format!("{}: {e}", path.display()))
 }
@@ -103,14 +103,14 @@ fn main() {
         .setup(move |app| {
             if let Some(options) = control_options {
                 match control::start(app.handle().clone(), bridge, options) {
-                    Ok(port) => eprintln!("pontilha: controle em http://127.0.0.1:{port}"),
-                    Err(e) => eprintln!("pontilha: controle desligado: {e}"),
+                    Ok(port) => eprintln!("pontilha: control on http://127.0.0.1:{port}"),
+                    Err(e) => eprintln!("pontilha: control off: {e}"),
                 }
             }
             Ok(())
         })
         .build(tauri::generate_context!())
-        .expect("falha ao iniciar o Pontilha")
+        .expect("failed to start Pontilha")
         .run(|_, event| {
             if let tauri::RunEvent::Exit = event {
                 control::cleanup();

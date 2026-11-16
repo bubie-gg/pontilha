@@ -18,47 +18,47 @@ function SelectionOptions() {
   const selection = useApp((s) => s.selection);
   const hasClip = useApp((s) => s.clipboard !== null);
   const square = useApp((s) => s.doc.width === s.doc.height);
-  const scope = selection ? 'a seleção' : 'a camada inteira';
+  const scope = selection ? 'the selection' : 'the whole layer';
   const edit = (fn: () => void) => () => onVisibleLayer(fn);
   return (
     <>
       <span className="options-meta">
         {!selection
-          ? 'Nada selecionado: as ações valem para a camada inteira'
+          ? 'Nothing selected: actions apply to the whole layer'
           : selection.mask
-            ? `${selectedCount(selection)} pixels numa área de ${selection.w} × ${selection.h} em ${selection.x}, ${selection.y}`
-            : `${selection.w} × ${selection.h} px em ${selection.x}, ${selection.y}`}
+            ? `${selectedCount(selection)} pixels in a ${selection.w} × ${selection.h} area at ${selection.x}, ${selection.y}`
+            : `${selection.w} × ${selection.h} px at ${selection.x}, ${selection.y}`}
       </span>
       <div className="bar-group">
-        <OptButton label="Espelhar ↔" title={`Espelha ${scope} na horizontal (Shift+H)`} onClick={edit(() => actions.flipSelection('horizontal'))} />
-        <OptButton label="Espelhar ↕" title={`Espelha ${scope} na vertical (Shift+V)`} onClick={edit(() => actions.flipSelection('vertical'))} />
+        <OptButton label="Flip ↔" title={`Flips ${scope} horizontally (Shift+H)`} onClick={edit(() => actions.flipSelection('horizontal'))} />
+        <OptButton label="Flip ↕" title={`Flips ${scope} vertically (Shift+V)`} onClick={edit(() => actions.flipSelection('vertical'))} />
         <OptButton
-          label="Girar ↻"
-          title={`Gira ${scope} 90° no sentido horário (Shift+R)`}
+          label="Rotate ↻"
+          title={`Rotates ${scope} 90° clockwise (Shift+R)`}
           disabled={!selection && !square}
           onClick={edit(() => actions.rotateSelection('cw'))}
         />
         <OptButton
-          label="Girar ↺"
-          title={`Gira ${scope} 90° no sentido anti-horário`}
+          label="Rotate ↺"
+          title={`Rotates ${scope} 90° counterclockwise`}
           disabled={!selection && !square}
           onClick={edit(() => actions.rotateSelection('ccw'))}
         />
       </div>
       <div className="bar-group">
-        <OptButton label="Copiar" title={`Copia ${scope} (Ctrl+C)`} onClick={() => actions.copy()} />
-        <OptButton label="Recortar" title={`Copia e apaga ${scope} (Ctrl+X)`} onClick={edit(() => actions.cut())} />
-        <OptButton label="Colar" title="Cola no mesmo lugar de onde copiou (Ctrl+V)" disabled={!hasClip} onClick={edit(() => actions.paste())} />
-        <OptButton label="Apagar" title="Apaga os pixels da seleção (Delete)" disabled={!selection} onClick={edit(() => actions.clearSelection())} />
+        <OptButton label="Copy" title={`Copies ${scope} (Ctrl+C)`} onClick={() => actions.copy()} />
+        <OptButton label="Cut" title={`Copies and erases ${scope} (Ctrl+X)`} onClick={edit(() => actions.cut())} />
+        <OptButton label="Paste" title="Pastes in the same place it was copied from (Ctrl+V)" disabled={!hasClip} onClick={edit(() => actions.paste())} />
+        <OptButton label="Erase" title="Erases the selected pixels (Delete)" disabled={!selection} onClick={edit(() => actions.clearSelection())} />
       </div>
       <div className="bar-group">
-        <OptButton label="Tudo" title="Seleciona a imagem inteira (Ctrl+A)" onClick={actions.selectAll} />
-        <OptButton label="Nada" title="Desfaz a seleção (Ctrl+D ou Esc)" disabled={!selection} onClick={() => actions.select(null)} />
+        <OptButton label="All" title="Selects the whole image (Ctrl+A)" onClick={actions.selectAll} />
+        <OptButton label="None" title="Clears the selection (Ctrl+D or Esc)" disabled={!selection} onClick={() => actions.select(null)} />
       </div>
       <div className="bar-group">
         <OptButton
-          label="Recortar imagem"
-          title="Deixa só a área selecionada, em todas as camadas e quadros"
+          label="Crop image"
+          title="Keeps only the selected area, in every layer and frame"
           disabled={!selection}
           onClick={() => actions.cropTo()}
         />
@@ -72,7 +72,7 @@ function ToolOptions() {
   const settings = useApp((s) => s.settings);
   const set = actions.setSettings;
 
-  const size = (label = 'Tamanho') => (
+  const size = (label = 'Size') => (
     <Stepper label={label} value={settings.brushSize} min={1} max={32} onChange={actions.setBrushSize} />
   );
 
@@ -83,11 +83,11 @@ function ToolOptions() {
       return (
         <>
           <Segmented
-            label="Alcance da varinha"
+            label="Wand range"
             value={settings.wandContiguous ? 'area' : 'all'}
             options={[
-              { value: 'area', label: 'Área conectada' },
-              { value: 'all', label: 'Mesma cor na camada toda' },
+              { value: 'area', label: 'Connected area' },
+              { value: 'all', label: 'Same color across the layer' },
             ]}
             onChange={(v) => set({ wandContiguous: v === 'area' })}
           />
@@ -100,19 +100,19 @@ function ToolOptions() {
         <>
           {size()}
           <Segmented
-            label="Forma do pincel"
+            label="Brush shape"
             value={settings.brushShape}
             options={[
-              { value: 'square', label: 'Quadrado' },
-              { value: 'round', label: 'Redondo' },
+              { value: 'square', label: 'Square' },
+              { value: 'round', label: 'Round' },
             ]}
             onChange={(brushShape) => set({ brushShape })}
           />
           <Toggle
-            label="Pixel perfeito"
+            label="Pixel perfect"
             checked={settings.pixelPerfect}
             disabled={settings.brushSize > 1}
-            title={settings.brushSize > 1 ? 'Funciona com pincel de 1 pixel' : 'Remove os cantos dobrados do traço'}
+            title={settings.brushSize > 1 ? 'Works with a 1-pixel brush' : 'Removes doubled corners from the stroke'}
             onChange={(pixelPerfect) => set({ pixelPerfect })}
           />
         </>
@@ -122,9 +122,9 @@ function ToolOptions() {
         <>
           {size()}
           <Toggle
-            label="Ângulo perfeito"
+            label="Perfect angle"
             checked={settings.perfectAngle}
-            title="Trava em 0°, 45°, 90° e nas linhas 2:1 do isométrico. Shift inverte."
+            title="Snaps to 0°, 45°, 90° and the 2:1 isometric lines. Shift inverts."
             onChange={(perfectAngle) => set({ perfectAngle })}
           />
         </>
@@ -132,25 +132,25 @@ function ToolOptions() {
     case 'rect':
       return (
         <>
-          {size('Contorno')}
-          <Toggle label="Preenchido" checked={settings.rectFilled} onChange={(rectFilled) => set({ rectFilled })} />
+          {size('Outline')}
+          <Toggle label="Filled" checked={settings.rectFilled} onChange={(rectFilled) => set({ rectFilled })} />
         </>
       );
     case 'ellipse':
       return (
         <>
-          {size('Contorno')}
-          <Toggle label="Preenchida" checked={settings.ellipseFilled} onChange={(ellipseFilled) => set({ ellipseFilled })} />
+          {size('Outline')}
+          <Toggle label="Filled" checked={settings.ellipseFilled} onChange={(ellipseFilled) => set({ ellipseFilled })} />
         </>
       );
     case 'fill':
       return (
         <Segmented
-          label="Alcance do balde"
+          label="Fill range"
           value={settings.fillContiguous ? 'area' : 'all'}
           options={[
-            { value: 'area', label: 'Área conectada' },
-            { value: 'all', label: 'Mesma cor na camada toda' },
+            { value: 'area', label: 'Connected area' },
+            { value: 'all', label: 'Same color across the layer' },
           ]}
           onChange={(v) => set({ fillContiguous: v === 'area' })}
         />
@@ -158,11 +158,11 @@ function ToolOptions() {
     case 'eyedropper':
       return (
         <Segmented
-          label="Pegar cor de"
+          label="Pick color from"
           value={settings.sampleAllLayers ? 'all' : 'layer'}
           options={[
-            { value: 'all', label: 'Imagem inteira' },
-            { value: 'layer', label: 'Camada ativa' },
+            { value: 'all', label: 'Whole image' },
+            { value: 'layer', label: 'Active layer' },
           ]}
           onChange={(v) => set({ sampleAllLayers: v === 'all' })}
         />
@@ -189,67 +189,67 @@ export function TopBar() {
 
       <div className="file-info" title={fileName}>
         <span className="file-name">{fileName}</span>
-        {dirty && <span className="file-state">não salvo</span>}
+        {dirty && <span className="file-state">unsaved</span>}
       </div>
 
       <div className="bar-group">
-        <IconButton icon="newFile" label="Nova imagem (Ctrl+N)" onClick={() => actions.openDialog('new')} />
-        <IconButton icon="open" label="Abrir (Ctrl+O)" onClick={openFile} />
-        <IconButton icon="save" label="Salvar (Ctrl+S)" onClick={() => saveProject()} />
-        <IconButton icon="export" label="Exportar (Ctrl+E)" onClick={() => actions.openDialog('export')} />
-        <IconButton icon="crop" label="Tamanho da imagem: tela, ampliar, recortar" onClick={() => actions.openDialog('canvas')} />
+        <IconButton icon="newFile" label="New image (Ctrl+N)" onClick={() => actions.openDialog('new')} />
+        <IconButton icon="open" label="Open (Ctrl+O)" onClick={openFile} />
+        <IconButton icon="save" label="Save (Ctrl+S)" onClick={() => saveProject()} />
+        <IconButton icon="export" label="Export (Ctrl+E)" onClick={() => actions.openDialog('export')} />
+        <IconButton icon="crop" label="Image size: canvas, scale up, crop" onClick={() => actions.openDialog('canvas')} />
       </div>
 
       <div className="bar-spacer" />
 
       <div className="bar-group">
-        <IconButton icon="undo" label="Desfazer (Ctrl+Z)" disabled={!canUndo} onClick={actions.undo} />
-        <IconButton icon="redo" label="Refazer (Ctrl+Shift+Z)" disabled={!canRedo} onClick={actions.redo} />
+        <IconButton icon="undo" label="Undo (Ctrl+Z)" disabled={!canUndo} onClick={actions.undo} />
+        <IconButton icon="redo" label="Redo (Ctrl+Shift+Z)" disabled={!canRedo} onClick={actions.redo} />
       </div>
 
       <div className="bar-group">
-        <IconButton icon="grid" label="Grade de pixels (Ctrl+')" active={showGrid} onClick={actions.toggleGrid} />
+        <IconButton icon="grid" label="Pixel grid (Ctrl+')" active={showGrid} onClick={actions.toggleGrid} />
         <IconButton
           icon="tile"
-          label="Modo tile: mostra a imagem repetida em volta, para conferir as emendas"
+          label="Tile mode: shows the image repeated around itself, to check the seams"
           active={tileMode}
           onClick={actions.toggleTileMode}
         />
         <IconButton
           icon="iso"
-          label="Grade isométrica 2:1"
+          label="2:1 isometric grid"
           active={isoGrid > 0}
           onClick={() => actions.setIsoGrid(isoGrid > 0 ? 0 : 32)}
         />
         {isoGrid > 0 && (
           <Segmented
-            label="Largura do ladrilho isométrico"
+            label="Isometric tile width"
             value={String(isoGrid)}
             options={[16, 32, 64].map((n) => ({ value: String(n), label: `${n}` }))}
             onChange={(v) => actions.setIsoGrid(Number(v))}
           />
         )}
-        <IconButton icon="minus" label="Diminuir zoom (-)" onClick={() => actions.zoomStep(-1)} />
+        <IconButton icon="minus" label="Zoom out (-)" onClick={() => actions.zoomStep(-1)} />
         <button type="button" className="zoom-readout px" title="Zoom 100% (1)" onClick={actions.zoomActual}>
           {Math.round(zoom * 100)}%
         </button>
-        <IconButton icon="plus" label="Aumentar zoom (+)" onClick={() => actions.zoomStep(1)} />
-        <IconButton icon="fit" label="Ajustar à janela (0)" onClick={actions.fitView} />
+        <IconButton icon="plus" label="Zoom in (+)" onClick={() => actions.zoomStep(1)} />
+        <IconButton icon="fit" label="Fit to window (0)" onClick={actions.fitView} />
       </div>
     </header>
   );
 }
 
 const TOOL_NAMES: Record<ToolId, string> = {
-  pencil: 'Lápis',
-  eraser: 'Borracha',
-  line: 'Linha',
-  rect: 'Retângulo',
-  ellipse: 'Elipse',
-  fill: 'Balde',
-  eyedropper: 'Conta-gotas',
-  select: 'Seleção',
-  wand: 'Varinha mágica',
+  pencil: 'Pencil',
+  eraser: 'Eraser',
+  line: 'Line',
+  rect: 'Rectangle',
+  ellipse: 'Ellipse',
+  fill: 'Fill',
+  eyedropper: 'Eyedropper',
+  select: 'Select',
+  wand: 'Magic wand',
 };
 
 /** Options for the active tool, in their own row so they never get squeezed by the top bar. */
@@ -259,16 +259,16 @@ const MIRRORED = new Set<ToolId>(['pencil', 'eraser', 'line', 'rect', 'ellipse',
 function SymmetryOption() {
   const symmetry = useApp((s) => s.settings.symmetry);
   return (
-    <div className="option-group" title="Repete o que você pinta do outro lado das linhas do centro da imagem">
-      <span className="option-label">Simetria</span>
+    <div className="option-group" title="Repeats what you paint across the image’s center lines">
+      <span className="option-label">Symmetry</span>
       <Segmented
-        label="Simetria"
+        label="Symmetry"
         value={symmetry}
         options={[
-          { value: 'none', label: 'Desligada' },
-          { value: 'vertical', label: '↔ Lados' },
-          { value: 'horizontal', label: '↕ Cima e baixo' },
-          { value: 'both', label: 'Os quatro' },
+          { value: 'none', label: 'Off' },
+          { value: 'vertical', label: '↔ Sides' },
+          { value: 'horizontal', label: '↕ Top and bottom' },
+          { value: 'both', label: 'All four' },
         ]}
         onChange={(value) => actions.setSettings({ symmetry: value })}
       />
@@ -280,10 +280,10 @@ export function OptionsBar() {
   const tool = useApp((s) => s.tool);
   const held = useApp((s) => s.heldTool);
   return (
-    <div className="options-bar" role="toolbar" aria-label={`Opções: ${TOOL_NAMES[tool]}`}>
+    <div className="options-bar" role="toolbar" aria-label={`Options: ${TOOL_NAMES[tool]}`}>
       <span className="options-tool">
         {TOOL_NAMES[tool]}
-        {held && <span className="options-held">enquanto segura Alt</span>}
+        {held && <span className="options-held">while holding Alt</span>}
       </span>
       <ToolOptions />
       {MIRRORED.has(tool) && <SymmetryOption />}

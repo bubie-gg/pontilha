@@ -169,10 +169,10 @@ describe('frames', () => {
 
   it('merges layers in every frame', async () => {
     await run('frame.new');
-    await run('layer.new', { name: 'cima' });
+    await run('layer.new', { name: 'top' });
     await run('draw.pixels', { pixels: [[2, 2]], color: '#ff0000', frame: 1 });
     await run('draw.pixels', { pixels: [[3, 3]], color: '#00ff00', frame: 2 });
-    await run('layer.mergeDown', { layer: 'cima' });
+    await run('layer.mergeDown', { layer: 'top' });
     expect(useApp.getState().doc.layers).toHaveLength(1);
     expect(((await run('doc.ascii', { frame: 1 })) as { rows: string[] }).rows[2]).toBe('..a.....');
     expect(((await run('doc.ascii', { frame: 2 })) as { rows: string[] }).rows[3]).toBe('...a....');
@@ -187,7 +187,7 @@ describe('frames', () => {
     expect(((await run('doc.ascii', { frame: 2, layer: copy.name })) as { rows: string[] }).rows[0]).toBe('a.......');
     // The copy owns its pixels.
     await run('draw.pixels', { pixels: [[1, 0]], color: '#00ff00', layer: copy.name });
-    expect(((await run('doc.ascii', { frame: 2, layer: 'Camada 1' })) as { rows: string[] }).rows[0]).toBe('a.......');
+    expect(((await run('doc.ascii', { frame: 2, layer: 'Layer 1' })) as { rows: string[] }).rows[0]).toBe('a.......');
   });
 });
 
@@ -404,21 +404,21 @@ describe('tags', () => {
 
   it('names stretches, exports only them and survives frame deletion', async () => {
     await fiveFrames();
-    const walk = await run('tag.add', { name: 'andar', from: 2, to: 4 });
-    expect(walk).toMatchObject({ name: 'andar', from: 2, to: 4 });
-    expect((await execute('tag.add', { name: 'andar', from: 1, to: 1 })).ok).toBe(false);
+    const walk = await run('tag.add', { name: 'walk', from: 2, to: 4 });
+    expect(walk).toMatchObject({ name: 'walk', from: 2, to: 4 });
+    expect((await execute('tag.add', { name: 'walk', from: 1, to: 1 })).ok).toBe(false);
 
-    expect((await run('render.gif', { tag: 'andar' })).frames).toBe(3);
-    expect((await run('render.sheet', { tag: 'andar' })).durations).toEqual([100, 50, 100]);
+    expect((await run('render.gif', { tag: 'walk' })).frames).toBe(3);
+    expect((await run('render.sheet', { tag: 'walk' })).durations).toEqual([100, 50, 100]);
 
     // Deleting an end moves it inwards; deleting the last frame of a one-frame tag drops the tag.
     await run('frame.delete', { frame: 4 });
-    expect((await run('doc.inspect')).tags).toEqual([expect.objectContaining({ name: 'andar', from: 2, to: 3 })]);
+    expect((await run('doc.inspect')).tags).toEqual([expect.objectContaining({ name: 'walk', from: 2, to: 3 })]);
     await run('tag.add', { name: 'pose', from: 1, to: 1 });
     await run('frame.delete', { frame: 1 });
-    expect(((await run('doc.inspect')).tags as Array<{ name: string }>).map((t) => t.name)).toEqual(['andar']);
+    expect(((await run('doc.inspect')).tags as Array<{ name: string }>).map((t) => t.name)).toEqual(['walk']);
     actions.undo();
-    expect(((await run('doc.inspect')).tags as Array<{ name: string }>).map((t) => t.name)).toEqual(['andar', 'pose']);
+    expect(((await run('doc.inspect')).tags as Array<{ name: string }>).map((t) => t.name)).toEqual(['walk', 'pose']);
 
     await run('tag.delete', { tag: 'pose' });
     expect((await execute('render.gif', { tag: 'pose' })).ok).toBe(false);
@@ -426,10 +426,10 @@ describe('tags', () => {
 
   it('keeps tags in the project file', async () => {
     await fiveFrames();
-    await run('tag.add', { name: 'pular', from: 3, to: 5 });
+    await run('tag.add', { name: 'jump', from: 3, to: 5 });
     const { text } = await run('project.serialize');
     await run('project.load', { text, discard: true });
-    expect((await run('doc.inspect')).tags).toEqual([expect.objectContaining({ name: 'pular', from: 3, to: 5 })]);
+    expect((await run('doc.inspect')).tags).toEqual([expect.objectContaining({ name: 'jump', from: 3, to: 5 })]);
   });
 });
 
@@ -477,7 +477,7 @@ describe('effects from node-based tools', () => {
     await run('draw.rect', { x: 0, y: 8, w: 16, h: 4, color: '#ffffff', filled: true });
     await run('effect.wave', { amp: 1, wavelength: 8, start: 8, animate: true, frames: 6 });
     expect(useApp.getState().doc.frames).toHaveLength(6);
-    await run('layer.new', { name: 'poeira' });
+    await run('layer.new', { name: 'dust' });
     const dust = await run('draw.particles', { count: 12, colors: ['#ffecd6', '#8d697a'], seed: 3 });
     expect(dust.cels).toBe(6);
     expect(dust.changed).toBeGreaterThan(0);
@@ -494,7 +494,7 @@ describe('effects from node-based tools', () => {
 
 describe('recipes', () => {
   it('records commands and replays them in other colours', async () => {
-    await run('recipe.start', { name: 'bola' });
+    await run('recipe.start', { name: 'ball' });
     await run('draw.ellipse', { x: 1, y: 1, w: 6, h: 6, color: '#ff0000', filled: true });
     await run('draw.pixels', { pixels: [[0, 0]], color: '#00ff00' });
     await run('history.undo');
@@ -507,7 +507,7 @@ describe('recipes', () => {
     const saved = await run('recipe.stop');
     expect(saved.steps).toBe(2);
     await run('layer.clear');
-    await run('recipe.run', { name: 'bola', colors: { '#ff0000': '#0000ff' } });
+    await run('recipe.run', { name: 'ball', colors: { '#ff0000': '#0000ff' } });
     expect(new Set(Object.values((await ascii()).legend))).toEqual(new Set(['#0000ff', '#000000']));
     // One undo removes the whole replay.
     await run('history.undo');
@@ -515,15 +515,15 @@ describe('recipes', () => {
   });
 
   it('keeps recipes and a thumbnail in the project file', async () => {
-    await run('recipe.save', { name: 'quadrado', steps: [{ method: 'draw.rect', params: { x: 0, y: 0, w: 2, h: 2, filled: true, color: '#ff0000' } }] });
-    await run('recipe.run', { name: 'quadrado' });
+    await run('recipe.save', { name: 'square', steps: [{ method: 'draw.rect', params: { x: 0, y: 0, w: 2, h: 2, filled: true, color: '#ff0000' } }] });
+    await run('recipe.run', { name: 'square' });
     const { text } = (await run('project.serialize')) as unknown as { text: string };
     const file = JSON.parse(text);
     expect(typeof file.thumbnail).toBe('string');
     expect(file.recipes).toHaveLength(1);
     useApp.setState({ recipes: [] });
     await run('project.load', { text, discard: true });
-    expect(useApp.getState().recipes.map((r) => r.name)).toEqual(['quadrado']);
+    expect(useApp.getState().recipes.map((r) => r.name)).toEqual(['square']);
   });
 });
 
@@ -532,16 +532,16 @@ describe('composing animation commands', () => {
     await run('draw.rect', { x: 0, y: 3, w: 2, h: 1, color: '#ff0000', filled: true });
     await run('frame.new', { copy: true });
     await run('draw.pixels', { pixels: [[7, 3]], color: '#00ff00' }); // frame 2 differs
-    await run('layer.new', { name: 'acessório' });
+    await run('layer.new', { name: 'accessory' });
     await run('draw.pixels', { pixels: [[4, 3]], color: '#0000ff', frame: 1 });
-    await run('anim.oscillate', { amp: 1, layer: 'Camada 1', phase: 0.25 });
-    await run('anim.oscillate', { amp: 1, layer: 'acessório', phase: 0.25 });
+    await run('anim.oscillate', { amp: 1, layer: 'Layer 1', phase: 0.25 });
+    await run('anim.oscillate', { amp: 1, layer: 'accessory', phase: 0.25 });
     const f2 = (await run('doc.ascii', { frame: 2 })) as unknown as { rows: string[]; legend: Record<string, string> };
     // phase 0.25 → frame 1 shifted +1, frame 2 shifted -1 (sine of 0.75 turn).
     expect(f2.rows[2]).toBe('aa..b..c');
     expect(f2.legend).toEqual({ a: '#ff0000', b: '#0000ff', c: '#00ff00' });
-    await run('effect.outline', { color: '#000000', allFrames: true, layer: 'Camada 1' });
-    expect((await run('doc.ascii', { frame: 1, layer: 'Camada 1' })).rows).not.toEqual((await run('doc.ascii', { frame: 2, layer: 'Camada 1' })).rows);
+    await run('effect.outline', { color: '#000000', allFrames: true, layer: 'Layer 1' });
+    expect((await run('doc.ascii', { frame: 1, layer: 'Layer 1' })).rows).not.toEqual((await run('doc.ascii', { frame: 2, layer: 'Layer 1' })).rows);
   });
 });
 
@@ -552,10 +552,10 @@ describe('rotate and clip', () => {
     await run('effect.rotate', { angle: 90 });
     const { rows } = await ascii();
     expect(rows[7]).toBe('..aaaaaaaaaaaa..');
-    await run('layer.new', { name: 'sombra' });
+    await run('layer.new', { name: 'shadow' });
     await run('draw.rect', { x: 0, y: 0, w: 16, h: 16, color: '#00ff00', filled: true });
-    await run('effect.clip', { by: 'Camada 1' });
-    const shadow = await run('doc.ascii', { layer: 'sombra' });
+    await run('effect.clip', { by: 'Layer 1' });
+    const shadow = await run('doc.ascii', { layer: 'shadow' });
     expect((shadow as { rows: string[] }).rows[7]).toBe('..aaaaaaaaaaaa..');
     expect((shadow as { rows: string[] }).rows[0]).toBe('.'.repeat(16));
   });

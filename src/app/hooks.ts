@@ -22,7 +22,7 @@ const TOOL_KEYS: Record<string, ToolId> = {
 /** Selection edits change the active layer, so they wait until it is visible. */
 export function onVisibleLayer(edit: () => void) {
   if (activeLayer().visible) edit();
-  else actions.notify('Essa camada está oculta. Mostre a camada para editar os pixels dela.', 'error');
+  else actions.notify('This layer is hidden. Show it to edit its pixels.', 'error');
 }
 
 const NUDGE: Record<string, [number, number]> = {
@@ -87,7 +87,7 @@ export function useShortcuts() {
               return true;
             case 'c':
               actions.copy();
-              actions.notify(s.selection ? 'Seleção copiada.' : 'Camada inteira copiada.');
+              actions.notify(s.selection ? 'Selection copied.' : 'Whole layer copied.');
               return true;
             case 'x':
               onVisibleLayer(() => actions.cut());
@@ -257,7 +257,7 @@ export function useWindowIntegration() {
       .onCloseRequested(async (event) => {
         if (closing || !useApp.getState().dirty) return;
         event.preventDefault();
-        const ok = await actions.confirm('Há alterações não salvas. Fechar o Pontilha mesmo assim?', 'Fechar sem salvar');
+        const ok = await actions.confirm('There are unsaved changes. Close Pontilha anyway?', 'Close without saving');
         if (!ok) return;
         closing = true;
         // Closing without saving on purpose: don't offer this work back next time.

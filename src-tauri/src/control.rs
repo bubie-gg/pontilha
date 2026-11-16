@@ -147,21 +147,21 @@ fn handle(app: &AppHandle, bridge: &Bridge, token: &str, mut request: tiny_http:
                     && same_secret(h.value.as_str().strip_prefix("Bearer ").unwrap_or(""), token)
             });
             if !authorized {
-                return respond(request, 401, &error("token inválido ou ausente"));
+                return respond(request, 401, &error("missing or invalid token"));
             }
             let mut body = String::new();
             if request.as_reader().take(MAX_BODY).read_to_string(&mut body).is_err() {
-                return respond(request, 400, &error("corpo da requisição ilegível"));
+                return respond(request, 400, &error("unreadable request body"));
             }
             let call: Value = match serde_json::from_str(&body) {
                 Ok(v) => v,
-                Err(e) => return respond(request, 400, &error(&format!("JSON inválido: {e}"))),
+                Err(e) => return respond(request, 400, &error(&format!("invalid JSON: {e}"))),
             };
             let Some(name) = call.get("method").and_then(Value::as_str) else {
-                return respond(request, 400, &error("o campo method está ausente"));
+                return respond(request, 400, &error("the method field is missing"));
             };
             if !bridge.ready.load(Ordering::SeqCst) {
-                return respond(request, 503, &error("o Pontilha ainda está carregando, tente de novo"));
+                return respond(request, 503, &error("Pontilha is still loading, try again"));
             }
 
             let id = bridge.next_id.fetch_add(1, Ordering::SeqCst) + 1;
@@ -174,17 +174,17 @@ fn handle(app: &AppHandle, bridge: &Bridge, token: &str, mut request: tiny_http:
             });
             if let Err(e) = app.emit("control://request", payload) {
                 bridge.pending.lock().unwrap().remove(&id);
-                return respond(request, 500, &error(&format!("falha ao falar com a janela: {e}")));
+                return respond(request, 500, &error(&format!("could not reach the window: {e}")));
             }
             match rx.recv_timeout(REPLY_TIMEOUT) {
                 Ok(reply) => respond(request, 200, &reply),
                 Err(_) => {
                     bridge.pending.lock().unwrap().remove(&id);
-                    respond(request, 504, &error("a janela do Pontilha não respondeu a tempo"));
+                    respond(request, 504, &error("the Pontilha window did not respond in time"));
                 }
             }
         }
-        _ => respond(request, 404, &error("rota desconhecida; use POST /rpc ou GET /health")),
+        _ => respond(request, 404, &error("unknown route; use POST /rpc or GET /health")),
     }
 }
 
@@ -196,7 +196,7 @@ pub fn start(app: AppHandle, bridge: Arc<Bridge>, options: Options) -> Result<u1
             let port = options.port.checked_add(offset)?;
             tiny_http::Server::http(("127.0.0.1", port)).ok().map(|s| (s, port))
         })
-        .ok_or_else(|| format!("nenhuma porta livre entre {} e {}", options.port, options.port + PORT_ATTEMPTS - 1))?;
+        .ok_or_else(|| format!("no free port between {} and {}", options.port, options.port + PORT_ATTEMPTS - 1))?;
 
     bridge.port.store(port, Ordering::SeqCst);
     let info = json!({

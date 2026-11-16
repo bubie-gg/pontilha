@@ -1,6 +1,6 @@
 {
  "name": "snack_counter.2x1",
- "description": "Balcão de lanche: cafeteira, xícaras e pote de biscoitos. Frente para +y.",
+ "description": "Snack counter: coffee maker, cups and a cookie jar. Faces +y.",
  "anchor": {
   "x": 78.0,
   "y": 104
@@ -48,7 +48,7 @@
   {
    "id": "layer.setProps",
    "params": {
-    "name": "sombra"
+    "name": "shadow"
    }
   },
   {
@@ -78,7 +78,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "balcao"
+    "name": "counter"
    }
   },
   {
@@ -268,7 +268,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "tampo"
+    "name": "tabletop"
    }
   },
   {
@@ -362,7 +362,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "cafeteira"
+    "name": "coffee_maker"
    }
   },
   {
@@ -492,7 +492,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "xicara_1"
+    "name": "cup_1"
    }
   },
   {
@@ -576,7 +576,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "xicara_2"
+    "name": "cup_2"
    }
   },
   {
@@ -660,7 +660,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "xicara_3"
+    "name": "cup_3"
    }
   },
   {
@@ -744,7 +744,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "pote"
+    "name": "jar"
    }
   },
   {

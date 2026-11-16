@@ -1,7 +1,7 @@
 [package]
 name = "pontilha"
 version = "0.1.0"
-description = "Editor de pixel art para Linux"
+description = "Pixel art editor for Linux"
 edition = "2021"
 
 [build-dependencies]

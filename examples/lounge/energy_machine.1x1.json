@@ -1,6 +1,6 @@
 {
  "name": "energy_machine.1x1",
- "description": "Máquina de bebidas \"Bubie Energy\": vitrine de latas, letreiro verde e âmbar. Frente para +y.",
+ "description": "Drinks machine \"Bubie Energy\": a window of cans, green and amber sign. Faces +y.",
  "anchor": {
   "x": 28.0,
   "y": 118
@@ -37,7 +37,7 @@
   {
    "id": "layer.setProps",
    "params": {
-    "name": "sombra"
+    "name": "shadow"
    }
   },
   {
@@ -67,7 +67,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "gabinete"
+    "name": "cabinet"
    }
   },
   {
@@ -161,7 +161,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "frente"
+    "name": "front"
    }
   },
   {

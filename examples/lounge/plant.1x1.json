@@ -1,6 +1,6 @@
 {
  "name": "plant.1x1",
- "description": "Planta grande em vaso de cerâmica turquesa.",
+ "description": "Large plant in a turquoise ceramic pot.",
  "anchor": {
   "x": 34.0,
   "y": 104
@@ -34,7 +34,7 @@
   {
    "id": "layer.setProps",
    "params": {
-    "name": "sombra"
+    "name": "shadow"
    }
   },
   {
@@ -51,7 +51,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "vaso"
+    "name": "pot"
    }
   },
   {
@@ -149,7 +149,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "caule"
+    "name": "stem"
    }
   },
   {
@@ -185,7 +185,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "folhas"
+    "name": "leaves"
    }
   },
   {

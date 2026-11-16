@@ -66,11 +66,11 @@ async function autosave() {
 async function offerRecovery() {
   const found = await read();
   if (!found) return;
-  const when = new Date(found.meta.savedAt).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+  const when = new Date(found.meta.savedAt).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' });
   const ok = await actions.confirm(
-    `O Pontilha fechou sem salvar “${found.meta.fileName}”. Há uma cópia automática de ${when}. Recuperar esse trabalho?`,
+    `Pontilha closed without saving “${found.meta.fileName}”. There is an automatic copy from ${when}. Recover this work?`,
     'Recuperar',
-    { title: 'Trabalho não salvo', cancelLabel: 'Descartar a cópia', tone: 'safe' },
+    { title: 'Unsaved work', cancelLabel: 'Discard the copy', tone: 'safe' },
   );
   if (ok) {
     try {
@@ -83,10 +83,10 @@ async function offerRecovery() {
         filePath: found.meta.filePath,
         dirty: true,
       });
-      actions.notify('Trabalho recuperado. Salve para guardar de vez.');
+      actions.notify('Work recovered. Save it to keep it.');
       return;
     } catch (err) {
-      actions.notify(`Não foi possível recuperar: ${err instanceof Error ? err.message : String(err)}.`, 'error');
+      actions.notify(`Could not recover: ${err instanceof Error ? err.message : String(err)}.`, 'error');
     }
   }
   await clearRecovery();

@@ -14,34 +14,34 @@ import {
 } from '../platform/files';
 import { actions, useApp } from '../state/store';
 
-const PROJECT = { name: 'Projeto Pontilha', extensions: ['pontilha'] };
-const PNG = { name: 'Imagem PNG', extensions: ['png'] };
-const GIF = { name: 'GIF animado', extensions: ['gif'] };
+const PROJECT = { name: 'Pontilha project', extensions: ['pontilha'] };
+const PNG = { name: 'PNG image', extensions: ['png'] };
+const GIF = { name: 'Animated GIF', extensions: ['gif'] };
 
 const reason = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
 async function okToDiscard(): Promise<boolean> {
   if (!useApp.getState().dirty) return true;
-  return actions.confirm('A imagem atual tem alterações não salvas. Elas serão perdidas.', 'Descartar alterações');
+  return actions.confirm('The current image has unsaved changes. They will be lost.', 'Discard changes');
 }
 
 export async function openFile() {
   if (!(await okToDiscard())) return;
   try {
-    const file = await pickFile([{ name: 'Projetos e imagens', extensions: ['pontilha', 'png'] }, PROJECT, PNG]);
+    const file = await pickFile([{ name: 'Projects and images', extensions: ['pontilha', 'png'] }, PROJECT, PNG]);
     if (!file) return;
 
     if (!file.name.toLowerCase().endsWith('.pontilha')) {
       const image = await decodeImage(file.bytes);
       if (image.width > MAX_SIZE || image.height > MAX_SIZE) {
-        actions.notify(`A imagem tem ${image.width} × ${image.height} px. O limite é ${MAX_SIZE} px por lado.`, 'error');
+        actions.notify(`The image is ${image.width} × ${image.height} px. The limit is ${MAX_SIZE} px per side.`, 'error');
         return;
       }
       actions.loadDoc(
         createDoc(image.width, image.height, image.pixels),
         { fileName: withExtension(file.name, 'pontilha'), filePath: null },
       );
-      actions.notify(`${file.name} aberto. Salve como projeto para guardar camadas e paleta.`);
+      actions.notify(`${file.name} opened. Save it as a project to keep layers and palette.`);
       return;
     }
 
@@ -54,7 +54,7 @@ export async function openFile() {
       filePath: file.path,
     });
   } catch (err) {
-    actions.notify(`Não foi possível abrir o arquivo: ${reason(err)}.`, 'error');
+    actions.notify(`Could not open the file: ${reason(err)}.`, 'error');
   }
 }
 
@@ -78,9 +78,9 @@ export async function saveProject(saveAs = false) {
     }
     await writeFile(path, bytes);
     useApp.setState({ filePath: path, fileName: baseName(path), dirty: false });
-    actions.notify(`Salvo em ${path}`);
+    actions.notify(`Saved to ${path}`);
   } catch (err) {
-    actions.notify(`Não foi possível salvar: ${reason(err)}.`, 'error');
+    actions.notify(`Could not save: ${reason(err)}.`, 'error');
   }
 }
 
@@ -102,14 +102,14 @@ async function renderExport(kind: ExportKind, scale: number, opts: ExportOptions
   const suffix = `${opts.suffix ? `-${opts.suffix}` : ''}${scale > 1 ? `@${scale}x` : ''}`;
   if (kind === 'gif') {
     const gif = renderGif(doc, { scale, pingpong: opts.pingpong, range: opts.range });
-    const note = gif.reduced ? ' Algumas cores parecidas foram unidas para caber nas 256 do GIF.' : '';
+    const note = gif.reduced ? ' Some similar colors were merged to fit the GIF’s 256.' : '';
     return { bytes: gif.bytes, name: `${stem}${suffix}.gif`, filter: GIF, mime: 'image/gif', label: 'GIF', note };
   }
   if (kind === 'sheet') {
     const sheet = renderSheet(doc, opts.layout ?? 'row', scale, opts.range);
     const bytes = await encodePng(new Uint8Array(sheet.pixels.buffer), sheet.width, sheet.height);
-    const note = ` ${sheet.cols} × ${sheet.rows} quadros de ${sheet.frameWidth} × ${sheet.frameHeight} px.`;
-    return { bytes, name: `${stem}-folha${suffix}.png`, filter: PNG, mime: 'image/png', label: 'Folha de sprites', note };
+    const note = ` ${sheet.cols} × ${sheet.rows} frames of ${sheet.frameWidth} × ${sheet.frameHeight} px.`;
+    return { bytes, name: `${stem}-sheet${suffix}.png`, filter: PNG, mime: 'image/png', label: 'Sprite sheet', note };
   }
   const pixels = scaleNearest(composite(doc), doc.width, doc.height, scale);
   const bytes = await encodePng(new Uint8Array(pixels.buffer), doc.width * scale, doc.height * scale);
@@ -129,6 +129,6 @@ export async function exportImage(kind: ExportKind, scale: number, opts: ExportO
     await writeFile(path, out.bytes);
     actions.notify(`${out.label} exportado em ${path}.${out.note}`);
   } catch (err) {
-    actions.notify(`Não foi possível exportar: ${reason(err)}.`, 'error');
+    actions.notify(`Could not export: ${reason(err)}.`, 'error');
   }
 }

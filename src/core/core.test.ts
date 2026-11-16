@@ -273,6 +273,6 @@ describe('files', () => {
   });
 
   it('rejects files that are not projects', async () => {
-    await expect(parseProject('{"app":"other"}')).rejects.toThrow('não é um projeto');
+    await expect(parseProject('{"app":"other"}')).rejects.toThrow('is not a Pontilha project');
   });
 });

@@ -1,6 +1,6 @@
 {
  "name": "gamer_chair.1x1",
- "description": "Cadeira gamer voltada para a mesa (de costas para quem olha). Assento no único ladrilho (0, 0).",
+ "description": "Gaming chair turned toward the desk (back to the viewer). Seat on its single tile (0, 0).",
  "anchor": {
   "x": 26.0,
   "y": 85
@@ -34,7 +34,7 @@
   {
    "id": "layer.setProps",
    "params": {
-    "name": "sombra"
+    "name": "shadow"
    }
   },
   {
@@ -185,7 +185,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "assento"
+    "name": "seat"
    }
   },
   {
@@ -279,7 +279,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "braco_esquerdo"
+    "name": "left_arm"
    }
   },
   {
@@ -373,7 +373,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "braco_direito"
+    "name": "right_arm"
    }
   },
   {
@@ -467,7 +467,7 @@
   {
    "id": "layer.new",
    "params": {
-    "name": "encosto"
+    "name": "backrest"
    }
   },
   {

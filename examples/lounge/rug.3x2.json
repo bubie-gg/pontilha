@@ -1,6 +1,6 @@
 {
  "name": "rug.3x2",
- "description": "Tapete turquesa com borda dourada e medalhão no centro. Plano: dá para pisar e pôr móveis em cima.",
+ "description": "Turquoise rug with a gold border and a medallion in the center. Flat: you can walk on it and put furniture on top.",
  "anchor": {
   "x": 114.0,
   "y": 100
@@ -32,7 +32,7 @@
   {
    "id": "layer.setProps",
    "params": {
-    "name": "tapete"
+    "name": "rug"
    }
   },
   {

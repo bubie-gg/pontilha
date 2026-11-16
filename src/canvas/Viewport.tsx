@@ -119,7 +119,7 @@ export function Viewport() {
     }
     const layer = activeLayer();
     if (!layer.visible) {
-      actions.notify('Essa camada está oculta. Mostre a camada para desenhar nela.', 'error');
+      actions.notify('This layer is hidden. Show it to draw on it.', 'error');
       return;
     }
     const color = secondary ? s.secondary : s.primary;
@@ -189,7 +189,7 @@ export function Viewport() {
         ref={canvasRef}
         className="stage-canvas"
         style={{ cursor }}
-        aria-label="Tela de desenho"
+        aria-label="Drawing canvas"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={finish}
